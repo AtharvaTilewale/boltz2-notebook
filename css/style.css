@@ -11,9 +11,17 @@ body {
 }
 
 .hero-bg {
-    background-color: #0c0a09;
-    background-image: radial-gradient(#1e293b 1px, transparent 1px);
+    background-color: #0f172a;
+    background-image: radial-gradient(#597497 1px, transparent 1px);
     background-size: 20px 20px;
+}
+.hero-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(#334155 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.3; /* control visibility */
 }
 
 /* --- Mobile First Refinements (for screens smaller than 640px) --- */
