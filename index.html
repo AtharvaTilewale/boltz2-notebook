@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boltz2-Notebook | AI-Powered Protein Structure Prediction on Google Colab</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model. Predict protein structures, complexes, and ligand affinities with an interactive UI, Gemini-powered insights, and automated analysis.">
+    <meta name="keywords" content="Protein Structure Prediction, Boltz2, Google Colab, Bioinformatics, Computational Biology, Deep Learning, Protein Folding, Ligand Affinity, Atharva Tilewale, Scientific Software">
+    <meta name="author" content="Atharva Tilewale">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://atharvatilewale.github.io/Boltz-Notebook/">
+    <meta property="og:title" content="Boltz2-Notebook | AI-Powered Protein Structure Prediction">
+    <meta property="og:description" content="An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model to predict protein structures, complexes, and ligand affinities.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/AtharvaTilewale/Boltz-Notebook/main/docs/assets/boltz2-notebook-social-preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://atharvatilewale.github.io/Boltz-Notebook/">
+    <meta property="twitter:title" content="Boltz2-Notebook | AI-Powered Protein Structure Prediction">
+    <meta property="twitter:description" content="An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model to predict protein structures, complexes, and ligand affinities.">
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/AtharvaTilewale/Boltz-Notebook/main/docs/assets/boltz2-notebook-social-preview.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://3dmol.org/build/3Dmol-min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="./js/script.js" defer></script>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body class="text-slate-700">
+    <header id="home" class="bg-slate-900/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold text-white">
+                            <i class="fa-solid fa-microchip text-indigo-400"></i> Boltz2-Notebook
+                        </h1>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#features" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Features</a>
+                        <a href="#workflow" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Workflow</a>
+                        <a href="#demo" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Demo</a>
+                        <a href="#faq" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">FAQ</a>
+                        <a href="#citation" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Cite</a>
+                        <a href="#about" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">About</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="relative hero-bg text-white py-20 sm:py-28 lg:py-32">
+            <div class="absolute inset-0 bg-slate-900/60"></div>
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
+                    Generative Foundation Model for Drug Discovery
+                </h2>
+                <p class="mt-6 max-w-2xl mx-auto text-lg text-slate-300">
+                    An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model. Predict
+                    protein structures, complexes, and binding affinities with an interactive UI and automated analysis.
+                </p>
+                <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="https://colab.research.google.com/github/AtharvaTilewale/Boltz-Notebook/blob/main/Boltz2_plus.ipynb"
+                        target="_blank"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                        <i class="fa-solid fa-rocket"></i> Run on Google Colab
+                    </a>
+                    <a href="https://github.com/AtharvaTilewale/Boltz-Notebook" target="_blank"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-slate-700 text-white font-semibold rounded-lg hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition">
+                        <i class="fa-brands fa-github"></i> View on GitHub
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Powerful Features, Simplified</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500">Everything you need for advanced protein
+                        modeling, packed into one accessible notebook.</p>
+                </div>
+                <div class="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-cubes text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">High-Resolution Structure Prediction</h4>
+                        <p class="mt-2 text-sm text-slate-500">Generate detailed 3D structures for proteins, antibodies, and multi-chain complexes using generative diffusion models.</p>
+                    </div>
+                    <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-puzzle-piece text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">Binding Affinity & Pose Prediction</h4>
+                        <p class="mt-2 text-sm text-slate-500">Predict structures with small molecule ligands
+                            (CCD/SMILES) and get binding affinity estimates.</p>
+                    </div>
+                    <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-cloud text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">Zero-Setup Colab Environment</h4>
+                        <p class="mt-2 text-sm text-slate-500">Run directly in your browser with free GPU access. All
+                            dependencies are installed automatically.</p>
+                    </div>
+                    <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-sliders text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">Interactive UI for Parameters</h4>
+                        <p class="mt-2 text-sm text-slate-500">No more manual config files. Use a simple form to input
+                            sequences, ligands, and run settings.</p>
+                    </div>
+                    <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-chart-pie text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">Automated Analysis & Reports</h4>
+                        <p class="mt-2 text-sm text-slate-500">Automatically generates confidence plots (pLDDT, PAE) and
+                            a 3D viewer in a clean report.</p>
+                    </div>
+                    <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-gears text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">Advanced User Controls</h4>
+                        <p class="mt-2 text-sm text-slate-500">Customize MSA options, recycling steps, and diffusion
+                            parameters for fine-tuned predictions.</p>
+                    </div>
+                    <!-- <div class="p-6 rounded-lg">
+                        <i class="fa-solid fa-lightbulb text-3xl text-indigo-500"></i>
+                        <h4 class="mt-4 text-lg font-semibold text-slate-900">Gemini-Powered Insights</h4>
+                        <p class="mt-2 text-sm text-slate-500">Get AI-powered explanations of complex topics and
+                            suggestions for next steps in your research.</p>
+                    </div> -->
+                </div>
+            </div>
+        </section>
+        <!-- Quick Start Section
+        <section id="quick-start" class="animated-section py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Get Started in 3 Steps</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500">Go from sequence to structure in minutes.</p>
+                </div>
+                <div class="mt-12 relative">
+                    <div class="absolute left-1/2 top-10 h-full w-px bg-slate-200 hidden md:block" aria-hidden="true"></div>
+                    <div class="grid md:grid-cols-3 gap-12">
+                        <div class="text-center">
+                            <div class="w-20 h-20 mx-auto rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-bold border-4 border-white shadow-md">1</div>
+                            <h4 class="mt-6 text-lg font-semibold text-slate-800">Open in Colab</h4>
+                            <p class="mt-2 text-slate-500">Click the "Run on Google Colab" button. No installation required.</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-20 h-20 mx-auto rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-bold border-4 border-white shadow-md">2</div>
+                            <h4 class="mt-6 text-lg font-semibold text-slate-800">Enter Your Data</h4>
+                            <p class="mt-2 text-slate-500">Use the interactive form to input your protein sequence and run parameters.</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-20 h-20 mx-auto rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-bold border-4 border-white shadow-md">3</div>
+                            <h4 class="mt-6 text-lg font-semibold text-slate-800">Run & Analyze</h4>
+                            <p class="mt-2 text-slate-500">Execute the cells and get your interactive 3D structure and confidence plots.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section> -->
+        <!-- Workflow Section -->
+        <section id="workflow" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">The Boltz2-Notebook
+                        Pipeline</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500">Explore the end-to-end process of
+                        predicting protein structures, from initial setup to final results, in four distinct phases.</p>
+                </div>
+
+                <!-- Phase 1 -->
+                <div id="phase1" class="mb-16">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-12 h-12 flex-shrink-0 rounded-full bg-sky-600 text-white flex items-center justify-center text-xl font-bold">
+                            1</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Setup & Configuration</h3>
+                    </div>
+                    <p class="mb-8 text-slate-600 max-w-3xl">This initial phase prepares the software environment and
+                        defines the inputs for the prediction task through a user-friendly interface.</p>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-sky-500"><i class="fa-solid fa-server"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Environment Setup</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Installs all CUDA-enabled dependencies and
+                                    validates the GPU.</p>
+                            </div>
+                            <!-- <button class="gemini-btn" data-topic="CUDA-enabled dependencies in bioinformatics"
+                                data-analogy="Think of a GPU as a super-fast graphics card. CUDA is like a special language that lets scientific programs use that graphics card for heavy calculations, not just for games. It's like turning a race car's engine into a supercomputer for science.">✨
+                                Explain This</button> -->
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-sky-500"><i class="fa-solid fa-keyboard"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Input Configuration</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Define protein sequences, ligands, and run
+                                    parameters via an interactive UI.</p>
+                            </div>
+                            <!-- <button class="gemini-btn" data-topic="SMILES strings for ligands"
+                                data-analogy="Imagine a SMILES string is a simple text message that describes a molecule's structure. Instead of drawing complex diagrams, it uses letters and symbols to spell out how atoms are connected, like a secret code for chemists.">✨
+                                Explain This</button> -->
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-sky-500"><i class="fa-solid fa-file-code"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">YAML Generation</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Automatically formats user input into a
+                                    machine-readable `params.yaml` file.</p>
+                            </div>
+                            <!-- <button class="gemini-btn" data-topic="YAML configuration files"
+                                data-analogy="A YAML file is like a highly organized grocery list for a computer program. It uses simple indentation to list all the 'ingredients' (parameters) and 'recipes' (settings) the program needs to run correctly, making it very easy for both humans and computers to read.">✨
+                                Explain This</button> -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 2 -->
+                <div id="phase2" class="mb-16">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 flex-shrink-0 rounded-full bg-amber-600 text-white flex items-center justify-center text-xl font-bold">
+                            2</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Core Prediction Engine</h3>
+                    </div>
+                    <p class="mb-8 text-slate-600 max-w-3xl">This is the automated, computational core of the pipeline. Boltz2 takes the configuration file and begins the intensive process of searching for evolutionary data and then running the deep learning model to predict the 3D structure.</p>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-amber-500"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">MSA Search</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Boltz2 connects to online bioinformatics servers to automatically fetch Multiple Sequence Alignments (MSAs), gathering crucial evolutionary context for the model.</p>
+                            </div>
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-amber-500"><i class="fa-solid fa-brain"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Structure Prediction</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">The deep learning model uses the MSA and a diffusion process to generate 3D coordinates. It iteratively refines the structure through recycling steps for higher accuracy.</p>
+                            </div>
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-amber-500"><i class="fa-solid fa-magnet"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Binding Affinity Prediction</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">A specialized model predicts the binding strength (IC₅₀) and interaction probability for a given ligand, providing key insights for drug discovery.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3 -->
+                <div id="phase3" class="mb-16">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl font-bold">
+                            3</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Analysis & Visualization</h3>
+                    </div>
+                    <p class="mb-8 text-slate-600 max-w-3xl">Once the prediction is complete, the pipeline generates a
+                        rich set of outputs. The notebook then automates the analysis of these results, creating plots
+                        and an interactive 3D view to help the user assess the quality and characteristics of the
+                        predicted structure.</p>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-emerald-500"><i class="fa-solid fa-box-archive"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Output Generation</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Generates 3D models (PDB), confidence scores
+                                    (pLDDT), error matrices (PAE), and ligand affinity predictions (`affinity.json`).
+                                </p>
+                            </div>
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-emerald-500"><i class="fa-solid fa-chart-line"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Automated Plotting</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Parses data and creates
+                                    pLDDT confidence plots and PAE heatmaps for each predicted chain. It also generates a dashboard visualizing the binding probability (Hit Discovery) and the calculated IC₅₀ and ΔG values (Lead Optimization).</p>
+                            </div>
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-emerald-500"><i class="fa-solid fa-cube"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Interactive Visualization</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Renders the predicted 3D structure in a 3Dmol.js
+                                    viewer and assembles all plots into a final, comprehensive HTML report.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 4 -->
+                <div id="phase4" class="mb-16">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-12 h-12 flex-shrink-0 rounded-full bg-violet-600 text-white flex items-center justify-center text-xl font-bold">
+                            4</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Export & Archiving</h3>
+                    </div>
+                    <p class="mb-8 text-slate-600 max-w-3xl">The final phase provides convenient options for saving and
+                        exporting all generated results. Users can either back up their work to the cloud for persistent
+                        storage or download a complete package to their local machine for offline analysis and
+                        record-keeping.</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-violet-500"><i class="fa-brands fa-google-drive"></i>
+                                    </div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Export to Drive</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Provides an option to copy the entire results
+                                    folder—containing PDBs, plots, and logs—directly to a user's Google Drive.</p>
+                            </div>
+                        </div>
+                        <div class="phase-card p-6">
+                            <div>
+                                <div class="flex items-center gap-4">
+                                    <div class="phase-icon bg-violet-500"><i class="fa-solid fa-file-zipper"></i></div>
+                                    <h4 class="text-lg font-semibold text-slate-900">Download Package</h4>
+                                </div>
+                                <p class="mt-4 text-slate-500 text-sm">Packages all generated results into a single
+                                    `.zip` file, allowing for easy download to a local computer.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Demo Section -->
+        <section id="demo" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">See it in Action</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500">Explore a sample output from a
+                        Boltz2-Notebook run. Interact with the 3D model and check the confidence plots.</p>
+                </div>
+                <div class="mt-12 max-w-4xl mx-auto">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button id="tab-btn-3d"
+                                class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                3D Structure Viewer
+                            </button>
+                            <button id="tab-btn-plots"
+                                class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Confidence Plots
+                            </button>
+                            <button id="tab-btn-affinity"
+                                class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Affinity Prediction
+                            </button>
+                        </nav>
+                    </div>
+                    <div class="mt-8">
+                        <div id="tab-content-3d" class="tab-content active">
+                            <div class="w-full h-[500px] bg-slate-100 rounded-lg border relative"
+                                id="mol_viewer_container"></div>
+                        </div>
+                        <div id="tab-content-plots" class="tab-content">
+                            <div class="grid md:grid-cols-2 gap-8 items-center">
+                                <div class="w-full">
+                                    <h5 class="text-center font-medium text-slate-600 mb-2">pLDDT Score per Residue</h5>
+                                    <div class="chart-container h-64 md:h-80"><canvas id="plddtChartDemo"></canvas>
+                                    </div>
+                                </div>
+                                <div class="w-full">
+                                    <h5 class="text-center font-medium text-slate-600 mb-2">Predicted Aligned Error
+                                        (PAE)</h5>
+                                    <div class="chart-container h-64 md:h-80"><canvas id="paeChartDemo"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-content-affinity" class="tab-content">
+                            <div class="bg-slate-50 p-8 rounded-lg text-center">
+                                <h4 class="font-semibold text-slate-800">Affinity Analysis</h4>
+                                <p class="text-sm text-slate-500 mt-2">A visual report showing binding probability and
+                                    predicted IC₅₀ values.</p>
+                                <div
+                                    class="mt-6 flex justify-center items-center text-left max-w-md mx-auto bg-white p-6 rounded-md shadow-inner">
+                                    <div class="text-center">
+                                        <div class="text-lg font-bold text-slate-700">Ensemble Model</div>
+                                        <div class="relative w-24 h-24 mx-auto mt-2">
+                                            <!-- Background circle -->
+                                            <svg width="150" height="150" class="absolute inset-0">
+                                                <circle cx="48" cy="48" r="43" fill="none" stroke="#e5e7eb"
+                                                    stroke-width="8" />
+                                                <!-- Progress circle = 85%, 360 * 0.85 = 306deg -->
+                                                <circle cx="48" cy="48" r="43" fill="none" stroke="#6366f1"
+                                                    stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="37.68"
+                                                    stroke-linecap="round" transform="rotate(-90 48 48)" />
+                                            </svg>
+                                            <div
+                                                class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-slate-800">
+                                                85%
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 text-sm text-slate-500">High Confidence</div>
+                                        <div class="mt-4 text-slate-800 font-semibold">Predicted IC₅₀: 0.78 µM</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- FAQ Section -->
+        <section id="faq" class="animated-section py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Frequently Asked Questions</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500">Have questions? We've got answers.</p>
+                </div>
+                <div class="mt-12 max-w-3xl mx-auto space-y-4">
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">Do I need a powerful computer to run this?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <p class="mt-4 text-slate-600 text-sm">No! The notebook is designed to run on Google Colab, which provides free access to powerful GPUs in the cloud. All you need is a web browser and a Google account.</p>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">Is Boltz2-Notebook free to use?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <p class="mt-4 text-slate-600 text-sm">Yes, this project is completely free and open-source, licensed under the MIT License. It builds upon the open-source Boltz2 model.</p>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">Can I predict multi-chain or complex proteins?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <p class="mt-4 text-slate-600 text-sm">Yes. You can define multi-chain complexes by adding multiple "protein" blocks in the user interface. Simply click the "Add Protein" button for each new chain you want to include in the complex. Ensure that each chain has a unique ID (e.g., A, B, C).</p>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">What are `recycling_steps` and `sampling_steps`?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <div class="mt-4 text-slate-600 text-sm space-y-3">
+                                <p><b>Recycling steps</b> control how many times the model's output is fed back into the network for refinement. More steps (e.g., 3-6) can improve accuracy but increase runtime.</p>
+                                <p><b>Sampling steps</b> refer to the number of steps in the diffusion process that generates the structure from noise. Higher values (e.g., 100-200) can lead to higher-quality structures but also take longer.</p>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">What's the difference between "Hit Discovery" and "Lead Optimization"?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <div class="mt-4 text-slate-600 text-sm space-y-3">
+                                <p><strong>Hit Discovery:</strong> This is the initial screening stage. It answers the question: "Does this ligand bind to the protein at all?" The output is a probability score that helps identify promising compounds, or "hits."</p>
+                                <p><strong>Lead Optimization:</strong> This is the next step. It answers the question: "How strongly does this ligand bind?" The output is a predicted IC₅₀ value, which measures the drug's potency. This stage helps refine a "hit" into a more effective "lead" compound.</p>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">How are the IC₅₀ and ΔG values calculated?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <div class="mt-4 text-slate-600 text-sm space-y-3">
+                                <p>The Boltz2 model does not directly predict the IC₅₀ or ΔG values. Instead, it predicts a core value called `affinity_pred_value`, which represents the <strong>log₁₀(IC₅₀)</strong> in micromolar (µM) units.</p>
+                                <p>The notebook then uses this prediction to derive the final metrics:</p>
+                                <ul class="list-disc list-inside space-y-2 pl-2">
+                                    <li>
+                                        <strong>IC₅₀ Calculation:</strong> The IC₅₀ value is calculated by taking 10 to the power of the model's prediction.
+                                        <br>
+                                        <code class="text-xs bg-slate-100 p-1 rounded">IC₅₀ (µM) = 10 ^ affinity_pred_value</code>
+                                    </li>
+                                    <li>
+                                        <strong>ΔG Calculation:</strong> The Gibbs free energy (ΔG), which represents the spontaneity of binding, is derived from the predicted `affinity_pred_value` using the following formula found in the analysis script:
+                                        <br>
+                                        <code class="text-xs bg-slate-100 p-1 rounded">ΔG (kcal/mol) = (6 - affinity_pred_value) * 1.364</code>
+                                    </li>
+                                </ul>
+                                <p>This approach allows the model to predict a logarithmic value, which is often more stable for machine learning, while the notebook provides the final, interpretable values for scientific analysis.</p>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">Can I predict the structure of a protein that is not in any database?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <p class="mt-4 text-slate-600 text-sm">Yes. Boltz2, like other modern predictors, uses Multiple Sequence Alignments (MSAs) to learn evolutionary patterns. As long as it can find related protein sequences (homologs), it can make a confident prediction even for a novel protein whose structure has never been experimentally determined.</p>
+                        </details>
+                    </div>
+                    <div class="faq-item bg-white p-4 rounded-lg border border-slate-200">
+                        <details>
+                            <summary class="flex justify-between items-center cursor-pointer">
+                                <span class="font-semibold text-slate-800">What is pLDDT and PAE?</span>
+                                <i class="faq-icon fa-solid fa-plus text-slate-500"></i>
+                            </summary>
+                            <p class="mt-4 text-slate-600 text-sm">pLDDT (predicted Local Distance Difference Test) is a per-residue confidence score from 0-100. Higher scores mean the model is more confident about the local structure. PAE (Predicted Aligned Error) indicates the model's confidence in the relative position of two residues. Lower PAE values (in Ångströms) are better, suggesting high confidence in the overall domain structure.</p>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Citation Section -->
+        <section id="citation" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">Cite Us</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500">If you use Boltz2-Notebook in your
+                        research, please cite the following works.</p>
+                </div>
+                <div class="mt-12 max-w-3xl mx-auto space-y-8">
+                    <div id="cite-notebook" class="bg-white p-6 rounded-lg border">
+                        <h4 class="font-semibold text-slate-800">For the Boltz2-Notebook</h4>
+                        <p class="mt-2 text-sm text-slate-600">Tilewale, A. (2025). Boltz2-Notebook: A Google Colab
+                            platform for simplified protein structure prediction. GitHub. <a
+                                href="https://github.com/AtharvaTilewale/Boltz-Notebook"
+                                class="text-indigo-600 hover:underline">https://github.com/AtharvaTilewale/Boltz-Notebook</a>
+                        </p>
+                        <div class="mt-4">
+                            <button onclick="copyToClipboard('cite-notebook')"
+                                class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Copy Citation</button>
+                            <span id="cite-notebook-feedback"
+                                class="ml-2 text-sm text-green-600 opacity-0 transition">Copied!</span>
+                        </div>
+                    </div>
+                    <div id="cite-model" class="bg-white p-6 rounded-lg border">
+                        <h4 class="font-semibold text-slate-800">For the Boltz2 Model</h4>
+                        <p class="mt-2 text-sm text-slate-600">Passaro, S., Corso, G., Wohlwend, J., et al. (2025).
+                            Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction. bioRxiv. <a
+                                href="https://doi.org/10.1101/2025.06.14.659707"
+                                class="text-indigo-600 hover:underline">doi:10.1101/2025.06.14.659707</a></p>
+                        <div class="mt-4">
+                            <button onclick="copyToClipboard('cite-model')"
+                                class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Copy Citation</button>
+                            <span id="cite-model-feedback"
+                                class="ml-2 text-sm text-green-600 opacity-0 transition">Copied!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <img src="https://avatars.githubusercontent.com/u/106968431" alt="Atharva Tilewale"
+                    class="w-24 h-24 rounded-full mx-auto mb-4">
+                <h3 class="text-2xl font-bold text-slate-900">About the Author</h3>
+                <p class="mt-2 text-xl font-medium text-slate-700">Atharva Tilewale</p>
+                <p class="mt-2 max-w-xl mx-auto text-slate-500">A bioinformatics and computational biology enthusiast
+                    passionate about creating accessible tools for scientific research. Currently at Gujarat
+                    Biotechnology University.</p>
+                <div class="mt-6 flex justify-center gap-6">
+                    <a href="https://github.com/AtharvaTilewale" class="text-slate-400 hover:text-slate-500"><span
+                            class="sr-only">GitHub</span><i class="fa-brands fa-github text-2xl"></i></a>
+                    <a href="https://www.linkedin.com/in/atharvatilewale"
+                        class="text-slate-400 hover:text-slate-500"><span class="sr-only">LinkedIn</span><i
+                            class="fa-brands fa-linkedin text-2xl"></i></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>&copy; 2025 Atharva Tilewale. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="explanation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-lg font-semibold text-slate-800">Explanation</h3>
+                <button id="modal-close-btn" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+            <div id="modal-body" class="text-slate-600"></div>
+        </div>
+    </div>
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Boltz2-Notebook",
+      "applicationCategory": "ScientificApplication",
+      "abstract": "An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model to predict protein structures, complexes, and ligand affinities.",
+      "operatingSystem": "Web, Google Colab",
+      "url": "https://github.com/AtharvaTilewale/Boltz-Notebook",
+      "author": {
+        "@type": "Person",
+        "name": "Atharva Tilewale",
+        "url": "https://github.com/AtharvaTilewale"
+      },
+      "softwareVersion": "1.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+    </script>
+</body>
+
+</html>

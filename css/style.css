@@ -1,0 +1,192 @@
+/* style.css
+  This file adds responsive refinements to the existing Tailwind CSS structure.
+  It is designed to be linked from the main HTML file.
+*/
+
+/* --- Global Styles & Typography --- */
+body {
+    background-color: #f1f5f9;
+    color: #1e293b;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.hero-bg {
+    background-color: #0c0a09;
+    background-image: radial-gradient(#1e293b 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* --- Mobile First Refinements (for screens smaller than 640px) --- */
+@media (max-width: 640px) {
+    /* Adjust hero section typography for small screens */
+    .hero-bg h2 {
+        font-size: 2.25rem; /* Equivalent to text-4xl */
+        line-height: 2.5rem;
+    }
+
+    .hero-bg p {
+        font-size: 1rem; /* Equivalent to text-base */
+    }
+
+    /* Adjust section header typography */
+    section h3 {
+        font-size: 1.875rem; /* Equivalent to text-3xl */
+        line-height: 2.25rem;
+    }
+
+    /* Reduce vertical padding on sections to make content more compact */
+    section {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    /* Make tab navigation wrap and center on small screens to prevent overflow */
+    nav[aria-label="Tabs"] {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    /* Reduce the height of the 3D viewer on mobile */
+    #mol_viewer_container {
+        height: 400px;
+    }
+
+    /* Adjust chart heights for better fit on mobile */
+    .chart-container {
+        height: 300px;
+    }
+}
+
+/* --- Tablet Refinements (for screens between 640px and 768px) --- */
+@media (min-width: 641px) and (max-width: 768px) {
+    /* Slightly reduce hero heading size for tablets */
+    .hero-bg h2 {
+        font-size: 3rem; /* Equivalent to text-5xl */
+        line-height: 1;
+    }
+    
+    /* Adjust 3D viewer height for tablets */
+    #mol_viewer_container {
+        height: 450px;
+    }
+}
+
+/* --- General Interactive & UI Element Styles --- */
+.phase-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+.phase-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+.phase-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+}
+.gemini-btn {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #0ea5e9;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.gemini-btn:hover {
+    color: #0284c7;
+}
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+.modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    transform: scale(0.95);
+    transition: transform 0.3s;
+}
+.modal-overlay.visible .modal-content {
+    transform: scale(1);
+}
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 2rem auto;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.tab-btn {
+    transition: all 0.2s ease-in-out;
+}
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+}
+.faq-item details > summary {
+    list-style: none;
+}
+.faq-item details > summary::-webkit-details-marker {
+    display: none;
+}
+.faq-item .faq-icon {
+    transition: transform 0.2s;
+}
+.faq-item details[open] .faq-icon {
+    transform: rotate(45deg);
+}
+.animated-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.animated-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
