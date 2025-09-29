@@ -1,0 +1,2 @@
+dist/* linguist-detectable=true
+*.py linguist-language=Python
