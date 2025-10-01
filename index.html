@@ -431,11 +431,29 @@
                                             </div>
                                         </div>
 
-                                        <div class="mt-3 text-sm text-slate-500">High Confidence</div>
-                                        <div class="mt-4 text-slate-800 font-semibold">Predicted IC₅₀: 0.78 µM</div>
+                                        <div class="mt-3 text-sm text-slate-500" style="font-size: 0.875rem;">(High Confidence)</div>
+                                        <div class="mt-4 text-slate-800 font-semibold" style="font-size: 0.875rem;">Predicted IC₅₀: 0.78 µM</div>
+                                        <div class="mt-1 text-sm text-slate-700" style="font-size: 0.85rem;">Predicted ΔG ≈ -9.2 kcal/mol</div>
+                                        <!-- Horizontal Binding Affinity Bar -->
+                            <div class="mt-8 w-full flex flex-col items-center">
+                                <div class="flex justify-between w-full mb-2 px-1">
+                                    <span class="text-xs text-slate-500 font-semibold">Weak</span>
+                                    <span class="text-xs text-slate-500 font-semibold">Strong</span>
+                                </div>
+                                <div class="relative w-full h-2 bg-slate-200 rounded-full">
+                                    <!-- Affinity fill (e.g., 85%) -->
+                                    <div class="absolute left-0 top-0 h-2 bg-indigo-500 rounded-full" style="width: 85%;"></div>
+                                    <!-- Marker for current affinity -->
+                                    <div class="absolute top-1/2 -translate-y-1/2" style="left: 85%;">
+                                        <div class="w-3 h-3 bg-indigo-600 rounded-full border-2 border-white shadow"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-slate-600">(Strong Binder)<span class="font-bold text-indigo-600"></span></div>
+                            </div>
                                     </div>
                                 </div>
                             </div>
+                            
                         </div>
                     </div>
                 </div>
