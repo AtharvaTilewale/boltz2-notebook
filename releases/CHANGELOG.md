@@ -18,3 +18,6 @@
 - Initial public notebook release
 - Basic protein-ligand prediction
 - Affinity prediction workflow
+- Visualization of predicted structures and interactions
+- G-Drive integration for saving and sharing results
+- Zip file export of all outputs for easy download and local analysis
