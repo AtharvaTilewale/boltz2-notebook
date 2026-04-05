@@ -57,9 +57,9 @@ The beta version adds more advanced input and modeling support:
 
 ## Notebook Files
 
-- [Current notebook](Boltz2.ipynb)
-- [V1 notebook](notebooks/v1/Boltz2_v1.0.0.ipynb)
-- [V2 beta notebook](notebooks/v2/Boltz2_V2.0.0_beta.ipynb)
+- [Current notebook](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb)
+- [V1 notebook](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/notebooks/v1/Boltz2_v1.0.0.ipynb)
+- [V2 beta notebook](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/notebooks/v2/Boltz2_V2.0.0_beta.ipynb)
 
 ## Short Summary
 
