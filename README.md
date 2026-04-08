@@ -1,66 +1,94 @@
 # Boltz2-Notebook
 
-Boltz2-Notebook is a simple Google Colab notebook project for protein, ligand, and biomolecular structure prediction using the Boltz2 model. It helps you prepare input data, run predictions, view the results, and save outputs without needing a full local setup.
+**Streamlined Boltz2 protein and biomolecular structure prediction in Google Colab.** 
 
-## What It Is
+Boltz2-Notebook provides interactive Jupyter notebooks for AI-powered molecular structure prediction, enabling you to prepare inputs, run predictions, visualize results, and export outputs—all without local installation.
 
-This notebook gives you a guided workflow for Boltz2. It handles setup, input preparation, prediction, and result analysis in one place.
+---
 
-## Main Features
+## Quick Start
 
-- Automatic environment setup for Colab or Linux
-- GPU check before running the notebook
-- YAML input generation for Boltz2 jobs
+### Choose Your Notebook
+
+| Notebook | Best For | Status |
+|----------|----------|--------|
+| [**Latest Release**](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb) | General protein-ligand prediction | Current |
+| [**V1 (Stable)**](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) | Core workflow, proven stability | Stable |
+| [**V2 (Beta)**](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb) | Advanced modeling, custom MSA, DNA/RNA | Beta |
+| [**Batch Processing**](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb) | Multiple predictions at once | Beta |
+
+👉 **[View all versions and release notes →](releases/version_table.md)**
+
+---
+
+## Features
+
+**Core Capabilities**
+- Automatic environment setup for Colab and Linux
+- GPU verification before prediction
+- Flexible biomolecular input handling (proteins, ligands, DNA/RNA)
+- Interactive YAML input generation
 - MSA download and validation
-- Structure prediction for protein and ligand systems
-- Confidence and error output such as pLDDT and PAE
-- 3D structure visualization
-- Google Drive export
-- ZIP download of results
 
-## What It Can Be Used For
+**Results & Analysis**
+- Structure prediction with confidence metrics (pLDDT, PAE)
+- Interactive 3D visualization
+- Protein-ligand complex analysis
+- Binding affinity estimation
 
-- Predicting protein-ligand complexes
-- Estimating binding affinity
-- Visualizing predicted molecular structures
-- Testing simple biomolecular modeling workflows in Colab
-- Saving results for later review or local analysis
+**Workflow**
+- Google Drive integration for saving results
+- ZIP export of all outputs
+- Batch prediction support (local scripts available)
 
-## Versions
+---
 
-### V1.0.0
+## Use Cases
 
-The first public version focuses on the core workflow:
+- **Structure Prediction**: Predict protein-ligand and protein-protein complexes
+- **Binding Analysis**: Estimate binding affinities and interaction sites
+- **Visualization**: Inspect predicted structures and confidence scores
+- **Batch Processing**: Automate predictions on multiple inputs locally
+- **Colab Workflows**: Test biomolecular workflows in cloud notebooks
 
-- Basic protein-ligand prediction
-- Affinity prediction
-- Structure and interaction visualization
-- Google Drive saving
-- ZIP export of results
+---
 
-### V2.0.0 Beta
+## Repository Structure
 
-The beta version adds more advanced input and modeling support:
+```
+Boltz2-Notebook/
+├── Boltz2.ipynb              # Main notebook (current version)
+├── colab/                    # Version-specific notebooks
+│   ├── v1/Boltz2_v1.0.0.ipynb
+│   └── v2/Boltz2_V2.0.0_beta.ipynb
+├── scripts/                  # Utility modules used by notebooks
+│   ├── batch_utils.py
+│   ├── v1/                   # V1 utilities (analysis.py, param_gen.py, setup.py)
+│   └── v2/                   # V2 utilities (analysis.py, param_gen.py, setup.py)
+├── batch/                    # Batch processing notebooks
+├── notebooks/                # Additional utility notebooks
+├── assets/                   # Sample data and predictions
+└── releases/                 # Version history and changelog
+    ├── version_table.md      # Complete version comparison
+    └── CHANGELOG.md          # Release notes
+```
 
-- Advanced modeling panel
-- Template upload for `.cif` and `.pdb` files
-- Explicit template chain mapping
-- Covalent ligand bond builder
-- Pocket conditioning builder
-- Contact conditioning builder
-- Modified residue editor
-- Custom or precomputed MSA upload
-- Warning for single-sequence mode when MSA is empty
-- DNA and RNA chain support
-- Cyclic polymer toggle
-- Expanded YAML writing for protein, DNA, RNA, ligands, constraints, templates, and advanced properties
+---
 
-## Notebook Files
+## Version History & Changelog
 
-- [Current notebook](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb)
-- [V1 notebook](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb)
-- [V2 beta notebook](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb)
+For detailed feature comparisons and release notes:
+- **[Version Table](releases/version_table.md)** — Quick feature comparison
+- **[Changelog](releases/CHANGELOG.md)** — Complete release history
 
-## Short Summary
+---
 
-If you want a quick way to run Boltz2 in Colab, this repo provides a clean notebook workflow for prediction, analysis, visualization, and result export. V2 beta adds more control for advanced biomolecular inputs and constraints.
+## License
+
+MIT License — See [LICENSE](LICENSE) for details.
+
+---
+
+## Support & Contribution
+
+For issues, feature requests, or contributions, please refer to the GitHub repository issues and discussions.
