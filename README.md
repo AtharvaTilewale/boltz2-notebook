@@ -23,7 +23,7 @@
 > **Note:** Google Colab provides free GPU access (T4 GPU). For best performance, select GPU runtime: `Runtime → Change runtime type → GPU`
 
 
-| Version | Features | Status | Link |
+| Version | Features | Status | Launch |
 |---------|----------|--------|------|
 | **V2.0.0** | Multi-entity support, DNA/RNA, Advanced constraints, Cyclic peptides, PTMs | ![Beta](https://img.shields.io/badge/Beta-Latest-blue) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb) |
 | **V1.0.0** | Multi-chain proteins, Protein-ligand binding, Affinity analysis | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
