@@ -12,6 +12,23 @@ This notebook is designed for:
 
 ---
 
+## Quick Start - Open in Google Colab
+
+Click the button below to launch the latest Boltz2 Batch notebook in Google Colab:
+
+**Boltz2 Batch v1.0.0 (pre-release)** 
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Batch/Boltz2_Batch_v1_beta.ipynb) 
+
+**or use this link:**
+```
+https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Batch/Boltz2_Batch_v1_beta.ipynb
+```
+
+> **Note:** Google Colab provides free GPU access. For best performance, select GPU runtime in Colab (`Runtime → Change runtime type → GPU`).
+
+---
+
 ## Key Features
 
 ### 1. **Environment Setup & Workspace Bootstrap**
