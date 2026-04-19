@@ -66,10 +66,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const hasBuilderCard = builderFields.every(Boolean) && scenarioLabel;
 
   if (hasBuilderCard) {
-    const extractProteinPdb = (pdbData, allowedChains = ['A', 'B']) => pdbData
-      .split(/\r?\n/)
-      .filter((line) => line.startsWith('ATOM') && allowedChains.includes(line.slice(21, 22)))
-      .join('\n');
+    const dnaResidues = new Set(['DA', 'DT', 'DG', 'DC', 'DU']);
+    let dnaChains = ['E', 'F'];
+
+    const extractDnaChains = (pdbData) => Array.from(new Set(
+      pdbData
+        .split(/\r?\n/)
+        .filter((line) => (line.startsWith('ATOM') || line.startsWith('HETATM')) && dnaResidues.has(line.slice(17, 20).trim()))
+        .map((line) => line.slice(21, 22).trim())
+        .filter(Boolean)
+    ));
 
     renderProtein = (viewer, proteinPdb, mode) => {
       if (typeof viewer.removeAllModels === 'function') {
@@ -83,17 +89,29 @@ document.addEventListener('DOMContentLoaded', () => {
       if (mode === 'chain-a') {
         viewer.setStyle({ hetflag: false, chain: 'A' }, { cartoon: { color: '#66b7ff' } });
         viewer.setStyle({ hetflag: false, chain: 'B' }, { hidden: true });
+        dnaChains.forEach((chain) => viewer.setStyle({ hetflag: false, chain }, { hidden: true }));
+        viewer.setStyle({ hetflag: true }, { hidden: true });
+      } else if (mode === 'chain-ab') {
+        viewer.setStyle({ hetflag: false, chain: 'A' }, { cartoon: { color: '#66b7ff' } });
+        viewer.setStyle({ hetflag: false, chain: 'B' }, { cartoon: { color: '#ff9f43' } });
+        dnaChains.forEach((chain) => viewer.setStyle({ hetflag: false, chain }, { hidden: true }));
         viewer.setStyle({ hetflag: true }, { hidden: true });
       } else {
         viewer.setStyle({ hetflag: false, chain: 'A' }, { cartoon: { color: '#66b7ff' } });
         viewer.setStyle({ hetflag: false, chain: 'B' }, { cartoon: { color: '#ff9f43' } });
         viewer.setStyle({ hetflag: true }, { hidden: true });
+        dnaChains.forEach((chain) => viewer.setStyle({ hetflag: false, chain }, { hidden: true }));
       }
 
-      if (mode === 'complex') {
+      if (mode === 'complex' || mode === 'dna') {
         viewer.setStyle({ hetflag: true }, { hidden: false });
-        viewer.setStyle({ hetflag: true, chain: 'C' }, { stick: { radius: 0.22, color: '#7be0d3' } });
-        viewer.setStyle({ hetflag: true, chain: 'D' }, { stick: { radius: 0.22, color: '#ffd166' } });
+        ['C', 'D'].forEach((chain) => {
+          viewer.setStyle({ hetflag: true, chain }, { stick: { radius: 0.22, color: '#7be0d3' } });
+        });
+      }
+
+      if (mode === 'dna') {
+        dnaChains.forEach((chain) => viewer.setStyle({ hetflag: false, chain }, { cartoon: { color: '#c084fc' } }));
       }
 
       viewer.zoomTo();
@@ -101,12 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     setStaticFields();
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        running = false;
-      }
-    });
   }
 
   const viewerElement = document.getElementById('useCasesProteinViewer');
@@ -121,15 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
       viewer.resize();
       viewer.render();
     };
-    let ulvanLyasePdb = null;
+    let protLigDnaPdb = null;
     let sequenceComplete = false;
+    let walkthroughInProgress = false;
 
     const renderCurrentScene = () => {
-      if (!ulvanLyasePdb || typeof renderProtein !== 'function') return;
+      if (!protLigDnaPdb || typeof renderProtein !== 'function') return;
 
-      renderProtein(viewer, ulvanLyasePdb, currentScene);
+      renderProtein(viewer, protLigDnaPdb, currentScene);
 
-      const surfaceOpacity = 0.2;
+      const surfaceOpacity = 0;
       viewer.addSurface(
         $3Dmol.SurfaceType.VDW,
         { opacity: surfaceOpacity, color: '#66b7ff' },
@@ -145,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (typeof viewer.spin === 'function') {
-        viewer.spin('y', 0.04);
+        viewer.spin('y', 0.3);
       }
     };
 
@@ -166,13 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderUlvanLyase = (scene = 'chain-a') => {
       currentScene = scene;
-      if (!ulvanLyasePdb) return;
+      if (!protLigDnaPdb) return;
 
       clearViewer();
       renderCurrentScene();
     };
 
-    const loadUlvanLyase = fetch('https://files.rcsb.org/download/6D3U.pdb')
+    const loadUlvanLyase = fetch('assets/pdb/prot_lig_dna.pdb')
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -180,7 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return response.text();
       })
       .then((pdbData) => {
-        ulvanLyasePdb = pdbData;
+        protLigDnaPdb = pdbData;
+        dnaChains = extractDnaChains(pdbData);
+        if (dnaChains.length === 0) {
+          dnaChains = ['F'];
+        }
         if (sequenceComplete) {
           renderUlvanLyase(currentScene);
         }
@@ -189,55 +206,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadUlvanLyase.catch(() => {
       clearViewer();
-      viewer.addModel('ATOM      1  CA  ALA A   1       0.000   0.000   0.000  1.00  0.00           C  ', 'pdb');
-      viewer.setStyle({}, { sphere: { radius: 1.2, color: '#66b7ff' } });
-      viewer.zoomTo();
       viewer.render();
     });
 
     const runProteinWalkthrough = async () => {
-      scenarioLabel.textContent = 'Protein + ligand walkthrough';
-      setStaticFields();
-      setActiveRow('id');
+      if (walkthroughInProgress || !running || document.hidden) return;
 
-      await sleep(250);
-      await typewriter(fieldId, 'A', 45);
+      walkthroughInProgress = true;
+      try {
+        while (running && !document.hidden) {
+          scenarioLabel.textContent = 'Simple Biomolecules';
+          setStaticFields();
+          setActiveRow('id');
 
-      await sleep(300);
-      setActiveRow('sequence');
-      await typewriter(fieldSequence, 'MSEQNNTEMTFQIQRIYTKDISFEAPNAPHVFQ', 22);
-      sequenceComplete = true;
+          await sleep(20);
+          if (!running || document.hidden) break;
+          await typewriter(fieldId, 'A', 45);
 
-      renderUlvanLyase('chain-a');
+          await sleep(300);
+          if (!running || document.hidden) break;
+          setActiveRow('sequence');
+          await typewriter(fieldSequence, 'MSEQNNTEMTFQIQRIYTKDISFEAPNAPHVFQ', 22);
+          sequenceComplete = true;
 
-      await sleep(700);
-      setActiveRow('id');
-      await appendWriter(fieldId, ', B', 55);
+          renderUlvanLyase('chain-a');
 
-      renderUlvanLyase('chain-ab');
+          await sleep(1500);
+          if (!running || document.hidden) break;
+          setActiveRow('id');
+          await appendWriter(fieldId, ', B', 55);
 
-      await sleep(1500);
-      setActiveRow('ligandOption');
-      await typewriter(fieldLigandOption, 'OC[C@@H](O1)[C@@H](O)', 26);
+          renderUlvanLyase('chain-ab');
 
-      renderUlvanLyase('complex');
+          await sleep(1500);
+          if (!running || document.hidden) break;
+          setActiveRow('ligandOption');
+          await typewriter(fieldLigandOption, 'OC[C@@H](O1)[C@@H](O)', 26);
 
-      await sleep(1500);
-      setActiveRow('dna');
-      await typewriter(fieldDna, 'ATGCGTACCTGATTGATAGAGCCGCGGC', 26);
+          renderUlvanLyase('complex');
 
-      await sleep(5000);
-      clearAllFields();
-      clearViewer();
-      sequenceComplete = false;
+          await sleep(1500);
+          if (!running || document.hidden) break;
+          setActiveRow('dna');
+          await typewriter(fieldDna, 'ATGCGTACCTGATTGATAGAGCCGCGGC', 26);
 
-      await sleep(100);
-      if (running) {
-        runProteinWalkthrough();
+          renderUlvanLyase('dna');
+
+          await sleep(5000);
+          if (!running || document.hidden) break;
+          clearAllFields();
+          clearViewer();
+          sequenceComplete = false;
+
+          await sleep(100);
+        }
+      } finally {
+        walkthroughInProgress = false;
       }
     };
 
-    runProteinWalkthrough();
+    const startWalkthrough = () => {
+      if (!hasBuilderCard || document.hidden) return;
+      running = true;
+      runProteinWalkthrough();
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        running = false;
+        clearViewer();
+        return;
+      }
+      startWalkthrough();
+    });
+
+    window.addEventListener('focus', startWalkthrough);
+
+    startWalkthrough();
 
     window.addEventListener('resize', syncViewerSize);
   } catch (error) {
