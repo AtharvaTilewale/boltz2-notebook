@@ -1,6 +1,9 @@
 # Boltz2 Notebook - Advanced Biomolecular Structure Prediction & Affinity Analysis
 
+[img src="https://raw.githubusercontent.com/AtharvaTilewale/boltz2-notebook/main/assets/boltz2_notebook_banner.jpeg" alt="Boltz2 Notebook Banner" width="100%"]
+
 **AI-powered biomolecular structure prediction and binding affinity analysis** — Interactive Jupyter notebooks for protein structure prediction, protein-ligand binding, and multi-entity complex modeling using the Boltz2 diffusion model. No local GPU installation required.
+
 
 <div align="center">
 
