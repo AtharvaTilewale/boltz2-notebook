@@ -837,6 +837,19 @@ img { max-width: 100%; display: block; }
   margin: 0.4rem 0;
 }
 
+.rules-grid .feature-icon {
+  width: auto;
+  height: auto;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: 10px;
+  font-size: 0.74rem;
+  margin-bottom: 0.85rem;
+}
+
 .footer {
   margin: 2rem auto 2.5rem;
   width: min(calc(100% - 2rem), var(--max));
@@ -951,6 +964,63 @@ img { max-width: 100%; display: block; }
   .usecases-jump a {
     font-size: 0.82rem;
     padding: 0.5rem 0.75rem;
+  }
+
+  .usecases-hero {
+    margin-bottom: 1.2rem;
+  }
+
+  .usecases-hero h1 {
+    max-width: none;
+    font-size: clamp(1.75rem, 8.5vw, 2.35rem);
+    line-height: 1.08;
+  }
+
+  .usecases-hero-grid {
+    gap: 0.75rem;
+  }
+
+  .usecases-hero-card {
+    padding: 1rem;
+  }
+
+  .usecases-hero-card strong {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .usecases-jump a {
+    flex: 1 1 calc(50% - 0.5rem);
+    text-align: center;
+  }
+
+  .pill-list span {
+    font-size: 0.82rem;
+    padding: 0.45rem 0.68rem;
+  }
+
+  .usecase-accordion {
+    gap: 0.7rem;
+  }
+
+  .usecase-accordion details {
+    padding: 0.9rem;
+  }
+
+  .usecase-accordion summary {
+    font-size: 0.95rem;
+    line-height: 1.35;
+    padding-right: 1.6rem;
+  }
+
+  .usecase-accordion summary::after {
+    top: -0.05rem;
+    font-size: 1.2rem;
+  }
+
+  .usecase-list,
+  .usecase-ordered {
+    padding-left: 0.95rem;
   }
 
   .table-row {
