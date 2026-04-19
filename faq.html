@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ | Boltz2 Notebook</title>
+  <meta name="description" content="Search answers about the Boltz2 Notebook, the V1 and V2 notebooks, and the Batch workflow." />
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" href="assets/boltz2-mark.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/css/styles_v2.css" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CV74V9XH8P"></script>
+  <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CV74V9XH8P"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-CV74V9XH8P');
+    </script>
+    <!-- Clarity tracking code for https://atharvatilewale.github.io/boltz2-notebook -->
+    <script>
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i + "?ref=bwt";
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "thc69cviel");
+    </script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <div class="container nav-wrap">
+        <a class="brand" href="index.html#hero" aria-label="Boltz2 Notebook home">
+          <img src="assets/boltz2-mark.svg" alt="Boltz2 Notebook logo" class="brand-mark" />
+          <div>
+            <div class="brand-name">Boltz2 Notebook</div>
+            <div class="brand-subtitle">Colab-first advanced biomolecular modeling</div>
+          </div>
+        </a>
+
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav-menu" id="navMenu">
+          <a href="index.html#hero">Home</a>
+          <a href="use-cases.html">Use Cases</a>
+          <a href="faq.html" aria-current="page">FAQ</a>
+          <a href="https://github.com/AtharvaTilewale/boltz2-notebook" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="section alt">
+        <div class="container">
+          <div class="section-heading narrow reveal">
+            <span class="kicker">FAQ</span>
+            <h1>Search the notebook questions in one place.</h1>
+            <p>
+              Answers are derived from the main README, the batch guide, the version table, and the release notes so
+              visitors can quickly find the right workflow.
+            </p>
+          </div>
+
+          <!-- <div class="pill-list reveal">
+            <span>General</span>
+            <span>Inputs</span>
+            <span>Analysis</span>
+            <span>Batch</span>
+            <span>Access</span>
+          </div> -->
+
+          <div class="faq-category-bar reveal delay-1" id="faqCategoryBar" aria-label="FAQ categories"></div>
+
+          <div class="batch-card faq-search-panel reveal delay-2" id="faq-search">
+            <p>Search by notebook name, feature, input type, or output metric.</p>
+            <form class="faq-search-form" id="faqSearchForm">
+              <div class="faq-search-field">
+                <input id="faqSearchInput" type="search" placeholder="Search FAQ questions..." autocomplete="off" aria-label="Search FAQs" />
+              </div>
+              <div class="faq-search-actions">
+                <button class="btn btn-primary" type="submit">Search</button>
+                <button class="btn btn-secondary" type="button" id="faqResetButton">Clear</button>
+              </div>
+            </form>
+            <div class="faq-results-meta">
+              <span id="faqResultCount">Loading FAQs...</span>
+              <span>Derived from README, version notes, and notebook summaries.</span>
+            </div>
+          </div>
+
+          <div class="faq-list faq-grid reveal delay-1" data-faq-grid></div>
+          <p class="faq-empty reveal" id="faqEmptyState" hidden>No FAQs matched your search.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-grid">
+        <div>
+          <a class="brand footer-brand" href="index.html#hero">
+            <img src="assets/boltz2-mark.svg" alt="Boltz2 Notebook logo" class="brand-mark" />
+            <div>
+              <div class="brand-name">Boltz2 Notebook</div>
+              <div class="brand-subtitle">Diffusion-based biomolecular modeling in Colab</div>
+            </div>
+          </a>
+          <p class="footer-copy">
+            Developed by Atharva Tilewale and Dr. Dhaval Patel. This FAQ page is assembled from the repository archive,
+            README content, notebook metadata, and release notes.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <a href="index.html#hero">Home</a>
+          <a href="use-cases.html">Use cases</a>
+          <a href="https://github.com/AtharvaTilewale/boltz2-notebook" target="_blank" rel="noreferrer">GitHub repository</a>
+          <a href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb" target="_blank" rel="noreferrer">Main notebook</a>
+          <a href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb" target="_blank" rel="noreferrer">V2 beta</a>
+          <a href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb" target="_blank" rel="noreferrer">Batch notebook</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="assets/js/script_v2.js"></script>
+  <script src="assets/js/faq.js"></script>
+</body>
+</html>
