@@ -1,14 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Boltz2 Notebook | AI Biomolecular Structure Prediction</title>
-  <meta name="description" content="Boltz2 Notebook is a Colab-first interface for biomolecular structure prediction, protein-ligand affinity analysis, multi-entity modeling, and batch screening powered by Boltz2." />
+  <meta name="description" content="Boltz2 Notebook is a Colab-first interface for advanced biomolecular structure prediction, protein-ligand affinity analysis, multi-entity modeling, and batch screening powered by Boltz2." />
   <meta name="theme-color" content="#0b1020" />
+  <meta name="keywords" content="Protein Structure Prediction, Boltz2, Boltz2 Notebook, Google Colab, Bioinformatics, Computational Biology, Deep Learning, Protein Folding, Ligand Affinity, Binding Affinity, Atharva Tilewale, Scientific Software">
+  <meta name="author" content="Atharva Tilewale">
   <meta property="og:title" content="Boltz2 Notebook" />
   <meta property="og:description" content="AI-powered biomolecular structure prediction and affinity analysis in Google Colab." />
   <meta property="og:type" content="website" />
+  <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://atharvatilewale.github.io/Boltz2-Notebook/">
+    <meta property="og:title" content="Boltz2-Notebook | AI-Powered Protein Structure Prediction">
+    <meta property="og:description"
+        content="An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model to predict protein structures, complexes, and ligand affinities.">
+    <meta property="og:image"
+        content="https://raw.githubusercontent.com/AtharvaTilewale/Boltz2-Notebook/main/docs/assets/boltz2-notebook-social-preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://atharvatilewale.github.io/Boltz2-Notebook/">
+    <meta property="twitter:title" content="Boltz2-Notebook | AI-Powered Protein Structure Prediction">
+    <meta property="twitter:description"
+        content="An open-source, zero-setup Google Colab notebook for running the advanced Boltz2 model to predict protein structures, complexes, and ligand affinities.">
+    <meta property="twitter:image"
+        content="https://raw.githubusercontent.com/AtharvaTilewale/Boltz2-Notebook/main/docs/assets/boltz2-notebook-social-preview.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CV74V9XH8P"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-CV74V9XH8P');
+    </script>
+    <!-- Clarity tracking code for https://atharvatilewale.github.io/boltz2-notebook -->
+    <script>
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i + "?ref=bwt";
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "thc69cviel");
+    </script>
   <link rel="icon" href="assets/boltz2-mark.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/styles_v2.css" />
   <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
