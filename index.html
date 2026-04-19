@@ -11,6 +11,7 @@
   <meta property="og:type" content="website" />
   <link rel="icon" href="assets/boltz2-mark.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/styles_v2.css" />
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
 </head>
 <body>
   <div class="site-shell">
@@ -30,6 +31,7 @@
 
         <nav class="nav-menu" id="navMenu">
           <a href="#features">Features</a>
+          <!-- <a href="#protein-viewer">Viewer</a> -->
           <a href="#workflow">Workflow</a>
           <a href="#versions">Versions</a>
           <a href="#batch">Batch</a>
@@ -42,6 +44,7 @@
     <main>
       <section class="hero" id="hero">
         <div class="hero-noise"></div>
+        <!-- <div id="bgViewer" class="hero-bg-viewer"></div> -->
         <div class="container hero-grid">
           <div class="hero-copy reveal">
             <div class="eyebrow">AI biomolecular structure prediction</div>
@@ -297,6 +300,59 @@
           </div>
         </div>
       </section>
+
+      <!-- <section class="section" id="protein-viewer">
+        <div class="container">
+          <div class="section-heading narrow reveal">
+            <span class="kicker">Interactive visualization</span>
+            <h2>Explore predicted structures in real-time.</h2>
+            <p>3D protein viewer powered by 3Dmol.js with full rotation, zoom, and analysis controls. Load any predicted structure or PDB file.</p>
+          </div>
+
+          <div class="viewer-container reveal">
+            <div class="viewer-grid">
+              <div class="viewer-panel">
+                <div id="viewer" class="protein-viewer"></div>
+                <div class="viewer-controls">
+                  <button class="control-btn" id="resetView" title="Reset view">↻ Reset</button>
+                  <button class="control-btn" id="cartoonView" title="Cartoon representation">🎬 Cartoon</button>
+                  <button class="control-btn" id="stickView" title="Stick representation">🔗 Stick</button>
+                  <button class="control-btn" id="sphereView" title="Space-filling">● Sphere</button>
+                </div>
+              </div>
+
+              <div class="viewer-info">
+                <div class="info-card">
+                  <h3>Sample Protein: Hemoglobin</h3>
+                  <p>A classic multi-chain complex showing how Boltz2 handles protein–protein interactions and confidence-linked coloring.</p>
+                  
+                  <div class="info-section">
+                    <strong>Controls</strong>
+                    <ul class="control-list">
+                      <li><strong>Left drag:</strong> Rotate structure</li>
+                      <li><strong>Right drag:</strong> Pan view</li>
+                      <li><strong>Scroll:</strong> Zoom in/out</li>
+                      <li><strong>Buttons:</strong> Switch representations</li>
+                    </ul>
+                  </div>
+
+                  <div class="info-section">
+                    <strong>What you're seeing</strong>
+                    <p>Hemoglobin is colored by chain (A, B, C, D). Each representation reveals different structural details—cartoon for secondary structure, stick for atomic detail, and sphere for van der Waals surfaces.</p>
+                  </div>
+
+                  <div class="info-section">
+                    <strong>Your predictions</strong>
+                    <p>Load your Boltz2-predicted structures the same way. Use the notebook to export PDB files, then drop them here to visualize confidence metrics and binding interfaces.</p>
+                  </div>
+
+                  <a href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb" class="btn btn-primary" target="_blank" rel="noreferrer">Start a prediction</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section> -->
 
       <section class="section alt" id="batch">
         <div class="container">
