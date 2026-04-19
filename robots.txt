@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://atharvatilewale.github.io/Boltz2-Notebook/sitemap.xml
