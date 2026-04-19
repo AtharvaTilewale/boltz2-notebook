@@ -8,6 +8,8 @@
   <meta name="theme-color" content="#0b1020" />
   <link rel="icon" href="assets/boltz2-mark.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/styles_v2.css" />
+  
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-CV74V9XH8P"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -22,6 +24,7 @@
       y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
     })(window, document, "clarity", "script", "thc69cviel");
   </script>
+  
 </head>
 <body>
   <div class="site-shell">
@@ -51,29 +54,84 @@
     <main>
       <section class="section alt">
         <div class="container">
-          <div class="section-heading reveal usecases-hero">
-            <span class="kicker">Use-Case Protocols</span>
-            <h1>Boltz2 Parameter Generator playbooks for real modeling scenarios.</h1>
-            <p>
-              This page translates the full protocol guide into implementation-ready workflows: setup rules, validation
-              guardrails, and step-by-step use cases for proteins, nucleic acids, ligands, templates, and constraints.
-            </p>
-            <div class="usecases-hero-grid">
-              <div class="usecases-hero-card">
-                <span>Coverage</span>
-                <strong>14 workflow protocols</strong>
-                <p>From single-chain predictions to template-guided and constrained multi-entity jobs.</p>
+          <div class="reveal">
+            <div class="section-heading usecases-hero">
+              <div class="usecases-heading-row">
+                <div class="usecases-heading-copy">
+                  <span class="kicker">Use-Case Protocols</span>
+                  <h1>Boltz2 Parameter Generator playbooks for real modeling scenarios.</h1>
+                  <p>
+                    This page translates the full protocol guide into implementation-ready workflows: setup rules, validation
+                    guardrails, and step-by-step use cases for proteins, nucleic acids, ligands, templates, and constraints.
+                  </p>
+                </div>
+
+                <aside class="hero-interactive-lab" aria-label="Interactive input builder and protein viewer">
+                  <!-- <div class="interactive-head">
+                    <span class="scene-eyebrow">Interactive Input Builder</span>
+                    <h3>Builder + Protein Scene</h3>
+                  </div> -->
+
+                  <div class="builder-viewer-row">
+                    <div class="builder-input-card" aria-live="polite">
+                      <div class="builder-input-head">
+                        <span>Input Card</span>
+                        <strong id="builderScenarioLabel">Single Protein Setup</strong>
+                      </div>
+
+                      <div class="builder-input-grid">
+                        <div class="builder-input-row">
+                          <label>Type</label>
+                          <div class="builder-input-value"><span id="builderFieldType" class="typing-target"></span><i class="typing-cursor"></i></div>
+                        </div>
+                        <div class="builder-input-row">
+                          <label>ID</label>
+                          <div class="builder-input-value"><span id="builderFieldId" class="typing-target"></span><i class="typing-cursor"></i></div>
+                        </div>
+                        <div class="builder-input-row">
+                          <label>Sequence</label>
+                          <div class="builder-input-value monospace"><span id="builderFieldSequence" class="typing-target"></span><i class="typing-cursor"></i></div>
+                        </div>
+                        <div class="builder-input-row">
+                          <label>Ligand (CCD/SMILES)</label>
+                          <div class="builder-input-value"><span id="builderFieldMsa" class="typing-target"></span><i class="typing-cursor"></i></div>
+                        </div>
+                        <div class="builder-input-row">
+                          <label>DNA</label>
+                          <div class="builder-input-value monospace"><span id="builderFieldDna" class="typing-target"></span><i class="typing-cursor"></i></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="mini-viewer-shell">
+                      <div id="useCasesProteinViewer" class="mini-protein-viewer"></div>
+                      <!-- <div class="scene-legend">
+                        <span><i class="dot chain-a"></i>Protein</span>
+                        <span><i class="dot chain-l"></i>Ligand</span>
+                      </div> -->
+                    </div>
+                  </div>
+                </aside>
               </div>
-              <div class="usecases-hero-card">
-                <span>Input model</span>
-                <strong>YAML-first builder</strong>
-                <p>Supports protein, DNA, RNA, ligands, advanced constraints, and run parameter generation.</p>
+
+              <div class="usecases-hero-grid">
+                <div class="usecases-hero-card">
+                  <span>Coverage</span>
+                  <strong>14 workflow protocols</strong>
+                  <p>From single-chain predictions to template-guided and constrained multi-entity jobs.</p>
+                </div>
+                <div class="usecases-hero-card">
+                  <span>Input model</span>
+                  <strong>YAML-first builder</strong>
+                  <p>Supports protein, DNA, RNA, ligands, advanced constraints, and run parameter generation.</p>
+                </div>
+                <div class="usecases-hero-card">
+                  <span>Quality guardrails</span>
+                  <strong>Validation-aware flow</strong>
+                  <p>Includes ID rules, MSA modes, ligand constraints, affinity caveats, and troubleshooting patterns.</p>
+                </div>
               </div>
-              <div class="usecases-hero-card">
-                <span>Quality guardrails</span>
-                <strong>Validation-aware flow</strong>
-                <p>Includes ID rules, MSA modes, ligand constraints, affinity caveats, and troubleshooting patterns.</p>
-              </div>
+
             </div>
           </div>
 
@@ -523,5 +581,6 @@
   </div>
 
   <script src="assets/js/script_v2.js"></script>
+  <script src="assets/js/use-cases.js"></script>
 </body>
 </html>
