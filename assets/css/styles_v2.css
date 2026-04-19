@@ -709,6 +709,134 @@ img { max-width: 100%; display: block; }
   letter-spacing: -0.04em;
 }
 
+.usecases-hero {
+  max-width: 100%;
+}
+
+.usecases-hero h1 {
+  max-width: 18ch;
+}
+
+.usecases-hero-grid {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.usecases-hero-card {
+  padding: 1.15rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+}
+
+.usecases-hero-card span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.82rem;
+}
+
+.usecases-hero-card strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.08rem;
+}
+
+.usecases-hero-card p {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+}
+
+.usecases-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.usecases-jump a {
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #d9e8ff;
+  font-size: 0.88rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.usecases-jump a:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99,230,255,0.35);
+}
+
+.usecases-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.usecase-accordion {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.usecase-accordion details {
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  padding: 1rem 1.1rem;
+}
+
+.usecase-accordion summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding-right: 2rem;
+  position: relative;
+}
+
+.usecase-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.usecase-accordion summary::after {
+  content: "+";
+  position: absolute;
+  right: 0;
+  top: -0.15rem;
+  font-size: 1.45rem;
+  color: var(--accent);
+}
+
+.usecase-accordion details[open] summary::after {
+  content: "-";
+}
+
+.usecase-accordion p {
+  color: var(--muted);
+  margin: 0.75rem 0 0.45rem;
+}
+
+.usecase-list,
+.usecase-ordered {
+  color: var(--muted);
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.usecase-list li,
+.usecase-ordered li {
+  margin: 0.4rem 0;
+}
+
 .footer {
   margin: 2rem auto 2.5rem;
   width: min(calc(100% - 2rem), var(--max));
@@ -764,6 +892,12 @@ img { max-width: 100%; display: block; }
   .release-grid,
   .timeline { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr; }
+
+  .usecases-hero-grid,
+  .usecases-overview-grid,
+  .rules-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -802,6 +936,21 @@ img { max-width: 100%; display: block; }
   .coming-soon-card {
     min-height: 240px;
     font-size: clamp(1.8rem, 9vw, 3rem);
+  }
+
+  .usecases-hero-grid,
+  .usecases-overview-grid,
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .usecases-jump {
+    gap: 0.5rem;
+  }
+
+  .usecases-jump a {
+    font-size: 0.82rem;
+    padding: 0.5rem 0.75rem;
   }
 
   .table-row {

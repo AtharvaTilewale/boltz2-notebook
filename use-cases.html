@@ -4,27 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Use Cases | Boltz2 Notebook</title>
-  <meta name="description" content="Use cases for Boltz2 Notebook are coming soon." />
+  <meta name="description" content="Professional use-case protocols for Boltz2-Notebook Parameter Generator with workflow guides, rules, and advanced modeling scenarios." />
   <meta name="theme-color" content="#0b1020" />
   <link rel="icon" href="assets/boltz2-mark.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/styles_v2.css" />
-  <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CV74V9XH8P"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        gtag('config', 'G-CV74V9XH8P');
-    </script>
-    <!-- Clarity tracking code for https://atharvatilewale.github.io/boltz2-notebook -->
-    <script>
-        (function (c, l, a, r, i, t, y) {
-            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
-            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i + "?ref=bwt";
-            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-        })(window, document, "clarity", "script", "thc69cviel");
-    </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CV74V9XH8P"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CV74V9XH8P');
+  </script>
+  <script>
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i + "?ref=bwt";
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, "clarity", "script", "thc69cviel");
+  </script>
 </head>
 <body>
   <div class="site-shell">
@@ -54,13 +51,446 @@
     <main>
       <section class="section alt">
         <div class="container">
-          <div class="section-heading narrow reveal">
-            <span class="kicker">Use Cases</span>
-            <!-- <h1>coming soon!!</h1> -->
+          <div class="section-heading reveal usecases-hero">
+            <span class="kicker">Use-Case Protocols</span>
+            <h1>Boltz2 Parameter Generator playbooks for real modeling scenarios.</h1>
+            <p>
+              This page translates the full protocol guide into implementation-ready workflows: setup rules, validation
+              guardrails, and step-by-step use cases for proteins, nucleic acids, ligands, templates, and constraints.
+            </p>
+            <div class="usecases-hero-grid">
+              <div class="usecases-hero-card">
+                <span>Coverage</span>
+                <strong>14 workflow protocols</strong>
+                <p>From single-chain predictions to template-guided and constrained multi-entity jobs.</p>
+              </div>
+              <div class="usecases-hero-card">
+                <span>Input model</span>
+                <strong>YAML-first builder</strong>
+                <p>Supports protein, DNA, RNA, ligands, advanced constraints, and run parameter generation.</p>
+              </div>
+              <div class="usecases-hero-card">
+                <span>Quality guardrails</span>
+                <strong>Validation-aware flow</strong>
+                <p>Includes ID rules, MSA modes, ligand constraints, affinity caveats, and troubleshooting patterns.</p>
+              </div>
+            </div>
           </div>
 
-          <div class="batch-card coming-soon-card reveal delay-1">
-            Coming Soon!!
+          <nav class="usecases-jump reveal delay-1" aria-label="Use cases quick navigation">
+            <a href="#overview">Overview</a>
+            <a href="#workflow">Standard Workflow</a>
+            <a href="#rules">Global Rules</a>
+            <a href="#core-use-cases">Core Use Cases</a>
+            <a href="#advanced-use-cases">Advanced Modeling</a>
+            <a href="#na-use-cases">DNA/RNA</a>
+            <a href="#run-parameters">Run Parameters</a>
+            <a href="#validation">Validation</a>
+          </nav>
+        </div>
+      </section>
+
+      <section class="section" id="overview">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Overview</span>
+            <h2>Main UI blocks and expected execution flow.</h2>
+          </div>
+
+          <div class="usecases-overview-grid reveal">
+            <article class="batch-card">
+              <h3>1. Chain Builder</h3>
+              <p>Add entities with explicit IDs and sequence/value inputs.</p>
+              <div class="pill-list">
+                <span>Add Primary Protein</span>
+                <span>Add Protein</span>
+                <span>Add DNA</span>
+                <span>Add RNA</span>
+                <span>Add Ligand</span>
+              </div>
+            </article>
+
+            <article class="batch-card">
+              <h3>2. Advanced Modeling</h3>
+              <p>Optional but critical for guided or constrained prediction.</p>
+              <div class="pill-list">
+                <span>Structural Templates</span>
+                <span>Covalent Ligand Bond Builder</span>
+                <span>Pocket / Contact Conditioning</span>
+              </div>
+            </article>
+
+            <article class="batch-card">
+              <h3>3. YAML to Run Flow</h3>
+              <p>Use this order for reproducible runs.</p>
+              <ol class="usecase-ordered">
+                <li>Fill entities and optional advanced settings</li>
+                <li>Click <strong>Save YAML</strong></li>
+                <li>Click <strong>Next</strong></li>
+                <li>Define run parameters</li>
+                <li>Click <strong>OK</strong> to save run configuration</li>
+              </ol>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt" id="workflow">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Standard Workflow</span>
+            <h2>Five-step protocol from molecular system to run config.</h2>
+          </div>
+
+          <div class="timeline reveal">
+            <div class="timeline-step">
+              <span>01</span>
+              <h3>Build the system</h3>
+              <p>Add proteins, DNA/RNA, and ligands with unique normalized chain IDs.</p>
+            </div>
+            <div class="timeline-step">
+              <span>02</span>
+              <h3>Add advanced controls</h3>
+              <p>Attach templates, covalent bonds, pocket guidance, or contact conditioning when needed.</p>
+            </div>
+            <div class="timeline-step">
+              <span>03</span>
+              <h3>Save YAML</h3>
+              <p>Validate all entries and resolve missing ID, sequence, ligand, or MSA errors before continuing.</p>
+            </div>
+            <div class="timeline-step">
+              <span>04</span>
+              <h3>Set run parameters</h3>
+              <p>Define job name, potentials, override behavior, and optional advanced performance settings.</p>
+            </div>
+            <div class="timeline-step">
+              <span>05</span>
+              <h3>Save run configuration</h3>
+              <p>Commit run settings to file for launch and reproducible execution.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="rules">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Global Rules</span>
+            <h2>Validation and reliability constraints that should always hold.</h2>
+          </div>
+
+          <div class="rules-grid reveal">
+            <article class="feature-card">
+              <div class="feature-icon">IDs</div>
+              <h3>Entity IDs and chain IDs</h3>
+              <ul class="usecase-list">
+                <li>Every entity must use a unique ID.</li>
+                <li>IDs are normalized to uppercase.</li>
+                <li>Homomers can be entered as comma-separated IDs like A,B,C.</li>
+              </ul>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon">MSA</div>
+              <h3>Protein MSA modes</h3>
+              <ul class="usecase-list">
+                <li>Server MSA: no upload required.</li>
+                <li>Custom MSA: upload .a3m for single chain or paired .csv.</li>
+                <li>Single-sequence mode lowers confidence and should be fallback only.</li>
+              </ul>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon">LIG</div>
+              <h3>Ligand rules</h3>
+              <ul class="usecase-list">
+                <li>Ligand definition must use exactly one of CCD or SMILES.</li>
+                <li>Do not provide both fields and do not leave both empty.</li>
+                <li>Covalent constraints are most reliable with CCD ligands.</li>
+              </ul>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon">AFF</div>
+              <h3>Affinity mode constraints</h3>
+              <ul class="usecase-list">
+                <li>Affinity selection supports one ligand chain only.</li>
+                <li>Intended for protein-small molecule systems.</li>
+                <li>RNA/DNA/co-factor targets may run but affinity output is unreliable.</li>
+              </ul>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon">TMP</div>
+              <h3>Template constraints</h3>
+              <ul class="usecase-list">
+                <li>Template files: .cif or .pdb.</li>
+                <li>Optional chain_id and template_id can be set explicitly.</li>
+                <li>If force is enabled, provide a threshold value.</li>
+              </ul>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon">CST</div>
+              <h3>Conditioning constraints</h3>
+              <ul class="usecase-list">
+                <li>Pocket/contact max_distance typically 4-20 A (default practical 6 A).</li>
+                <li>Use force only when prior assumptions are high confidence.</li>
+                <li>FASTA is deprecated for these YAML-only advanced features.</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt" id="core-use-cases">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Core Use Cases</span>
+            <h2>Primary protocols for proteins and protein-ligand systems.</h2>
+          </div>
+
+          <div class="usecase-accordion reveal">
+            <details open>
+              <summary>1. Single Protein Prediction</summary>
+              <p><strong>Goal:</strong> Predict one protein chain.</p>
+              <ol class="usecase-ordered">
+                <li>Add Primary Protein with ID <strong>A</strong> and sequence.</li>
+                <li>Select MSA mode (server, custom .a3m, or single-sequence fallback).</li>
+                <li>Save YAML, move Next, define run parameters, then save config.</li>
+              </ol>
+              <p><strong>What to enter:</strong> chain ID, sequence, optional .a3m.</p>
+            </details>
+
+            <details>
+              <summary>2. Homo-Oligomer Prediction</summary>
+              <p><strong>Goal:</strong> Predict complexes with identical chains.</p>
+              <ol class="usecase-ordered">
+                <li>Use one protein block with IDs like A,B (or A,B,C).</li>
+                <li>Enter shared sequence once and choose MSA mode.</li>
+                <li>Save YAML and run parameters as usual.</li>
+              </ol>
+              <p><strong>Key note:</strong> Use grouped IDs for homomers instead of duplicate manual blocks.</p>
+            </details>
+
+            <details>
+              <summary>3. Hetero-Oligomer Prediction</summary>
+              <p><strong>Goal:</strong> Multi-chain protein complexes with distinct sequences.</p>
+              <ol class="usecase-ordered">
+                <li>Add primary protein A and sequence.</li>
+                <li>Add additional protein blocks for B, C, and so on.</li>
+                <li>Use server MSA, custom MSA, or paired .csv for multi-chain pairing workflows.</li>
+              </ol>
+              <p><strong>Run tip:</strong> choose MSA pairing strategy (greedy or complete).</p>
+            </details>
+
+            <details>
+              <summary>4. Protein-Ligand Interaction Prediction</summary>
+              <p><strong>Goal:</strong> Build structural protein-small molecule complexes.</p>
+              <ol class="usecase-ordered">
+                <li>Add protein block and sequence.</li>
+                <li>Add ligand block with ID L and choose CCD or SMILES.</li>
+                <li>Save YAML and proceed to run configuration.</li>
+              </ol>
+              <p><strong>Rule:</strong> exactly one ligand encoding mode (CCD or SMILES).</p>
+            </details>
+
+            <details>
+              <summary>5. Protein-Ligand + Affinity Prediction</summary>
+              <p><strong>Goal:</strong> Request affinity output for one ligand chain.</p>
+              <ol class="usecase-ordered">
+                <li>Create protein and ligand entities first.</li>
+                <li>Enable Predict Ligand Affinity and select the ligand chain.</li>
+                <li>Save YAML, then finalize run parameters.</li>
+              </ol>
+              <p><strong>Reliability note:</strong> intended for protein-small molecule systems only.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="advanced-use-cases">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Advanced Modeling</span>
+            <h2>Constraint-guided and chemistry-aware protocols.</h2>
+          </div>
+
+          <div class="usecase-accordion reveal">
+            <details>
+              <summary>6. Residue Modification on Protein, DNA, or RNA</summary>
+              <p><strong>Goal:</strong> Add PTMs and chemical residue edits.</p>
+              <ol class="usecase-ordered">
+                <li>Add polymer entity and sequence.</li>
+                <li>Open Modified Residues, add position (1-based) and CCD code.</li>
+                <li>Save YAML and proceed.</li>
+              </ol>
+            </details>
+
+            <details>
+              <summary>7. Cyclic Peptide or Cyclic Polymer</summary>
+              <p><strong>Goal:</strong> Model circular polymer topology.</p>
+              <ol class="usecase-ordered">
+                <li>Add polymer block and sequence.</li>
+                <li>Enable Cyclic Polymer.</li>
+                <li>Save YAML and run settings.</li>
+              </ol>
+              <p><strong>Rule:</strong> cyclic applies to polymers, not ligands.</p>
+            </details>
+
+            <details>
+              <summary>8. Template-Guided Protein Prediction</summary>
+              <p><strong>Goal:</strong> Bias structure generation with known template geometry.</p>
+              <ol class="usecase-ordered">
+                <li>Build chain system then add .cif/.pdb template files.</li>
+                <li>Optionally set explicit chain mapping and template_id.</li>
+                <li>If force mode is enabled, provide threshold in angstrom.</li>
+              </ol>
+            </details>
+
+            <details>
+              <summary>9. Covalent Protein-Ligand Complex</summary>
+              <p><strong>Goal:</strong> Represent explicit covalent attachment.</p>
+              <ol class="usecase-ordered">
+                <li>Add protein and ligand (prefer CCD ligand).</li>
+                <li>In Covalent Ligand Bond Builder, define atom pairs for both sides.</li>
+                <li>Save YAML and continue.</li>
+              </ol>
+              <p><strong>Example:</strong> A:145:SG to L:1:C1.</p>
+            </details>
+
+            <details>
+              <summary>10. Pocket-Constrained Ligand Binding</summary>
+              <p><strong>Goal:</strong> Guide placement toward a known pocket.</p>
+              <ol class="usecase-ordered">
+                <li>Add protein and ligand entities.</li>
+                <li>In Pocket / Contact Conditioning, set binder chain and contacts.</li>
+                <li>Set max_distance (commonly 6 A) and optional force flag.</li>
+              </ol>
+            </details>
+
+            <details>
+              <summary>11. Contact-Constrained Interface Modeling</summary>
+              <p><strong>Goal:</strong> Enforce specific interface contacts.</p>
+              <ol class="usecase-ordered">
+                <li>Add complete molecular system.</li>
+                <li>Create contact constraints using chain plus residue/atom tokens.</li>
+                <li>Apply optional max_distance and force only when justified.</li>
+              </ol>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt" id="na-use-cases">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">DNA / RNA</span>
+            <h2>Nucleic-acid protocols for mixed and standalone systems.</h2>
+          </div>
+
+          <div class="usecase-accordion reveal">
+            <details>
+              <summary>12. Protein-DNA Complex</summary>
+              <p><strong>Goal:</strong> Model protein binding to DNA chains.</p>
+              <ol class="usecase-ordered">
+                <li>Add protein entity then DNA entity with valid nucleotide sequence.</li>
+                <li>Optionally add contact constraints for interface guidance.</li>
+                <li>Save YAML and set run parameters.</li>
+              </ol>
+            </details>
+
+            <details>
+              <summary>13. Protein-RNA Complex</summary>
+              <p><strong>Goal:</strong> Model protein-RNA assemblies.</p>
+              <ol class="usecase-ordered">
+                <li>Add protein and RNA chains with explicit IDs.</li>
+                <li>Optionally apply contact or pocket-style conditioning.</li>
+                <li>Save YAML and finalize run settings.</li>
+              </ol>
+              <p><strong>Note:</strong> affinity output is not considered reliable for RNA-target scenarios.</p>
+            </details>
+
+            <details>
+              <summary>14. DNA-Only or RNA-Only Input</summary>
+              <p><strong>Goal:</strong> Run nucleic-acid-only predictions.</p>
+              <ol class="usecase-ordered">
+                <li>Add DNA or RNA block.</li>
+                <li>Provide IDs, sequences, and optional modifications.</li>
+                <li>Save YAML and continue to run parameters.</li>
+              </ol>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="run-parameters">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Run Parameters</span>
+            <h2>Required fields, common toggles, and advanced controls.</h2>
+          </div>
+
+          <div class="usecases-overview-grid reveal">
+            <article class="batch-card">
+              <h3>Required</h3>
+              <ul class="usecase-list">
+                <li><strong>Job Name</strong> is mandatory; spaces are normalized to underscores.</li>
+              </ul>
+            </article>
+
+            <article class="batch-card">
+              <h3>Common toggles</h3>
+              <ul class="usecase-list">
+                <li><strong>Use Potentials:</strong> improves physical plausibility for many jobs.</li>
+                <li><strong>Override:</strong> reruns from fresh output state.</li>
+              </ul>
+            </article>
+
+            <article class="batch-card">
+              <h3>Advanced options</h3>
+              <ul class="usecase-list">
+                <li>Recycling Steps: 3</li>
+                <li>Sampling Steps: 200</li>
+                <li>Diffusion Samples: 1</li>
+                <li>Step Scale: 1.638</li>
+                <li>Max MSA Sequences: 8192</li>
+                <li>Subsample MSA and pairing strategy (greedy/complete)</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt" id="validation">
+        <div class="container">
+          <div class="section-heading reveal">
+            <span class="kicker">Validation & Troubleshooting</span>
+            <h2>Most common errors and warning copy for guardrails.</h2>
+          </div>
+
+          <div class="batch-card reveal">
+            <div class="mini-grid">
+              <div>
+                <h3>Common validation errors</h3>
+                <ul class="usecase-list">
+                  <li>Missing IDs, missing sequences, or duplicate IDs</li>
+                  <li>Ligand block with invalid CCD/SMILES configuration</li>
+                  <li>Custom MSA selected but no upload provided</li>
+                  <li>Affinity enabled without valid ligand chain selection</li>
+                </ul>
+              </div>
+              <div>
+                <h3>Recommended warning messages</h3>
+                <ul class="usecase-list">
+                  <li>Each chain or molecule must have a unique ID.</li>
+                  <li>Ligands must be defined by exactly one of CCD or SMILES.</li>
+                  <li>Custom MSA mode requires uploaded .a3m or paired .csv.</li>
+                  <li>Single-sequence mode is lower accuracy and should be fallback only.</li>
+                  <li>Affinity prediction is intended for protein-small molecule systems.</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -77,7 +507,8 @@
             </div>
           </a>
           <p class="footer-copy">
-            Developed by Atharva Tilewale and Dr. Dhaval Patel. This page is a placeholder for future use-case examples.
+            Developed by Atharva Tilewale and Dr. Dhaval Patel. This use-cases page is based on the Boltz2 Parameter
+            Generator protocol guide and repository documentation.
           </p>
         </div>
 
