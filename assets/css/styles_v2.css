@@ -342,7 +342,8 @@ img { max-width: 100%; display: block; }
 .stats-grid,
 .feature-grid,
 .version-grid,
-.release-grid {
+.release-grid,
+.usecases-intro-grid {
   display: grid;
   gap: 1rem;
 }
@@ -351,6 +352,7 @@ img { max-width: 100%; display: block; }
 .feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .version-grid { grid-template-columns: 1.2fr 1fr 1fr; }
 .release-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.usecases-intro-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .stat-card,
 .feature-card,
@@ -439,6 +441,37 @@ img { max-width: 100%; display: block; }
 .release-card p,
 .timeline-step p,
 .stat-card p { color: var(--muted); }
+
+/* Use Cases Mini Cards */
+.usecase-mini-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+}
+
+.usecase-mini-card:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.usecase-mini-card h3 {
+  margin: 0 0 0.8rem;
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+  color: #f5feff;
+}
+
+.usecase-mini-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
 
 .timeline {
   display: grid;
@@ -581,6 +614,22 @@ img { max-width: 100%; display: block; }
   
   .step-content p {
     font-size: 0.9rem;
+  }
+  
+  .usecases-intro-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .usecase-mini-card {
+    padding: 1.3rem 1rem;
+  }
+  
+  .usecase-mini-card h3 {
+    font-size: 1rem;
+  }
+  
+  .usecase-mini-card p {
+    font-size: 0.88rem;
   }
 }
 
