@@ -185,7 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCurrentScene();
     };
 
-    const loadUlvanLyase = fetch('assets/pdb/prot_lig_dna.pdb')
+    const pdbUrl = new URL('../assets/pdb/prot_lig_dna.pdb', window.location.href).toString();
+
+    const loadUlvanLyase = fetch(pdbUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
