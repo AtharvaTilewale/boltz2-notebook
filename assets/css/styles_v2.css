@@ -457,6 +457,133 @@ img { max-width: 100%; display: block; }
   margin-bottom: 1rem;
 }
 
+/* Vertical Stepper Styles */
+.vertical-stepper {
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.vertical-stepper::before {
+  content: "";
+  position: absolute;
+  left: 25px;
+  top: 60px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(99,230,255,0.4), rgba(99,230,255,0.1));
+}
+
+.stepper-step {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2.2rem;
+  position: relative;
+  align-items: flex-start;
+}
+
+.stepper-step.last .step-marker::after {
+  background: linear-gradient(135deg, rgba(94,242,194,0.3), rgba(94,242,194,0.1));
+}
+
+.step-marker {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99,230,255,0.18), rgba(124,140,255,0.14));
+  border: 2px solid rgba(99,230,255,0.3);
+  display: grid;
+  place-items: center;
+  color: #c5efff;
+  font-weight: 700;
+  font-size: 1rem;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(99, 230, 255, 0.12);
+}
+
+.stepper-step.last .step-marker {
+  background: linear-gradient(135deg, rgba(94,242,194,0.22), rgba(94,242,194,0.12));
+  border-color: rgba(94,242,194,0.4);
+  color: #dffdf4;
+  box-shadow: 0 0 20px rgba(94, 242, 194, 0.12);
+}
+
+.step-marker::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99,230,255,0.08), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stepper-step:hover .step-marker::after {
+  opacity: 1;
+}
+
+.step-content {
+  flex: 1;
+  padding-top: 0.4rem;
+}
+
+.step-content h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: #f5feff;
+  transition: color 0.3s ease;
+}
+
+.step-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  transition: color 0.3s ease;
+}
+
+.stepper-step:hover .step-marker {
+  border-color: rgba(99,230,255,0.5);
+  background: linear-gradient(135deg, rgba(99,230,255,0.25), rgba(124,140,255,0.18));
+  box-shadow: 0 0 28px rgba(99, 230, 255, 0.18);
+  transform: scale(1.08);
+}
+
+.stepper-step:hover .step-content h3,
+.stepper-step:hover .step-content p {
+  color: #f5feff;
+}
+
+@media (max-width: 768px) {
+  .vertical-stepper::before {
+    left: 21px;
+    top: 50px;
+  }
+  
+  .step-marker {
+    width: 44px;
+    height: 44px;
+    font-size: 0.9rem;
+  }
+  
+  .stepper-step {
+    gap: 1.2rem;
+    margin-bottom: 1.8rem;
+  }
+  
+  .step-content h3 {
+    font-size: 1rem;
+  }
+  
+  .step-content p {
+    font-size: 0.9rem;
+  }
+}
+
 .card-head {
   display: flex;
   align-items: flex-start;

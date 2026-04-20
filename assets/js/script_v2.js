@@ -29,6 +29,45 @@ const observer = new IntersectionObserver(
 
 document.querySelectorAll('.reveal').forEach((node) => observer.observe(node));
 
+// Modern Progress Bar Interactivity
+(function initProgressBar() {
+  const progressSteps = document.querySelectorAll('.progress-step');
+  const detailCards = document.querySelectorAll('.detail-card');
+
+  if (progressSteps.length === 0 || detailCards.length === 0) return;
+
+  // Set first card as active by default
+  detailCards[0].classList.add('active');
+
+  progressSteps.forEach((step, index) => {
+    step.addEventListener('mouseenter', () => {
+      // Remove active from all cards
+      detailCards.forEach((card) => card.classList.remove('active'));
+      // Add active to corresponding card
+      if (detailCards[index]) {
+        detailCards[index].classList.add('active');
+      }
+    });
+
+    // Also support click for better mobile experience
+    step.addEventListener('click', () => {
+      detailCards.forEach((card) => card.classList.remove('active'));
+      if (detailCards[index]) {
+        detailCards[index].classList.add('active');
+      }
+    });
+  });
+
+  // Restore first card on mouse leaving the entire progress section
+  const progressTrack = document.querySelector('.progress-track');
+  if (progressTrack) {
+    progressTrack.addEventListener('mouseleave', () => {
+      detailCards.forEach((card) => card.classList.remove('active'));
+      detailCards[0].classList.add('active');
+    });
+  }
+})();
+
 // 3Dmol.js Protein Viewer Initialization - MAIN VIEWER
 (function initMainViewer() {
   document.addEventListener('DOMContentLoaded', function() {
