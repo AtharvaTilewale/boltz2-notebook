@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "Boltz2 Notebook: A Colab-first workflow for biomolecular structure prediction and affinity analysis"
+message: "If you use this notebook, please cite it as below."
+type: software
+authors:
+  - family-names: Tilewale
+    given-names: Atharva
+  - family-names: Patel
+    given-names: Dhaval
+repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
+url: "https://atharvatilewale.github.io/boltz2-notebook/"
+license: MIT
+version: "1.0.0"
+date-released: "2025-10-01"
