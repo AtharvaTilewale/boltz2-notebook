@@ -1,7 +1,7 @@
 # Changelog
 
 ## v2.0.0
-- Advanced Modeling panel with the same overall UI theme
+- Advanced Modeling panel 
 - Template upload for .cif / .pdb
 - Explicit template chain mapping
 - Covalent ligand bond builder
