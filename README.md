@@ -640,19 +640,14 @@ If you use Boltz2-Notebook, please cite:
 
 ```bibtex
 @software{tilewale_2026_21850102,
-  author       = {Tilewale, Atharva and
-                  Patel, Dhaval},
-  title        = {Boltz2-Notebook: A streamlined Colab-based
-                   pipeline for biomolecular structure prediction and
-                   binding affinity analysis using the Boltz2 deep
-                   learning model.
-                  },
-  month        = aug,
-  year         = 2026,
-  publisher    = {Zenodo},
-  version      = {v2.0.0},
-  doi          = {10.5281/zenodo.21850102},
-  url          = {https://doi.org/10.5281/zenodo.21850102},
+  title={Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model.},
+  author={Tilewale, Atharva and Patel, Dhaval},
+  month=aug,
+  year=2026,
+  publisher={Zenodo},
+  version={v2.0.0},
+  doi={10.5281/zenodo.21850102},
+  url={https://doi.org/10.5281/zenodo.21850102}
 }
 
 @article{Passaro2025,
