@@ -7,7 +7,6 @@ authors:
     given-names: Atharva
   - family-names: Patel
     given-names: Dhaval
-version: 2.0.0
 doi: 10.5281/zenodo.21850102
 repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
 url: "https://atharvatilewale.github.io/boltz2-notebook/"
@@ -21,3 +20,11 @@ keywords:
   - "Binding Affinity Analysis"
   - "Drug Discovery"
   - "Structural Bioinformatics"
+preferred-citation: |
+  @misc{tilewale2026boltz2,
+    author = {Tilewale, Atharva and Patel, Dhaval},
+    title = {Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model},
+    year = {2026},
+    howpublished = {\url{https://github.com/AtharvaTilewale/boltz2-notebook}},
+    doi = {10.5281/zenodo.21850102}
+  }

@@ -209,6 +209,92 @@ img { max-width: 100%; display: block; }
 }
 .btn.full { width: 100%; margin-top: 1rem; }
 
+/* Citation dropdown and button tweaks */
+.citation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+#citationFormatSelect {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: rgba(4,10,20,0.8);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--text);
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  font-weight: 600;
+  min-width: 170px;
+  box-shadow: 0 6px 18px rgba(2,8,20,0.45);
+  background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.04) 50%),
+                    linear-gradient(135deg, rgba(255,255,255,0.04) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px);
+  background-size: 8px 8px, 8px 8px;
+  background-repeat: no-repeat;
+  backdrop-filter: blur(6px);
+}
+
+#citationFormatSelect option {
+  background-color: rgba(4,10,20,0.95);
+  color: var(--text);
+}
+
+.citation-card .btn {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border-radius: 10px;
+}
+
+.citation-card .btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #06101d;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.citation-card .btn-secondary {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.06);
+}
+
+@media (max-width: 640px) {
+  #citationFormatSelect { min-width: 140px; }
+  .citation-card { gap: 0.45rem; }
+}
+
+/* Download-as dropdown menu */
+.download-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 8px;
+  list-style: none;
+  padding: 0.4rem;
+  background-color: rgba(4,10,20,0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(2,8,20,0.5);
+  min-width: 200px;
+  z-index: 60;
+}
+
+.download-menu li {
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.download-menu li:hover {
+  background: rgba(99,230,255,0.06);
+  color: #cbf6ff;
+}
+
+/* Ensure menu is full-width on small screens */
+@media (max-width: 520px) {
+  .download-menu { left: 0; right: auto; min-width: 160px; }
+}
+
 .badge-row {
   display: flex;
   flex-wrap: wrap;
@@ -297,6 +383,25 @@ img { max-width: 100%; display: block; }
   margin: 0.35rem 0;
   font-size: 0.95rem;
 }
+
+/* Themed code / BibTeX display box */
+.bibtex-block,
+.citation-display {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.07);
+  padding: 1rem;
+  border-radius: 12px;
+  color: #d6e6ff;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  box-shadow: 0 14px 36px rgba(2,8,20,0.55);
+}
+
+.bibtex-block code { display: block; }
+
+.citation-display { background: rgba(255,255,255,0.02); }
 
 .code-line .key { color: #7ceaff; }
 .code-line .value { color: #b9d0ff; }
