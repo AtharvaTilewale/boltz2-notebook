@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Boltz2 Notebook: A Colab-first workflow for biomolecular structure prediction and affinity analysis"
+title: "Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model"
 message: "If you use this notebook, please cite it as below."
 type: software
 authors:
@@ -7,8 +7,17 @@ authors:
     given-names: Atharva
   - family-names: Patel
     given-names: Dhaval
+version: 2.0.0
+doi: https://doi.org/10.5281/zenodo.21850102
 repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
 url: "https://atharvatilewale.github.io/boltz2-notebook/"
 license: MIT
 version: "1.0.0"
-date-released: "2025-10-01"
+date-released: "2026-08-08"
+keywords: 
+  - "Boltz2"
+  - "Deep Learning"
+  - "Protein Structure Prediction"
+  - "Binding Affinity Analysis"
+  - "Drug Discovery"
+  - "Structural Bioinformatics"
