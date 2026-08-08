@@ -12,7 +12,7 @@ doi: 10.5281/zenodo.21850102
 repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
 url: "https://atharvatilewale.github.io/boltz2-notebook/"
 license: MIT
-version: "1.0.0"
+version: "2.0.0"
 date-released: "2026-08-08"
 keywords: 
   - "Boltz2"
