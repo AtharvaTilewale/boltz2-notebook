@@ -8,7 +8,7 @@ authors:
   - family-names: Patel
     given-names: Dhaval
 version: 2.0.0
-doi: https://doi.org/10.5281/zenodo.21850102
+doi: 10.5281/zenodo.21850102
 repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
 url: "https://atharvatilewale.github.io/boltz2-notebook/"
 license: MIT
