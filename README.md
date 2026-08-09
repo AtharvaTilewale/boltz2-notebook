@@ -684,4 +684,4 @@ If you use Boltz2-Notebook, please cite:
 
 ---
 
-**Last Updated:** April 2026 | **Version:** 2.0.0 (Latest) | **Status:** ✅ Production Ready
+**Last Updated:** August 2026 | **Version:** 2.0.0 (Latest) | **Status:** ✅ Production Ready
