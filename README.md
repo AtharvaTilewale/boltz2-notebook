@@ -7,6 +7,7 @@
 
 <div align="center">
 
+![Zenodo](https://img.shields.io/badge/Zenodo-10.5281%2Fzenodo.21850101-blue?logo=zenodo)
 ![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-green?logo=nvidia)
 ![Boltz2](https://img.shields.io/badge/Model-Boltz2-purple)
