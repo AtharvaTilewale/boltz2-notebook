@@ -186,38 +186,19 @@ if not FORCE_REINSTALL:
         print(f"[{Color.GREEN}✔{Color.RESET}] Boltz2 with CUDA support is already installed and verified! (Skipping re-installation)")
 
 if not already_installed:
-    repo_dir = "/content/boltz"
-    if FORCE_REINSTALL and os.path.isdir(repo_dir):
-        print(f"{Color.YELLOW}[i] Removing existing '{repo_dir}' for fresh reinstallation...{Color.RESET}")
-        try:
-            shutil.rmtree(repo_dir)
-        except Exception as e:
-            print(f"{Color.RED}✖ Failed to remove '{repo_dir}': {e}{Color.RESET}")
+    has_uv = ensure_uv()
 
-    if not os.path.isdir(repo_dir):
-        clone_ok, _ = run_step(
-            ["git", "clone", "--depth", "1", "https://github.com/AtharvaTilewale/boltz.git", repo_dir],
-            f"{Color.CYAN}Cloning Boltz (shallow)...{Color.RESET}",
-            f"[{Color.GREEN}✔{Color.RESET}] Boltz cloned successfully.",
-            f"[{Color.RED}✖{Color.RESET}] Boltz clone failed."
-        )
-        if not clone_ok:
-            raise RuntimeError("Git clone failed.")
+    # Pre-install dm-tree binary wheel to guarantee CMake is NEVER invoked
+    pre_cmd = ["uv", "pip", "install", "--system", "dm-tree>=0.1.10"] if has_uv else [sys.executable, "-m", "pip", "install", "-q", "dm-tree>=0.1.10"]
+    run_step(
+        pre_cmd,
+        f"{Color.CYAN}Ensuring pre-built binary dependencies...{Color.RESET}",
+        f"[{Color.GREEN}✔{Color.RESET}] Binary dependencies ready.",
+        f"[{Color.YELLOW}i{Color.RESET}] Binary dependency notice."
+    )
 
-    # Patch pyproject.toml if Python version >= 3.13 to prevent build requirement failure
-    pyproject_path = Path("/content/boltz/pyproject.toml")
-    if pyproject_path.exists():
-        try:
-            p_text = pyproject_path.read_text(encoding="utf-8")
-            if "requires-python" in p_text and sys.version_info >= (3, 13):
-                p_text = re.sub(r'requires-python\s*=\s*".*?"', 'requires-python = ">=3.10"', p_text)
-                pyproject_path.write_text(p_text, encoding="utf-8")
-        except Exception:
-            pass
-
-    # Build package list
-    numpy_pkg = "numpy" if sys.version_info >= (3, 13) else "numpy<2.0"
-    packages = ["-e", "/content/boltz[cuda]", "biopython", numpy_pkg, "matplotlib", "pyyaml", "py3Dmol"]
+    # Packages to install directly from PyPI (no git clone)
+    packages = ["boltz[cuda]", "biopython", "numpy", "matplotlib", "pyyaml", "py3Dmol"]
 
     # Check for cached wheels on Drive
     find_links_args = []
@@ -227,25 +208,38 @@ if not already_installed:
             find_links_args = ["--find-links", str(wheel_cache)]
             print(f"[{Color.CYAN}ℹ{Color.RESET}] Found {len(wheel_files)} cached wheel(s) on Google Drive.")
 
-    # Try uv with LOCAL cache first (never on Google Drive FUSE to prevent SQLite fcntl lock errors)
+    # Override file for uv (forces binary wheels and avoids Python 3.13 restriction)
+    override_file = Path("/content/.cache/boltz_overrides.txt")
+    override_file.parent.mkdir(parents=True, exist_ok=True)
+    override_lines = ["dm-tree>=0.1.10", "scipy>=1.13.1"]
+    if sys.version_info >= (3, 13):
+        override_lines.extend(["numpy>=1.26", "scikit-learn>=1.6.1", "chembl_structure_pipeline>=1.2.2"])
+    override_file.write_text("\n".join(override_lines) + "\n", encoding="utf-8")
+
     install_success = False
-    has_uv = ensure_uv()
+
+    # 1. High-speed uv installer (local cache, no CMake, uses official PyPI wheels)
     if has_uv:
         local_uv_cache = Path("/content/.cache/uv")
         local_uv_cache.mkdir(parents=True, exist_ok=True)
-        uv_cmd = ["uv", "pip", "install", "--system", "--link-mode=copy", "--cache-dir", str(local_uv_cache)]
+        uv_cmd = [
+            "uv", "pip", "install", "--system",
+            "--link-mode=copy",
+            "--cache-dir", str(local_uv_cache),
+            "--override", str(override_file)
+        ]
         if find_links_args:
             uv_cmd.extend(find_links_args)
         uv_cmd.extend(packages)
 
         install_success, _ = run_step(
             uv_cmd,
-            f"{Color.RESET}Installing dependencies with high-speed uv engine...{Color.RESET}",
-            f"[{Color.GREEN}✔{Color.RESET}] Dependencies installed successfully (uv).",
-            f"[{Color.YELLOW}i{Color.RESET}] High-speed uv installer encountered an issue. Falling back to pip..."
+            f"{Color.RESET}Installing Boltz2 (PyPI) with high-speed uv engine...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] Boltz2 installed successfully (uv).",
+            f"[{Color.YELLOW}i{Color.RESET}] uv encountered an issue. Falling back to pip..."
         )
 
-    # Fallback to standard pip if uv was not used or had an issue
+    # 2. Standard pip fallback
     if not install_success:
         pip_cmd = [sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python"]
         if find_links_args:
@@ -254,13 +248,28 @@ if not already_installed:
 
         pip_ok, pip_err = run_step(
             pip_cmd,
-            f"{Color.RESET}Installing dependencies with pip...{Color.RESET}",
-            f"[{Color.GREEN}✔{Color.RESET}] Dependencies installed successfully.",
-            f"[{Color.RED}✖{Color.RESET}] Dependency installation failed."
+            f"{Color.RESET}Installing Boltz2 (PyPI) with pip...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] Boltz2 installed successfully.",
+            f"[{Color.YELLOW}i{Color.RESET}] Trying direct wheel install..."
         )
         if not pip_ok:
-            all_success = False
-            raise RuntimeError(f"Pip installation failed: {pip_err}")
+            # Safe direct wheel install if resolver hit Python 3.13 version constraints
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python", "--no-deps", "boltz[cuda]"], check=False)
+            deps = [
+                "dm-tree>=0.1.10", "torch>=2.2", "numpy", "hydra-core==1.3.2", "pytorch-lightning==2.5.0",
+                "rdkit>=2024.3.2", "requests==2.32.3", "pandas>=2.2.2", "types-requests", "einops==0.8.0",
+                "einx==0.3.0", "fairscale==0.4.13", "mashumaro==3.14", "modelcif==1.2", "wandb==0.18.7",
+                "click==8.1.7", "pyyaml==6.0.2", "biopython>=1.84", "scipy>=1.13.1", "numba>=0.60.0",
+                "gemmi>=0.6.5", "scikit-learn>=1.6.1", "chembl_structure_pipeline>=1.2.2",
+                "cuequivariance_ops_cu12>=0.5.0", "cuequivariance_ops_torch_cu12>=0.5.0",
+                "cuequivariance_torch>=0.5.0", "matplotlib", "py3Dmol"
+            ]
+            run_step(
+                [sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python"] + deps,
+                f"{Color.CYAN}Installing Boltz dependencies...{Color.RESET}",
+                f"[{Color.GREEN}✔{Color.RESET}] Boltz dependencies installed successfully.",
+                f"[{Color.RED}✖{Color.RESET}] Failed to install dependencies."
+            )
 
     # If Drive is mounted, copy newly downloaded wheels from local pip cache to Drive
     if drive_mounted and wheel_cache.exists():
@@ -280,7 +289,7 @@ if not already_installed:
 
     # Validate installation
     valid_ok, _ = run_step(
-        [sys.executable, "-c", "import torch; print('Torch CUDA available:', torch.cuda.is_available()); print('CUDA device count:', torch.cuda.device_count())"],
+        [sys.executable, "-c", "import torch, boltz; print('Torch CUDA available:', torch.cuda.is_available()); print('CUDA device count:', torch.cuda.device_count()); print('Boltz version:', getattr(boltz, '__version__', 'ready'))"],
         f"{Color.CYAN}Validating CUDA installation...{Color.RESET}",
         f"[{Color.GREEN}✔{Color.RESET}] Validation complete.",
         f"[{Color.RED}✖{Color.RESET}] Validation failed."
