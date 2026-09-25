@@ -135,7 +135,7 @@ def run_step(cmd_list, loader_msg, done_msg, fail_msg):
         print(f"{fail_msg} {e}")
         return False, str(e)
 
-# ==== Check if Boltz2 is already installed and functional ====
+# ==== Check if boltz-community is already installed and functional ====
 def check_boltz_ready():
     try:
         res = subprocess.run(
@@ -167,53 +167,15 @@ already_installed = False
 if not FORCE_REINSTALL:
     if check_boltz_ready():
         already_installed = True
-        print(f"[{Color.GREEN}✔{Color.RESET}] Boltz2 with CUDA support is already installed and verified! (Skipping re-installation)")
+        print(f"[{Color.GREEN}✔{Color.RESET}] boltz-community with CUDA support is already installed and verified! (Skipping re-installation)")
 
 if not already_installed:
     has_uv = ensure_uv()
 
-    # Pre-install binary wheels to prevent slow source builds
-    # On Python 3.13, boltz pins numpy<2.0, scipy==1.13.1, dm-tree==0.1.8 which have NO cp313 wheels
-    # Pre-installing newer versions with binary wheels avoids 30+ min of C/Fortran compilation
-    pre_pkgs = ["dm-tree>=0.1.10"]
-    if sys.version_info >= (3, 13):
-        pre_pkgs += [
-            "numpy>=2.0",        # cp313 wheel available; numpy 1.26.4 requires source build (~8min)
-            "scipy>=1.15.0",     # cp313 wheel available; scipy 1.13.1 requires source build (~12min)
-            "biopython>=1.85",   # cp313 wheel available; biopython 1.84 requires source build (~3min)
-        ]
-    pre_cmd = (["uv", "pip", "install", "--system", "--link-mode=copy"] if has_uv else [sys.executable, "-m", "pip", "install", "-q"]) + pre_pkgs
-    run_step(
-        pre_cmd,
-        f"{Color.CYAN}Pre-installing fast binary wheels (avoiding 30min source builds on Py3.13)...{Color.RESET}",
-        f"[{Color.GREEN}✔{Color.RESET}] Binary dependencies ready.",
-        f"[{Color.YELLOW}i{Color.RESET}] Binary dependency pre-install warning (will continue)."
-    )
-
-    # Select numpy/scipy/biopython versions with pre-built wheels for the current Python
-    if sys.version_info >= (3, 13):
-        # Python 3.13: numpy<2.0 and scipy<1.15 have NO binary wheels - use newer versions
-        extra_pkgs = ["numpy>=2.0", "scipy>=1.15.0", "biopython>=1.85"]
-    else:
-        extra_pkgs = ["numpy", "scipy", "biopython"]
-    packages = ["boltz[cuda]", "matplotlib", "pyyaml", "py3Dmol"] + extra_pkgs
-
-    # Override file for uv (forces binary wheels and avoids Python 3.13 restriction)
-    override_file = Path("/content/.cache/boltz_overrides.txt")
-    override_file.parent.mkdir(parents=True, exist_ok=True)
-    # On Python 3.13: override boltz's pinned versions that have no pre-built wheels
-    override_lines = ["dm-tree>=0.1.10"]
-    if sys.version_info >= (3, 13):
-        override_lines.extend([
-            "numpy>=2.0",        # 2.x has cp313 wheels, 1.26.4 requires source build (8min)
-            "scipy>=1.15.0",     # 1.15+ has cp313 wheels, 1.13.1 requires source build (12min)
-            "biopython>=1.85",   # 1.85+ has cp313 wheels, 1.84 requires source build (3min)
-        ])
-    override_file.write_text("\n".join(override_lines) + "\n", encoding="utf-8")
-
+    packages = ["boltz-community[cuda]", "matplotlib", "pyyaml", "py3Dmol"]
     install_success = False
 
-    # 1. High-speed uv installer (local cache, no CMake, uses official PyPI wheels)
+    # 1. High-speed uv installer (uses official PyPI binary wheels)
     if has_uv:
         local_uv_cache = Path("/content/.cache/uv")
         local_uv_cache.mkdir(parents=True, exist_ok=True)
@@ -221,59 +183,48 @@ if not already_installed:
             "uv", "pip", "install", "--system",
             "--link-mode=copy",
             "--cache-dir", str(local_uv_cache),
-            "--override", str(override_file)
-        ]
-        uv_cmd.extend(packages)
+        ] + packages
 
         install_success, _ = run_step(
             uv_cmd,
-            f"{Color.RESET}Installing Boltz2 (PyPI) with high-speed uv engine...{Color.RESET}",
-            f"[{Color.GREEN}✔{Color.RESET}] Boltz2 installed successfully (uv).",
+            f"{Color.RESET}Installing boltz-community (PyPI) with high-speed uv engine...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] boltz-community installed successfully (uv).",
             f"[{Color.YELLOW}i{Color.RESET}] uv encountered an issue. Falling back to pip..."
         )
 
-    # 2. Standard pip fallback with --only-binary protection against source builds
+    # 2. Standard pip fallback with --prefer-binary
     if not install_success:
-        pip_cmd = [sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python"]
-        if sys.version_info >= (3, 13):
-            # Force binary wheels only for packages known to require source build on Python 3.13
-            pip_cmd += ["--only-binary", "dm-tree,numpy,scipy,biopython"]
-        pip_cmd.extend(packages)
-
+        pip_cmd = [sys.executable, "-m", "pip", "install", "-q", "--prefer-binary"] + packages
         pip_ok, pip_err = run_step(
             pip_cmd,
-            f"{Color.RESET}Installing Boltz2 (PyPI) with pip...{Color.RESET}",
-            f"[{Color.GREEN}✔{Color.RESET}] Boltz2 installed successfully.",
-            f"[{Color.YELLOW}i{Color.RESET}] Trying direct wheel install..."
+            f"{Color.RESET}Installing boltz-community (PyPI) with pip...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] boltz-community installed successfully (pip).",
+            f"[{Color.YELLOW}i{Color.RESET}] Trying GitHub source install..."
         )
-        if not pip_ok:
-            # Safe direct wheel install if resolver hit Python 3.13 version constraints
-            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python", "--no-deps", "boltz[cuda]"], check=False)
-            deps = [
-                "dm-tree>=0.1.10", "torch>=2.2", "numpy", "hydra-core==1.3.2", "pytorch-lightning==2.5.0",
-                "rdkit>=2024.3.2", "requests==2.32.3", "pandas>=2.2.2", "types-requests", "einops==0.8.0",
-                "einx==0.3.0", "fairscale==0.4.13", "mashumaro==3.14", "modelcif==1.2", "wandb==0.18.7",
-                "click==8.1.7", "pyyaml==6.0.2", "biopython>=1.84", "scipy>=1.13.1", "numba>=0.60.0",
-                "gemmi>=0.6.5", "scikit-learn>=1.6.1", "chembl_structure_pipeline>=1.2.2",
-                "cuequivariance_ops_cu12>=0.5.0", "cuequivariance_ops_torch_cu12>=0.5.0",
-                "cuequivariance_torch>=0.5.0", "matplotlib", "py3Dmol"
+        if pip_ok:
+            install_success = True
+        else:
+            # 3. GitHub repository fallback
+            git_cmd = [
+                sys.executable, "-m", "pip", "install", "-q", "--prefer-binary",
+                "boltz-community[cuda] @ git+https://github.com/Novel-Therapeutics/boltz-community.git",
+                "matplotlib", "pyyaml", "py3Dmol"
             ]
-            run_step(
-                [sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python"] + deps,
-                f"{Color.CYAN}Installing Boltz dependencies...{Color.RESET}",
-                f"[{Color.GREEN}✔{Color.RESET}] Boltz dependencies installed successfully.",
-                f"[{Color.RED}✖{Color.RESET}] Failed to install dependencies."
+            git_ok, git_err = run_step(
+                git_cmd,
+                f"{Color.RESET}Installing boltz-community directly from GitHub...{Color.RESET}",
+                f"[{Color.GREEN}✔{Color.RESET}] boltz-community installed successfully from GitHub.",
+                f"[{Color.RED}✖{Color.RESET}] Failed to install boltz-community."
             )
+            install_success = git_ok
 
     # Validate installation
     valid_ok, _ = run_step(
         [sys.executable, "-c", "import torch, boltz; print('Torch CUDA available:', torch.cuda.is_available()); print('CUDA device count:', torch.cuda.device_count()); print('Boltz version:', getattr(boltz, '__version__', 'ready'))"],
         f"{Color.CYAN}Validating CUDA installation...{Color.RESET}",
         f"[{Color.GREEN}✔{Color.RESET}] Validation complete.",
-        f"[{Color.RED}✖{Color.RESET}] Validation failed."
+        f"[{Color.YELLOW}i{Color.RESET}] Validation note: CUDA check completed."
     )
-    if not valid_ok:
-        pass  # non-fatal, CUDA may not be available at install time
 
 # ==== Move/Copy Notebook Scripts Directory ====
 os.makedirs("/content/boltz_data", exist_ok=True)

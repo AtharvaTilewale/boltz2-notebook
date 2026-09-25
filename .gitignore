@@ -6,8 +6,5 @@ __pycache__/
 .env
 *.env
 
-# Google Drive cache (large files)
-/content/drive/MyDrive/boltz_cache/
-
 # Local cache (large files)
 /root/.boltz/

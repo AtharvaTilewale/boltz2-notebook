@@ -8,7 +8,7 @@
 <div align="center">
 
 [![bioRxiv](https://img.shields.io/badge/bioRxiv-10.64898%2F2026.09.18.752645-b31b1b)](https://doi.org/10.64898/2026.09.18.752645)
-![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.10%20--%203.13-blue?logo=python)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-green?logo=nvidia)
 ![Boltz2](https://img.shields.io/badge/Model-Boltz2-purple)
 ![Platform](https://img.shields.io/badge/Platform-Colab%20|%20Linux-lightgrey?logo=googlecolab)
@@ -672,7 +672,7 @@ If you use Boltz2-Notebook, please cite:
 ## Credits & Links
 
 - **Notebook:** [Atharva Tilewale](https://github.com/AtharvaTilewale) & Dr. Dhaval Patel (Gujarat Biotechnology University)
-- **Boltz2 Model:** [Original Repository](https://github.com/jwohlwend/boltz)
+- **Boltz2 Engine:** [boltz-community](https://github.com/Novel-Therapeutics/boltz-community) (community fork of [Boltz](https://github.com/jwohlwend/boltz) with Python 3.13 support & bug fixes)
 - **License:** MIT License — See [LICENSE](LICENSE) for details.
 
 ---

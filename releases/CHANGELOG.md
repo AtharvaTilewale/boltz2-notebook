@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.1 (Latest)
+- Migrated engine to `boltz-community` with full Python 3.13 support
+- Removed Google Drive cache in favor of fast local NVMe SSD storage (`/root/.boltz`)
+- Eliminated 30+ minute source build times on Python 3.13 using PyPI binary wheels and `uv`
+- Fixed CCD dataset re-downloading on every run (boltz-community #633)
+- Relaxed dependency constraints (numpy>=1.26, fairscale removed)
+
+
 ## v2.0.0
 - Advanced Modeling panel 
 - Template upload for .cif / .pdb
