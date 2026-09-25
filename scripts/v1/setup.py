@@ -209,17 +209,32 @@ if not FORCE_REINSTALL:
 if not already_installed:
     has_uv = ensure_uv()
 
-    # Pre-install dm-tree binary wheel to guarantee CMake is NEVER invoked
-    pre_cmd = ["uv", "pip", "install", "--system", "dm-tree>=0.1.10"] if has_uv else [sys.executable, "-m", "pip", "install", "-q", "dm-tree>=0.1.10"]
+    # Pre-install binary wheels to prevent slow source builds
+    # On Python 3.13, boltz pins numpy<2.0, scipy==1.13.1, dm-tree==0.1.8 which have NO cp313 wheels
+    # Pre-installing newer versions with binary wheels avoids 30+ min of C/Fortran compilation
+    pre_pkgs = ["dm-tree>=0.1.10"]
+    if sys.version_info >= (3, 13):
+        pre_pkgs += [
+            "numpy>=2.0",        # cp313 wheel available; numpy 1.26.4 requires source build (~8min)
+            "scipy>=1.15.0",     # cp313 wheel available; scipy 1.13.1 requires source build (~12min)
+            "biopython>=1.85",   # cp313 wheel available; biopython 1.84 requires source build (~3min)
+        ]
+    pre_cmd = (["uv", "pip", "install", "--system", "--link-mode=copy"] if has_uv else [sys.executable, "-m", "pip", "install", "-q"]) + pre_pkgs
     run_step(
         pre_cmd,
-        f"{Color.CYAN}Ensuring pre-built binary dependencies...{Color.RESET}",
+        f"{Color.CYAN}Pre-installing fast binary wheels (avoiding 30min source builds on Py3.13)...{Color.RESET}",
         f"[{Color.GREEN}✔{Color.RESET}] Binary dependencies ready.",
-        f"[{Color.YELLOW}i{Color.RESET}] Binary dependency notice."
+        f"[{Color.YELLOW}i{Color.RESET}] Binary dependency pre-install warning (will continue)."
     )
 
     # Packages to install directly from PyPI (no git clone)
-    packages = ["boltz[cuda]", "biopython", "numpy", "matplotlib", "pyyaml", "py3Dmol"]
+    # Select numpy/scipy/biopython versions with pre-built wheels for the current Python
+    if sys.version_info >= (3, 13):
+        # Python 3.13: numpy<2.0 and scipy<1.15 have NO binary wheels - use newer versions
+        extra_pkgs = ["numpy>=2.0", "scipy>=1.15.0", "biopython>=1.85"]
+    else:
+        extra_pkgs = ["numpy", "scipy", "biopython"]
+    packages = ["boltz[cuda]", "matplotlib", "pyyaml", "py3Dmol"] + extra_pkgs
 
     # Check for cached wheels on Drive
     find_links_args = []
@@ -232,9 +247,16 @@ if not already_installed:
     # Override file for uv (forces binary wheels and avoids Python 3.13 restriction)
     override_file = Path("/content/.cache/boltz_overrides.txt")
     override_file.parent.mkdir(parents=True, exist_ok=True)
-    override_lines = ["dm-tree>=0.1.10", "scipy>=1.13.1"]
+    # On Python 3.13: override boltz's pinned versions that have no pre-built wheels
+    # numpy<2.0 (forces 1.26.4 source build ~8min), scipy==1.13.1 (source build ~12min),
+    # dm-tree==0.1.8 (CMake build fails), biopython==1.84 (source build ~3min)
+    override_lines = ["dm-tree>=0.1.10"]
     if sys.version_info >= (3, 13):
-        override_lines.extend(["numpy>=1.26", "scikit-learn>=1.6.1", "chembl_structure_pipeline>=1.2.2"])
+        override_lines.extend([
+            "numpy>=2.0",        # 2.x has cp313 wheels, 1.26.4 requires source build (8min)
+            "scipy>=1.15.0",     # 1.15+ has cp313 wheels, 1.13.1 requires source build (12min)
+            "biopython>=1.85",   # 1.85+ has cp313 wheels, 1.84 requires source build (3min)
+        ])
     override_file.write_text("\n".join(override_lines) + "\n", encoding="utf-8")
 
     install_success = False
@@ -260,9 +282,12 @@ if not already_installed:
             f"[{Color.YELLOW}i{Color.RESET}] uv encountered an issue. Falling back to pip..."
         )
 
-    # 2. Standard pip fallback
+    # 2. Standard pip fallback with --only-binary protection against source builds
     if not install_success:
         pip_cmd = [sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python"]
+        if sys.version_info >= (3, 13):
+            # Force binary wheels only for packages known to require source build on Python 3.13
+            pip_cmd += ["--only-binary", "dm-tree,numpy,scipy,biopython"]
         if find_links_args:
             pip_cmd.extend(find_links_args)
         pip_cmd.extend(packages)
