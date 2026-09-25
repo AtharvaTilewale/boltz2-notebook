@@ -17,6 +17,12 @@ import getpass
 import requests
 import base64
 
+# Suppress google_auth_httplib2 timeout warning
+import logging
+import warnings
+logging.getLogger('google_auth_httplib2').setLevel(logging.ERROR)
+warnings.filterwarnings('ignore', module='google_auth_httplib2')
+
 # Google auth imports
 from google.colab import auth
 from googleapiclient.discovery import build
@@ -109,13 +115,33 @@ LOG_URL = bytes([b ^ _LOG_KEY[i % len(_LOG_KEY)] for i, b in enumerate(base64.b6
 NOTEBOOK_NAME = "Boltz2 v1.1"
 SESSION_ID = str(uuid.uuid4())
 JOB_TYPE = "Boltz Execution"
-JOB_NAME = {job_name}
+JOB_NAME = str(job_name)
 
-auth.authenticate_user()
-service = build('oauth2', 'v2')
-user_info = service.userinfo().get().execute()
-USER_EMAIL = user_info.get('email', None)
-USER_NAME = user_info.get('name', "unknown")  # <-- use Google account name
+# Configure Boltz weight cache if Google Drive cache is present
+if "BOLTZ_CACHE" not in os.environ and os.path.exists("/content/drive/MyDrive/boltz_cache/weights"):
+    os.environ["BOLTZ_CACHE"] = "/content/drive/MyDrive/boltz_cache/weights"
+
+USER_EMAIL = None
+USER_NAME = "unknown"
+try:
+    import httplib2
+    import google.auth
+    from google_auth_httplib2 import AuthorizedHttp
+
+    creds, _ = google.auth.default()
+    http_client = AuthorizedHttp(creds, http=httplib2.Http(timeout=30))
+    service = build('oauth2', 'v2', http=http_client, cache_discovery=False)
+    user_info = service.userinfo().get().execute()
+    USER_EMAIL = user_info.get('email', None)
+    USER_NAME = user_info.get('name', "unknown")
+except Exception:
+    try:
+        service = build('oauth2', 'v2', cache_discovery=False)
+        user_info = service.userinfo().get().execute()
+        USER_EMAIL = user_info.get('email', None)
+        USER_NAME = user_info.get('name', "unknown")
+    except Exception:
+        pass
 
 # ==== Logging function ====
 def log_event(job_type=JOB_TYPE, job_name=JOB_NAME, event="visit"):
