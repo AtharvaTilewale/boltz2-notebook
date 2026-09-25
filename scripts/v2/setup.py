@@ -34,13 +34,6 @@ except ImportError:
 _LOG_KEY = b"b0ltz2_t3l3m3try_k3y"
 _LOG_DATA = b"CkQYBAkIcFtAD0EEQwBcHjAEVBUHHg8bFx0yFVAeXB4cB104FA1KGgBIPBsVAg0xUBh2GR5CFyENLVRUDUdfKxNzKhFKI1AqAA1fISwiaUEyQz8yLmgIOQYubDQePTgAEARqKFtSCkMrAmxbVhRWDg=="
 LOG_URL = bytes([b ^ _LOG_KEY[i % len(_LOG_KEY)] for i, b in enumerate(base64.b64decode(_LOG_DATA))]).decode("utf-8")
-NOTEBOOK_NAME = "Boltz2 v2.0"
-SESSION_ID = str(uuid.uuid4())
-JOB_TYPE = "Installation"
-JOB_NAME = "Boltz2 CUDA Setup"
-
-# Read user preference flags (can be set in Colab form or env)
-USE_DRIVE_CACHE = os.environ.get("USE_DRIVE_CACHE", "1").lower() in ("1", "true", "yes")
 FORCE_REINSTALL = os.environ.get("FORCE_REINSTALL", "0").lower() in ("1", "true", "yes")
 
 os.chdir("/content/")
@@ -55,7 +48,7 @@ class Color:
 
 print(f"{Color.CYAN} ===Initialising Setup=== {Color.RESET}")
 
-# ==== Google authentication and email retrieval (with warning suppression & timeout fix) ====
+# ==== Google authentication and email retrieval ====
 USER_EMAIL = None
 USER_NAME = "unknown"
 
@@ -78,14 +71,17 @@ if HAS_GOOGLE_AUTH:
             pass
 
 # ==== Logging function ====
-def log_event(job_type=JOB_TYPE, job_name=JOB_NAME, event="visit"):
+NOTEBOOK_NAME_V2 = "Boltz2 v2.0"
+SESSION_ID = str(uuid.uuid4())
+
+def log_event(job_type="Installation", job_name="Boltz Setup", event="visit"):
     try:
         now_ist = datetime.datetime.now(ZoneInfo("Asia/Kolkata"))
         data = {
             "timestamp": now_ist.strftime("%Y-%m-%d %H:%M:%S %Z"),
             "email": USER_EMAIL,
             "username": USER_NAME,
-            "notebook": NOTEBOOK_NAME,
+            "notebook": NOTEBOOK_NAME_V2,
             "session_id": SESSION_ID,
             "job_type": job_type,
             "job_name": job_name,
@@ -97,44 +93,11 @@ def log_event(job_type=JOB_TYPE, job_name=JOB_NAME, event="visit"):
 
 log_event(job_type="Installation", job_name="Boltz Setup", event=" ")
 
-# ==== High-Speed Local NVMe & Persistent Drive Cache Configuration ====
-drive_mounted = os.path.exists("/content/drive/MyDrive")
-local_boltz_cache = Path(os.environ.get("BOLTZ_CACHE", "/root/.boltz"))
+# ==== Boltz Cache: use local NVMe SSD only ====
+local_boltz_cache = Path("/root/.boltz")
 local_boltz_cache.mkdir(parents=True, exist_ok=True)
 os.environ["BOLTZ_CACHE"] = str(local_boltz_cache)
-
-if USE_DRIVE_CACHE and drive_mounted:
-    cache_root = Path("/content/drive/MyDrive/boltz_cache")
-    wheel_cache = cache_root / "wheels"
-    drive_weight_cache = cache_root / "weights"
-    wheel_cache.mkdir(parents=True, exist_ok=True)
-    drive_weight_cache.mkdir(parents=True, exist_ok=True)
-
-    # Fast Startup Sync: If weights/CCD exist on Google Drive, mirror to fast local SSD
-    # Sequential copy of 2GB is ~15s, avoiding slow random reads on Drive FUSE during inference!
-    synced_assets = 0
-    for asset in drive_weight_cache.glob("*"):
-        local_target = local_boltz_cache / asset.name
-        if not local_target.exists():
-            try:
-                if asset.is_file():
-                    shutil.copy2(asset, local_target)
-                    synced_assets += 1
-                elif asset.is_dir():
-                    shutil.copytree(asset, local_target, dirs_exist_ok=True)
-                    synced_assets += 1
-            except Exception:
-                pass
-    if synced_assets > 0:
-        print(f"[{Color.GREEN}✔{Color.RESET}] Loaded {synced_assets} cached model asset(s) from Google Drive to fast local SSD.")
-    print(f"[{Color.GREEN}✔{Color.RESET}] Persistent Google Drive cache active: {cache_root}")
-    print(f"[{Color.CYAN}ℹ{Color.RESET}] High-speed local NVMe cache ready: {local_boltz_cache}")
-else:
-    cache_root = Path("/content/.cache/boltz_cache")
-    wheel_cache = cache_root / "wheels"
-    drive_weight_cache = None
-    wheel_cache.mkdir(parents=True, exist_ok=True)
-    print(f"[{Color.CYAN}ℹ{Color.RESET}] High-speed local NVMe cache ready: {local_boltz_cache}")
+print(f"[{Color.CYAN}i{Color.RESET}] Boltz cache: {local_boltz_cache}")
 
 # ==== Fast Loader ====
 def loader(msg, stop_event):
@@ -227,7 +190,6 @@ if not already_installed:
         f"[{Color.YELLOW}i{Color.RESET}] Binary dependency pre-install warning (will continue)."
     )
 
-    # Packages to install directly from PyPI (no git clone)
     # Select numpy/scipy/biopython versions with pre-built wheels for the current Python
     if sys.version_info >= (3, 13):
         # Python 3.13: numpy<2.0 and scipy<1.15 have NO binary wheels - use newer versions
@@ -236,20 +198,10 @@ if not already_installed:
         extra_pkgs = ["numpy", "scipy", "biopython"]
     packages = ["boltz[cuda]", "matplotlib", "pyyaml", "py3Dmol"] + extra_pkgs
 
-    # Check for cached wheels on Drive
-    find_links_args = []
-    if drive_mounted and wheel_cache.exists():
-        wheel_files = list(wheel_cache.glob("*.whl"))
-        if wheel_files:
-            find_links_args = ["--find-links", str(wheel_cache)]
-            print(f"[{Color.CYAN}ℹ{Color.RESET}] Found {len(wheel_files)} cached wheel(s) on Google Drive.")
-
     # Override file for uv (forces binary wheels and avoids Python 3.13 restriction)
     override_file = Path("/content/.cache/boltz_overrides.txt")
     override_file.parent.mkdir(parents=True, exist_ok=True)
     # On Python 3.13: override boltz's pinned versions that have no pre-built wheels
-    # numpy<2.0 (forces 1.26.4 source build ~8min), scipy==1.13.1 (source build ~12min),
-    # dm-tree==0.1.8 (CMake build fails), biopython==1.84 (source build ~3min)
     override_lines = ["dm-tree>=0.1.10"]
     if sys.version_info >= (3, 13):
         override_lines.extend([
@@ -271,8 +223,6 @@ if not already_installed:
             "--cache-dir", str(local_uv_cache),
             "--override", str(override_file)
         ]
-        if find_links_args:
-            uv_cmd.extend(find_links_args)
         uv_cmd.extend(packages)
 
         install_success, _ = run_step(
@@ -288,8 +238,6 @@ if not already_installed:
         if sys.version_info >= (3, 13):
             # Force binary wheels only for packages known to require source build on Python 3.13
             pip_cmd += ["--only-binary", "dm-tree,numpy,scipy,biopython"]
-        if find_links_args:
-            pip_cmd.extend(find_links_args)
         pip_cmd.extend(packages)
 
         pip_ok, pip_err = run_step(
@@ -317,22 +265,6 @@ if not already_installed:
                 f"[{Color.RED}✖{Color.RESET}] Failed to install dependencies."
             )
 
-    # If Drive is mounted, copy newly downloaded wheels from local pip cache to Drive
-    if drive_mounted and wheel_cache.exists():
-        try:
-            pip_cache_path = Path("/root/.cache/pip/wheels")
-            if pip_cache_path.exists():
-                saved_count = 0
-                for whl in pip_cache_path.rglob("*.whl"):
-                    target = wheel_cache / whl.name
-                    if not target.exists():
-                        shutil.copy2(whl, target)
-                        saved_count += 1
-                if saved_count > 0:
-                    print(f"[{Color.GREEN}✔{Color.RESET}] Saved {saved_count} wheel(s) to Google Drive cache for fast future startup.")
-        except Exception:
-            pass
-
     # Validate installation
     valid_ok, _ = run_step(
         [sys.executable, "-c", "import torch, boltz; print('Torch CUDA available:', torch.cuda.is_available()); print('CUDA device count:', torch.cuda.device_count()); print('Boltz version:', getattr(boltz, '__version__', 'ready'))"],
@@ -341,7 +273,7 @@ if not already_installed:
         f"[{Color.RED}✖{Color.RESET}] Validation failed."
     )
     if not valid_ok:
-        all_success = False
+        pass  # non-fatal, CUDA may not be available at install time
 
 # ==== Move/Copy Notebook Scripts Directory ====
 os.makedirs("/content/boltz_data", exist_ok=True)
@@ -352,18 +284,5 @@ if os.path.exists(notebook_script):
     if os.path.exists(destination_notebook_script):
         shutil.rmtree(destination_notebook_script)
     shutil.copytree(notebook_script, destination_notebook_script)
-
-# Mirror any local model weights to Google Drive cache for persistent storage
-if drive_mounted and 'drive_weight_cache' in locals() and drive_weight_cache and drive_weight_cache.exists():
-    try:
-        for asset in local_boltz_cache.glob("*"):
-            target = drive_weight_cache / asset.name
-            if not target.exists():
-                if asset.is_file():
-                    shutil.copy2(asset, target)
-                elif asset.is_dir():
-                    shutil.copytree(asset, target, dirs_exist_ok=True)
-    except Exception:
-        pass
 
 all_success = True

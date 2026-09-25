@@ -117,24 +117,9 @@ SESSION_ID = str(uuid.uuid4())
 JOB_TYPE = "Boltz Execution"
 JOB_NAME = str(job_name)
 
-# Configure Boltz weight cache on fast local NVMe SSD (never run inference over network Drive FUSE)
-local_boltz_cache = Path(os.environ.get("BOLTZ_CACHE", "/root/.boltz"))
-local_boltz_cache.mkdir(parents=True, exist_ok=True)
-os.environ["BOLTZ_CACHE"] = str(local_boltz_cache)
-
-# Mirror cached weights from Google Drive to local SSD if needed for maximum GPU speed
-drive_weight_cache = Path("/content/drive/MyDrive/boltz_cache/weights")
-if drive_weight_cache.exists():
-    for asset in drive_weight_cache.glob("*"):
-        local_target = local_boltz_cache / asset.name
-        if not local_target.exists():
-            try:
-                if asset.is_file():
-                    shutil.copy2(asset, local_target)
-                elif asset.is_dir():
-                    shutil.copytree(asset, local_target, dirs_exist_ok=True)
-            except Exception:
-                pass
+# Set Boltz cache to local NVMe SSD
+os.environ.setdefault("BOLTZ_CACHE", "/root/.boltz")
+Path(os.environ["BOLTZ_CACHE"]).mkdir(parents=True, exist_ok=True)
 
 USER_EMAIL = None
 USER_NAME = "unknown"
