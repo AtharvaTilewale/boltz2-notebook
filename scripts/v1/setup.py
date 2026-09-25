@@ -7,6 +7,7 @@ import os
 import shutil
 import datetime
 import uuid
+import re
 from zoneinfo import ZoneInfo
 from pathlib import Path
 import requests
@@ -124,6 +125,30 @@ def loader(msg, stop_event):
     sys.stdout.write("\r" + " " * (len(msg) + 15) + "\r")
     sys.stdout.flush()
 
+def run_step(cmd_list, loader_msg, done_msg, fail_msg):
+    stop_event = threading.Event()
+    t = threading.Thread(target=loader, args=(loader_msg, stop_event))
+    t.start()
+    try:
+        proc = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stop_event.set()
+        t.join()
+        if proc.returncode != 0:
+            print(fail_msg)
+            err_text = (proc.stderr or proc.stdout or "").strip()
+            if err_text:
+                err_lines = err_text.splitlines()[-10:]
+                print(f"{Color.RED}" + "\n".join(err_lines) + f"{Color.RESET}")
+            return False, err_text
+        else:
+            print(done_msg)
+            return True, proc.stdout
+    except Exception as e:
+        stop_event.set()
+        t.join()
+        print(f"{fail_msg} {e}")
+        return False, str(e)
+
 # ==== Check if Boltz2 is already installed and functional ====
 def check_boltz_ready():
     try:
@@ -169,55 +194,99 @@ if not already_installed:
         except Exception as e:
             print(f"{Color.RED}✖ Failed to remove '{repo_dir}': {e}{Color.RESET}")
 
-    steps = []
     if not os.path.isdir(repo_dir):
-        steps.append({
-            "loader": f"{Color.CYAN}Cloning Boltz (shallow)...{Color.RESET}",
-            "done":   f"[{Color.GREEN}✔{Color.RESET}] Boltz cloned successfully.",
-            "fail":   f"[{Color.RED}✖{Color.RESET}] boltz clone failed.",
-            "cmd": ["git", "clone", "--depth", "1", "https://github.com/AtharvaTilewale/boltz.git", repo_dir]
-        })
+        clone_ok, _ = run_step(
+            ["git", "clone", "--depth", "1", "https://github.com/AtharvaTilewale/boltz.git", repo_dir],
+            f"{Color.CYAN}Cloning Boltz (shallow)...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] Boltz cloned successfully.",
+            f"[{Color.RED}✖{Color.RESET}] Boltz clone failed."
+        )
+        if not clone_ok:
+            raise RuntimeError("Git clone failed.")
 
-    # Prepare package install command (prefer uv for 5x-10x speedup)
+    # Patch pyproject.toml if Python version >= 3.13 to prevent build requirement failure
+    pyproject_path = Path("/content/boltz/pyproject.toml")
+    if pyproject_path.exists():
+        try:
+            p_text = pyproject_path.read_text(encoding="utf-8")
+            if "requires-python" in p_text and sys.version_info >= (3, 13):
+                p_text = re.sub(r'requires-python\s*=\s*".*?"', 'requires-python = ">=3.10"', p_text)
+                pyproject_path.write_text(p_text, encoding="utf-8")
+        except Exception:
+            pass
+
+    # Build package list
+    numpy_pkg = "numpy" if sys.version_info >= (3, 13) else "numpy<2.0"
+    packages = ["-e", "/content/boltz[cuda]", "biopython", numpy_pkg, "matplotlib", "pyyaml", "py3Dmol"]
+
+    # Check for cached wheels on Drive
+    find_links_args = []
+    if drive_mounted and wheel_cache.exists():
+        wheel_files = list(wheel_cache.glob("*.whl"))
+        if wheel_files:
+            find_links_args = ["--find-links", str(wheel_cache)]
+            print(f"[{Color.CYAN}ℹ{Color.RESET}] Found {len(wheel_files)} cached wheel(s) on Google Drive.")
+
+    # Try uv with LOCAL cache first (never on Google Drive FUSE to prevent SQLite fcntl lock errors)
+    install_success = False
     has_uv = ensure_uv()
     if has_uv:
-        pkg_cmd = ["uv", "pip", "install", "--system", "--cache-dir", str(wheel_cache),
-                   "-e", "/content/boltz[cuda]", "biopython", "numpy<2.0", "matplotlib", "pyyaml", "py3Dmol"]
-        install_msg = f"{Color.RESET}Installing dependencies with high-speed uv engine...{Color.RESET}"
-    else:
-        pkg_cmd = [sys.executable, "-m", "pip", "install", "--cache-dir", str(wheel_cache),
-                   "-e", "/content/boltz[cuda]", "biopython", "numpy<2.0", "matplotlib", "pyyaml", "py3Dmol", "--quiet"]
-        install_msg = f"{Color.RESET}Installing dependencies with pip...{Color.RESET}"
+        local_uv_cache = Path("/content/.cache/uv")
+        local_uv_cache.mkdir(parents=True, exist_ok=True)
+        uv_cmd = ["uv", "pip", "install", "--system", "--link-mode=copy", "--cache-dir", str(local_uv_cache)]
+        if find_links_args:
+            uv_cmd.extend(find_links_args)
+        uv_cmd.extend(packages)
 
-    steps.append({
-        "loader": install_msg,
-        "done": f"[{Color.GREEN}✔{Color.RESET}] Dependencies installed successfully.",
-        "fail": f"[{Color.RED}✖{Color.RESET}] Dependency installation failed.",
-        "cmd": pkg_cmd
-    })
+        install_success, _ = run_step(
+            uv_cmd,
+            f"{Color.RESET}Installing dependencies with high-speed uv engine...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] Dependencies installed successfully (uv).",
+            f"[{Color.YELLOW}i{Color.RESET}] High-speed uv installer encountered an issue. Falling back to pip..."
+        )
 
-    steps.append({
-        "loader": f"{Color.CYAN}Validating CUDA installation...{Color.RESET}",
-        "done": f"[{Color.GREEN}✔{Color.RESET}] Validation complete.",
-        "fail": f"[{Color.RED}✖{Color.RESET}] Validation failed.",
-        "cmd": [sys.executable, "-c", "import torch; print('Torch CUDA available:', torch.cuda.is_available()); print('CUDA device count:', torch.cuda.device_count())"]
-    })
+    # Fallback to standard pip if uv was not used or had an issue
+    if not install_success:
+        pip_cmd = [sys.executable, "-m", "pip", "install", "-q", "--ignore-requires-python"]
+        if find_links_args:
+            pip_cmd.extend(find_links_args)
+        pip_cmd.extend(packages)
 
-    for step in steps:
-        stop_event = threading.Event()
-        t = threading.Thread(target=loader, args=(step["loader"], stop_event))
-        t.start()
-        try:
-            subprocess.run(step["cmd"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-            stop_event.set()
-            t.join()
-            print(step["done"])
-        except Exception as e:
-            stop_event.set()
-            t.join()
-            print(f"{step['fail']} {e}")
+        pip_ok, pip_err = run_step(
+            pip_cmd,
+            f"{Color.RESET}Installing dependencies with pip...{Color.RESET}",
+            f"[{Color.GREEN}✔{Color.RESET}] Dependencies installed successfully.",
+            f"[{Color.RED}✖{Color.RESET}] Dependency installation failed."
+        )
+        if not pip_ok:
             all_success = False
-            raise
+            raise RuntimeError(f"Pip installation failed: {pip_err}")
+
+    # If Drive is mounted, copy newly downloaded wheels from local pip cache to Drive
+    if drive_mounted and wheel_cache.exists():
+        try:
+            pip_cache_path = Path("/root/.cache/pip/wheels")
+            if pip_cache_path.exists():
+                saved_count = 0
+                for whl in pip_cache_path.rglob("*.whl"):
+                    target = wheel_cache / whl.name
+                    if not target.exists():
+                        shutil.copy2(whl, target)
+                        saved_count += 1
+                if saved_count > 0:
+                    print(f"[{Color.GREEN}✔{Color.RESET}] Saved {saved_count} wheel(s) to Google Drive cache for fast future startup.")
+        except Exception:
+            pass
+
+    # Validate installation
+    valid_ok, _ = run_step(
+        [sys.executable, "-c", "import torch; print('Torch CUDA available:', torch.cuda.is_available()); print('CUDA device count:', torch.cuda.device_count())"],
+        f"{Color.CYAN}Validating CUDA installation...{Color.RESET}",
+        f"[{Color.GREEN}✔{Color.RESET}] Validation complete.",
+        f"[{Color.RED}✖{Color.RESET}] Validation failed."
+    )
+    if not valid_ok:
+        all_success = False
 
 # ==== Move/Copy Notebook Scripts Directory ====
 os.makedirs("/content/boltz_data", exist_ok=True)
