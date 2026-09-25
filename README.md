@@ -7,7 +7,7 @@
 
 <div align="center">
 
-[![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.21850102.svg)](https://doi.org/10.5281/zenodo.21850102)
+[![bioRxiv](https://img.shields.io/badge/bioRxiv-10.64898%2F2026.09.18.752645-b31b1b)](https://doi.org/10.64898/2026.09.18.752645)
 ![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-green?logo=nvidia)
 ![Boltz2](https://img.shields.io/badge/Model-Boltz2-purple)
@@ -640,15 +640,16 @@ V2.0.0/
 If you use Boltz2-Notebook, please cite:
 
 ```bibtex
-@software{tilewale_2026_21850102,
-  title={Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model.},
-  author={Tilewale, Atharva and Patel, Dhaval},
-  month=aug,
-  year=2026,
-  publisher={Zenodo},
-  version={v2.0.0},
-  doi={10.5281/zenodo.21850102},
-  url={https://doi.org/10.5281/zenodo.21850102}
+@article{Tilewale2026.09.18.752645,
+  author = {Tilewale, Atharva and Patel, Dhaval},
+  title = {Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model.},
+  elocation-id = {2026.09.18.752645},
+  year = {2026},
+  doi = {10.64898/2026.09.18.752645},
+  publisher = {Cold Spring Harbor Laboratory},
+  URL = {https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645},
+  eprint = {https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645.full.pdf},
+  journal = {bioRxiv}
 }
 
 @article{Passaro2025,

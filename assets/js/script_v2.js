@@ -78,10 +78,10 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!formatSelect || !citationText) return;
 
   const citations = {
-    apa: 'Tilewale, A., & Patel, D. (2026). Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model. https://doi.org/10.5281/zenodo.21850102',
-    mla: 'Tilewale, Atharva, and Dhaval Patel. Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model. 2026. Zenodo, https://doi.org/10.5281/zenodo.21850102.',
-    ieee: 'A. Tilewale and D. Patel, "Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model," Zenodo, 2026. DOI: 10.5281/zenodo.21850102',
-    chicago: 'Tilewale, Atharva, and Dhaval Patel. 2026. "Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model." Zenodo. https://doi.org/10.5281/zenodo.21850102.'
+    apa: 'Tilewale, A., & Patel, D. (2026). Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model. bioRxiv. https://doi.org/10.64898/2026.09.18.752645',
+    mla: 'Tilewale, Atharva, and Dhaval Patel. "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model." bioRxiv (2026). https://doi.org/10.64898/2026.09.18.752645.',
+    ieee: 'A. Tilewale and D. Patel, "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model," bioRxiv, 2026. DOI: 10.64898/2026.09.18.752645',
+    chicago: 'Tilewale, Atharva, and Dhaval Patel. 2026. "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model." bioRxiv. https://doi.org/10.64898/2026.09.18.752645.'
   };
 
   function updateCitationDisplay() {
@@ -138,27 +138,28 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!downloadBtn || !downloadMenu || !bibBlock) return;
 
   const meta = {
-    id: 'tilewale2026boltz2',
+    id: 'Tilewale2026.09.18.752645',
     authors: [
       { given: 'Atharva', family: 'Tilewale' },
       { given: 'Dhaval', family: 'Patel' }
     ],
-    title: 'Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model',
+    title: 'Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model.',
     year: '2026',
-    doi: '10.5281/zenodo.21850102',
-    url: 'https://github.com/AtharvaTilewale/boltz2-notebook',
+    journal: 'bioRxiv',
+    doi: '10.64898/2026.09.18.752645',
+    url: 'https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645',
   };
 
   function generateBibtex() { return bibBlock.innerText.trim(); }
 
   function generateRIS() {
-    let out = 'TY  - MISC\n';
+    let out = 'TY  - JOUR\n';
     meta.authors.forEach(a => { out += `AU  - ${a.family}, ${a.given}\n`; });
     out += `TI  - ${meta.title}\n`;
+    out += `JO  - ${meta.journal}\n`;
     out += `PY  - ${meta.year}\n`;
     if (meta.doi) out += `DO  - ${meta.doi}\n`;
     if (meta.url) out += `UR  - ${meta.url}\n`;
-    if (meta.note) out += `AB  - ${meta.note}\n`;
     out += 'ER  -\n';
     return out;
   }
@@ -168,9 +169,10 @@ document.addEventListener('DOMContentLoaded', function () {
   function generateCSLJSON() {
     const item = {
       id: meta.id,
-      type: 'webpage',
+      type: 'article-journal',
       author: meta.authors.map(a => ({ given: a.given, family: a.family })),
       title: meta.title,
+      'container-title': meta.journal,
       URL: meta.url,
       DOI: meta.doi,
       issued: { 'date-parts': [[parseInt(meta.year)]] }

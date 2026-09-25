@@ -1,18 +1,18 @@
 cff-version: 1.2.0
-title: "Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model"
-message: "If you use this notebook, please cite it as below."
+title: "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model."
+message: "If you use this software or notebook, please cite our preprint as below."
 type: software
 authors:
   - family-names: Tilewale
     given-names: Atharva
   - family-names: Patel
     given-names: Dhaval
-doi: 10.5281/zenodo.21850102
+doi: 10.64898/2026.09.18.752645
 repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
-url: "https://atharvatilewale.github.io/boltz2-notebook/"
+url: "https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645"
 license: MIT
 version: "2.0.0"
-date-released: "2026-08-08"
+date-released: "2026-09-24"
 keywords: 
   - "Boltz2"
   - "Deep Learning"
@@ -20,11 +20,17 @@ keywords:
   - "Binding Affinity Analysis"
   - "Drug Discovery"
   - "Structural Bioinformatics"
-preferred-citation: |
-  @misc{tilewale2026boltz2,
-    author = {Tilewale, Atharva and Patel, Dhaval},
-    title = {Boltz2-Notebook: A streamlined Colab-based pipeline for biomolecular structure prediction and binding affinity analysis using the Boltz2 deep learning model},
-    year = {2026},
-    howpublished = {\url{https://github.com/AtharvaTilewale/boltz2-notebook}},
-    doi = {10.5281/zenodo.21850102}
-  }
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Tilewale
+      given-names: Atharva
+    - family-names: Patel
+      given-names: Dhaval
+  title: "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model."
+  journal: "bioRxiv"
+  year: 2026
+  doi: 10.64898/2026.09.18.752645
+  url: "https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645"
+  publisher:
+    name: "Cold Spring Harbor Laboratory"
