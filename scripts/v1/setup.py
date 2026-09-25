@@ -97,21 +97,44 @@ def log_event(job_type=JOB_TYPE, job_name=JOB_NAME, event="visit"):
 
 log_event(job_type="Installation", job_name="Boltz Setup", event=" ")
 
-# ==== Persistent Cache Configuration (Google Drive / Local) ====
+# ==== High-Speed Local NVMe & Persistent Drive Cache Configuration ====
 drive_mounted = os.path.exists("/content/drive/MyDrive")
+local_boltz_cache = Path(os.environ.get("BOLTZ_CACHE", "/root/.boltz"))
+local_boltz_cache.mkdir(parents=True, exist_ok=True)
+os.environ["BOLTZ_CACHE"] = str(local_boltz_cache)
+
 if USE_DRIVE_CACHE and drive_mounted:
     cache_root = Path("/content/drive/MyDrive/boltz_cache")
     wheel_cache = cache_root / "wheels"
-    weight_cache = cache_root / "weights"
+    drive_weight_cache = cache_root / "weights"
     wheel_cache.mkdir(parents=True, exist_ok=True)
-    weight_cache.mkdir(parents=True, exist_ok=True)
-    os.environ["BOLTZ_CACHE"] = str(weight_cache)
+    drive_weight_cache.mkdir(parents=True, exist_ok=True)
+
+    # Fast Startup Sync: If weights/CCD exist on Google Drive, mirror to fast local SSD
+    # Sequential copy of 2GB is ~15s, avoiding slow random reads on Drive FUSE during inference!
+    synced_assets = 0
+    for asset in drive_weight_cache.glob("*"):
+        local_target = local_boltz_cache / asset.name
+        if not local_target.exists():
+            try:
+                if asset.is_file():
+                    shutil.copy2(asset, local_target)
+                    synced_assets += 1
+                elif asset.is_dir():
+                    shutil.copytree(asset, local_target, dirs_exist_ok=True)
+                    synced_assets += 1
+            except Exception:
+                pass
+    if synced_assets > 0:
+        print(f"[{Color.GREEN}✔{Color.RESET}] Loaded {synced_assets} cached model asset(s) from Google Drive to fast local SSD.")
     print(f"[{Color.GREEN}✔{Color.RESET}] Persistent Google Drive cache active: {cache_root}")
-    print(f"[{Color.CYAN}ℹ{Color.RESET}] Model weights will persist at: {weight_cache}")
+    print(f"[{Color.CYAN}ℹ{Color.RESET}] High-speed local NVMe cache ready: {local_boltz_cache}")
 else:
     cache_root = Path("/content/.cache/boltz_cache")
     wheel_cache = cache_root / "wheels"
+    drive_weight_cache = None
     wheel_cache.mkdir(parents=True, exist_ok=True)
+    print(f"[{Color.CYAN}ℹ{Color.RESET}] High-speed local NVMe cache ready: {local_boltz_cache}")
 
 # ==== Fast Loader ====
 def loader(msg, stop_event):
@@ -178,8 +201,6 @@ def ensure_uv():
 
 # ==== Main Installation Logic ====
 already_installed = False
-all_success = True
-
 if not FORCE_REINSTALL:
     if check_boltz_ready():
         already_installed = True
@@ -306,5 +327,18 @@ if os.path.exists(notebook_script):
     if os.path.exists(destination_notebook_script):
         shutil.rmtree(destination_notebook_script)
     shutil.copytree(notebook_script, destination_notebook_script)
+
+# Mirror any local model weights to Google Drive cache for persistent storage
+if drive_mounted and 'drive_weight_cache' in locals() and drive_weight_cache and drive_weight_cache.exists():
+    try:
+        for asset in local_boltz_cache.glob("*"):
+            target = drive_weight_cache / asset.name
+            if not target.exists():
+                if asset.is_file():
+                    shutil.copy2(asset, target)
+                elif asset.is_dir():
+                    shutil.copytree(asset, target, dirs_exist_ok=True)
+    except Exception:
+        pass
 
 all_success = True
