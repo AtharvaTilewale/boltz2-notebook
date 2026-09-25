@@ -15,13 +15,6 @@ import uuid
 from zoneinfo import ZoneInfo
 import getpass
 import requests
-import base64
-
-# Suppress google_auth_httplib2 timeout warning
-import logging
-import warnings
-logging.getLogger('google_auth_httplib2').setLevel(logging.ERROR)
-warnings.filterwarnings('ignore', module='google_auth_httplib2')
 
 # Google auth imports
 from google.colab import auth
@@ -67,19 +60,12 @@ def clean_ansi_codes(text):
 
 # --- Visualization Function (Modified) ---
 
-def create_visualizations(job_name, model_id=0, b_min=50, b_max=90, pdb_file=None):
+def create_visualizations(job_name, model_id=0, b_min=50, b_max=90):
     """
     Generates only the 3D viewer HTML and returns the PDB data.
     """
-    if not pdb_file or not os.path.exists(pdb_file):
-        candidates = glob.glob(f"/content/boltz_data/{job_name}/**/*_model_{model_id}.pdb", recursive=True)
-        if not candidates:
-            candidates = glob.glob(f"/content/boltz_data/{job_name}/**/*.pdb", recursive=True)
-        if candidates:
-            pdb_file = candidates[0]
-        else:
-            base_path = f"/content/boltz_data/{job_name}/boltz_results_{job_name}/predictions/{job_name}"
-            pdb_file = f"{base_path}/{job_name}_model_{model_id}.pdb"
+    base_path = f"/content/boltz_data/{job_name}/boltz_results_{job_name}/predictions/{job_name}"
+    pdb_file   = f"{base_path}/{job_name}_model_{model_id}.pdb"
 
     # --- Load PDB Data ---
     with open(pdb_file, "r") as f:
@@ -116,39 +102,17 @@ max_msa_seqs = params.get("max_msa_seqs", 254)
 msa_pairing_strategy = params.get("msa_pairing_strategy", "unpaired_paired")
 
 # ==== CONFIG ====
-_LOG_KEY = b"b0ltz2_t3l3m3try_k3y"
-_LOG_DATA = b"CkQYBAkIcFtAD0EEQwBcHjAEVBUHHg8bFx0yFVAeXB4cB104FA1KGgBIPBsVAg0xUBh2GR5CFyENLVRUDUdfKxNzKhFKI1AqAA1fISwiaUEyQz8yLmgIOQYubDQePTgAEARqKFtSCkMrAmxbVhRWDg=="
-LOG_URL = bytes([b ^ _LOG_KEY[i % len(_LOG_KEY)] for i, b in enumerate(base64.b64decode(_LOG_DATA))]).decode("utf-8")
+LOG_URL = "https://script.google.com/macros/s/AKfycbxPoo0REctEt-6eXRFg-ow3_iAueyOcG3y-XsIZ8PsSFTZWM5B_Y-IJyOoYQ9bf7Q03/exec"
 NOTEBOOK_NAME = "Boltz2 v1.1"
 SESSION_ID = str(uuid.uuid4())
 JOB_TYPE = "Boltz Execution"
 JOB_NAME = str(job_name)
 
-# Set Boltz cache to local NVMe SSD
-os.environ.setdefault("BOLTZ_CACHE", "/root/.boltz")
-Path(os.environ["BOLTZ_CACHE"]).mkdir(parents=True, exist_ok=True)
-
-USER_EMAIL = None
-USER_NAME = "unknown"
-try:
-    import httplib2
-    import google.auth
-    from google_auth_httplib2 import AuthorizedHttp
-
-    creds, _ = google.auth.default()
-    http_client = AuthorizedHttp(creds, http=httplib2.Http(timeout=30))
-    service = build('oauth2', 'v2', http=http_client, cache_discovery=False)
-    user_info = service.userinfo().get().execute()
-    USER_EMAIL = user_info.get('email', None)
-    USER_NAME = user_info.get('name', "unknown")
-except Exception:
-    try:
-        service = build('oauth2', 'v2', cache_discovery=False)
-        user_info = service.userinfo().get().execute()
-        USER_EMAIL = user_info.get('email', None)
-        USER_NAME = user_info.get('name', "unknown")
-    except Exception:
-        pass
+auth.authenticate_user()
+service = build('oauth2', 'v2')
+user_info = service.userinfo().get().execute()
+USER_EMAIL = user_info.get('email', None)
+USER_NAME = user_info.get('name', "unknown")  # <-- use Google account name
 
 # ==== Logging function ====
 def log_event(job_type=JOB_TYPE, job_name=JOB_NAME, event="visit"):
@@ -178,11 +142,8 @@ if os.path.exists(output_path):
 source_file = '/content/boltz_data/params.yaml'
 param_file = f'/content/boltz_data/{job_name}.yaml'
 if os.path.exists(source_file):
-    with open(source_file, "r", encoding="utf-8") as f:
-        text = f.read()
-    text = re.sub(r'sequence:\s*\|-\s*\n\s*', 'sequence: ', text)
-    with open(param_file, "w", encoding="utf-8") as f:
-        f.write(text)
+    sed_command = f"sed '/sequence: |-/ {{ N; s/|-\\n\\s*/ / }}' {source_file} > {param_file}"
+    subprocess.run(sed_command, shell=True, check=True)
 else:
     if not os.path.exists(param_file):
         raise FileNotFoundError(f"Cannot proceed: The parameter file '{param_file}' does not exist.")
@@ -226,7 +187,7 @@ try:
     candidates = glob.glob(f"/content/boltz_data/{job_name}/**/*_model_0.pdb", recursive=True)
     if candidates:
         pdb_to_check = candidates[0]
-        visual_data = create_visualizations(job_name=job_name, model_id=0, pdb_file=candidates[0])
+        visual_data = create_visualizations(job_name=job_name, model_id=0)
     else:
         job_output_html += '<pre class="output-box error">Error: No model PDB file found.</pre>'
 

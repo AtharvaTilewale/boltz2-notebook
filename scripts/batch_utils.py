@@ -594,16 +594,14 @@ def capture_run_context(run_params: Dict[str, Any]) -> Path:
         "captured_at": now_iso(),
         "notebook_version": NOTEBOOK_VERSION,
         "run_params": run_params,
-        "python_version": _safe_run_capture([sys.executable, "--version"]),
-        "pip_freeze_head": _safe_run_capture([sys.executable, "-m", "pip", "freeze"]).splitlines()[:40],
+        "python_version": _safe_run_capture(["python", "--version"]),
+        "pip_freeze_head": _safe_run_capture(["python", "-m", "pip", "freeze"]).splitlines()[:40],
         "boltz_help": _safe_run_capture(["boltz", "--help"]).splitlines()[:10],
-        "boltz_version": _safe_run_capture([sys.executable, "-c", "import boltz; print(getattr(boltz, '__version__', 'ready'))"]),
         "boltz_git_commit": None,
     }
-    for cand in [Path("/content/boltz2-notebook/.git"), Path("/content/boltz/.git")]:
-        if cand.exists():
-            context["boltz_git_commit"] = _safe_run_capture(["git", "-C", str(cand.parent), "rev-parse", "HEAD"])
-            break
+    git_dir = Path("/content/boltz/.git")
+    if git_dir.exists():
+        context["boltz_git_commit"] = _safe_run_capture(["git", "-C", "/content/boltz", "rev-parse", "HEAD"])
     out = WORK_ROOT / "run_context.json"
     write_json(out, context)
     return out
