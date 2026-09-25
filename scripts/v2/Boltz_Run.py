@@ -67,12 +67,19 @@ def clean_ansi_codes(text):
 
 # --- Visualization Function (Modified) ---
 
-def create_visualizations(job_name, model_id=0, b_min=50, b_max=90):
+def create_visualizations(job_name, model_id=0, b_min=50, b_max=90, pdb_file=None):
     """
     Generates only the 3D viewer HTML and returns the PDB data.
     """
-    base_path = f"/content/boltz_data/{job_name}/boltz_results_{job_name}/predictions/{job_name}"
-    pdb_file   = f"{base_path}/{job_name}_model_{model_id}.pdb"
+    if not pdb_file or not os.path.exists(pdb_file):
+        candidates = glob.glob(f"/content/boltz_data/{job_name}/**/*_model_{model_id}.pdb", recursive=True)
+        if not candidates:
+            candidates = glob.glob(f"/content/boltz_data/{job_name}/**/*.pdb", recursive=True)
+        if candidates:
+            pdb_file = candidates[0]
+        else:
+            base_path = f"/content/boltz_data/{job_name}/boltz_results_{job_name}/predictions/{job_name}"
+            pdb_file = f"{base_path}/{job_name}_model_{model_id}.pdb"
 
     # --- Load PDB Data ---
     with open(pdb_file, "r") as f:
@@ -171,8 +178,11 @@ if os.path.exists(output_path):
 source_file = '/content/boltz_data/params.yaml'
 param_file = f'/content/boltz_data/{job_name}.yaml'
 if os.path.exists(source_file):
-    sed_command = f"sed '/sequence: |-/ {{ N; s/|-\\n\\s*/ / }}' {source_file} > {param_file}"
-    subprocess.run(sed_command, shell=True, check=True)
+    with open(source_file, "r", encoding="utf-8") as f:
+        text = f.read()
+    text = re.sub(r'sequence:\s*\|-\s*\n\s*', 'sequence: ', text)
+    with open(param_file, "w", encoding="utf-8") as f:
+        f.write(text)
 else:
     if not os.path.exists(param_file):
         raise FileNotFoundError(f"Cannot proceed: The parameter file '{param_file}' does not exist.")
@@ -216,7 +226,7 @@ try:
     candidates = glob.glob(f"/content/boltz_data/{job_name}/**/*_model_0.pdb", recursive=True)
     if candidates:
         pdb_to_check = candidates[0]
-        visual_data = create_visualizations(job_name=job_name, model_id=0)
+        visual_data = create_visualizations(job_name=job_name, model_id=0, pdb_file=candidates[0])
     else:
         job_output_html += '<pre class="output-box error">Error: No model PDB file found.</pre>'
 

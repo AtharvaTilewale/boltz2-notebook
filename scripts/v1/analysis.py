@@ -9,6 +9,7 @@ import io
 import base64
 from IPython.display import display, HTML
 import os
+import glob
 import json
 from Bio.PDB import PDBParser
 
@@ -159,7 +160,11 @@ def generate_affinity_plot_html(job_name: str, plots_dir: str) -> str:
     base_path = f"/content/boltz_data/{job_name}/boltz_results_{job_name}/predictions/{job_name}"
     affinity_json_path = f"{base_path}/affinity_{job_name}.json"
     if not os.path.exists(affinity_json_path):
-        return ""
+        aff_candidates = glob.glob(f"/content/boltz_data/{job_name}/**/affinity_*.json", recursive=True)
+        if aff_candidates:
+            affinity_json_path = aff_candidates[0]
+        else:
+            return ""
 
     try:
         with open(affinity_json_path, 'r') as f:
@@ -213,6 +218,16 @@ def create_dashboard_data(job_name, model_id=0, plots_dir=''):
     plddt_file = f"{base_path}/plddt_{job_name}_model_{model_id}.npz"
     pae_file = f"{base_path}/pae_{job_name}_model_{model_id}.npz"
     pdb_file = f"{base_path}/{job_name}_model_{model_id}.pdb"
+
+    if not os.path.exists(plddt_file):
+        c = glob.glob(f"/content/boltz_data/{job_name}/**/plddt_*model_{model_id}.npz", recursive=True)
+        if c: plddt_file = c[0]
+    if not os.path.exists(pae_file):
+        c = glob.glob(f"/content/boltz_data/{job_name}/**/pae_*model_{model_id}.npz", recursive=True)
+        if c: pae_file = c[0]
+    if not os.path.exists(pdb_file):
+        c = glob.glob(f"/content/boltz_data/{job_name}/**/*_model_{model_id}.pdb", recursive=True)
+        if c: pdb_file = c[0]
 
     for f in [plddt_file, pae_file, pdb_file]:
         if not os.path.exists(f):
