@@ -32,13 +32,14 @@ Dynamic: license-file
 
 ![Boltz2 Notebook Banner](https://raw.githubusercontent.com/AtharvaTilewale/boltz2-notebook/main/assets/boltz2_notebook_banner.jpeg)
 
-**AI-powered biomolecular structure prediction and binding affinity analysis** — Interactive Jupyter notebooks for protein structure prediction, protein-ligand binding, and multi-entity complex modeling using the Boltz2 diffusion model. No local GPU installation required.
+**Interactive Google Colab front-ends for [Boltz-2](https://github.com/jwohlwend/boltz)** — protein, nucleic-acid and protein-ligand structure prediction with binding-affinity estimation, confidence analysis and reports. No local GPU installation required; the same code also runs on a workstation.
 
 
 <div align="center">
 
 [![bioRxiv](https://img.shields.io/badge/bioRxiv-10.64898%2F2026.09.18.752645-b31b1b)](https://doi.org/10.64898/2026.09.18.752645)
 ![Python](https://img.shields.io/badge/Python-3.10%20--%203.13-blue?logo=python)
+[![CI](https://github.com/AtharvaTilewale/boltz2-notebook/actions/workflows/ci.yml/badge.svg)](https://github.com/AtharvaTilewale/boltz2-notebook/actions/workflows/ci.yml)
 ![CUDA](https://img.shields.io/badge/CUDA-Enabled-green?logo=nvidia)
 ![Boltz2](https://img.shields.io/badge/Model-Boltz2-purple)
 ![Platform](https://img.shields.io/badge/Platform-Colab%20|%20Linux-lightgrey?logo=googlecolab)
@@ -67,14 +68,17 @@ Dynamic: license-file
 
 ## Key Features
 
-- **Protein Structure Prediction** — Diffusion-based AI modeling for single proteins and multi-chain complexes
-- **Protein-Ligand Binding** — Predict and score molecular interactions with affinity estimation
-- **Multi-Entity Support** — Handle proteins, DNA/RNA, ligands, and custom modifications simultaneously
-- **Advanced Constraints** — Covalent bonds, binding pocket conditioning, contact constraints, template guidance
-- **Confidence Metrics** — Per-residue confidence (pLDDT), Predicted Aligned Error (PAE), affinity predictions
-- **Interactive Visualization** — 3D structure viewer with confidence overlays and binding analysis dashboard
-- **GPU Acceleration** — CUDA-enabled with free T4 GPU access in Google Colab
-- **Zero Installation** — Runs entirely in Google Colab (no local GPU setup required)
+- **Structure prediction** for single proteins, multi-chain complexes, DNA/RNA and small-molecule ligands (SMILES or CCD code)
+- **Binding affinity** (Boltz-2 affinity module): binding probability plus predicted IC50 with correct units (log10 µM → nM/µM, pIC50)
+- **Advanced inputs** — covalent bonds, pocket and contact conditioning, template guidance, PTMs, cyclic peptides, custom MSAs
+- **Confidence analysis done right** — per-token pLDDT, the *asymmetric* PAE matrix on a fixed 0–32 Å scale with inter-chain blocks, per-chain and interface summaries
+- **Ensemble statistics** across diffusion samples (mean ± SD of confidence, ipTM, pLDDT, affinity spread)
+- **Standalone HTML report** per job with embedded figures, 3-D viewer, metrics tables and full provenance (`run_context.json`)
+- **Live logs and diagnostics** — Boltz output streams into the cell; failures come with a likely cause and a fix
+- **Batch mode** — CSV/FASTA/YAML manifests, resume, ranking, export
+- **Reproducible** — pinned engine version, pinned notebook version (git tag), no silent overwrites
+- **Private** — no account lookups, no hidden logging; usage statistics are opt-in and anonymous ([details](docs/PRIVACY.md))
+- **Tested** — the logic lives in the `boltz2nb` package with a pytest suite and CI; generated inputs are validated with Boltz's own parser
 
 ---
 <!-- ## Available Notebooks
@@ -92,8 +96,8 @@ Dynamic: license-file
 |---------|:------:|:------:|:-----:|
 | Single protein prediction | ✅ | ✅ | ✅ |
 | Protein-ligand binding | ✅ | ✅ | ✅ |
-| Multi-chain complexes | ✅ | ✅ | ❌ |
-| DNA/RNA support | ❌ | ✅ | ❌ |
+| Multi-chain complexes | ✅ | ✅ | ✅ |
+| DNA/RNA support | ❌ | ✅ | ✅ (CSV columns) |
 | Template guidance | ✅ | ✅ | ✅ |
 | Custom MSA upload | ❌ | ✅ | ❌ |
 | Post-translational modifications | ❌ | ✅ | ❌ |
@@ -104,11 +108,12 @@ Dynamic: license-file
 | Batch processing | ❌ | ❌ | ✅ |
 | CSV/FASTA input | ❌ | ❌ | ✅ |
 | 3D visualization | ✅ | ✅ | ✅ |
+| Ensemble statistics / HTML report | ✅ | ✅ | ✅ (summary CSV) |
 
 
 ### Notebook Selection Guide
 
-- **New users or standard predictions?** → Use **V1.0.0** (stable, battle-tested)
+- **New users or standard predictions?** → Use **V1.0.0** (simplest form)
 - **Advanced modeling needs?** → Use **V2.0.0** (latest features, DNA/RNA, constraints)
 - **Large-scale screening?** → Use **Batch v1.0** (automated high-throughput)
 
@@ -176,42 +181,32 @@ Dynamic: license-file
 
 ## Architecture & Workflow
 
+The notebooks are thin shells. Cell 1 clones a **pinned tag** of this repository and installs the `boltz2nb`
+package plus the Boltz engine (`boltz[cuda]==2.2.1` on Python ≤ 3.12, `boltz-community[cuda]==2.10.12` on 3.13);
+the remaining cells `%run` three scripts that call into the package.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 1: Setup Environment & Dependencies                    │
-│ - Install Boltz2, PyTorch, CUDA support                     │
-│ - Initialize workspace directories                          │
-│ - Google Drive integration (optional)                       │
-└────────────────┬────────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 2: Input Builder (param_gen.py)                        │
-│ - Define protein/DNA/RNA sequences                          │
-│ - Add ligands (SMILES or CCD code)                          │
-│ - Upload templates & custom MSA files                       │
-│ - Define constraints (bonds, pockets, contacts)             │
-│ - Generate params.yaml & run_params.txt                     │
-└────────────────┬────────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 3: Boltz2 Execution (Boltz_Run.py)                     │
-│ - MSA generation (online or pre-computed)                   │
-│ - Diffusion-based structure prediction                      │
-│ - Recycling steps for refinement                            │
-│ - Generate PDB/CIF models                                   │
-│ - Compute confidence scores                                 │
-└────────────────┬────────────────────────────────────────────┘
-                 ↓
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 4: Analysis & Visualization (analysis.py)              │
-│ - Extract pLDDT (per-residue confidence)                    │
-│ - Extract PAE (predicted aligned error)                     │
-│ - Compute affinity predictions                              │
-│ - Generate confidence plots                                 │
-│ - Create interactive 3D viewer                              │
-│ - Display hit discovery dashboard                           │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│ Cell 1  setup.py          pinned engine + boltz2nb, GPU check         │
+│ Cell 2  warm-up           weights/CCD download (~6 GB once per runtime)│
+├──────────────────────────────────────────────────────────────────────┤
+│ Cell 3  param_gen.py      HTML form → boltz2nb.yaml_builder            │
+│                           validates alphabets, chain IDs, constraints, │
+│                           SMILES (RDKit) → params.yaml + run_params.txt│
+├──────────────────────────────────────────────────────────────────────┤
+│ Cell 4  Boltz_Run.py      boltz2nb.runner: builds `boltz predict …`,   │
+│                           streams the log, writes run_context.json,    │
+│                           never overwrites an existing job folder      │
+├──────────────────────────────────────────────────────────────────────┤
+│ Cell 5  analysis.py       boltz2nb.analysis/report: token mapping,     │
+│                           pLDDT, PAE, interface PAE, affinity, ensemble│
+│                           → analysis/<job>_report.html + summary.json  │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+Package layout: `boltz2nb/` (`yaml_builder`, `run_params`, `runner`, `tokens`, `analysis`, `report`, `batch`,
+`diagnostics`, `msa_cache`, `ligand`, `telemetry`, `install`), `scripts/common/` (cell implementations),
+`scripts/v1|v2/` (parameter GUIs + shims), `tests/`.
 
 **Typical Time:** 2-10 minutes on T4 GPU (depending on complexity)
 
@@ -323,310 +318,71 @@ Dynamic: license-file
 
 ### Execution Pipeline
 
-1. **Parameter Loading** - Reads `run_params.txt` with job settings
-2. **Directory Setup** - Creates output folder structure
-3. **MSA Generation** - Fetches homologous sequences (unless pre-provided)
-4. **Boltz2 Command** - Constructs and runs prediction:
+1. `run_params.txt` is parsed and validated (ranges, names, pairing strategy).
+2. `params.yaml` is re-serialised through the builder (no shell/`sed` step) to `<job>.yaml`.
+3. Output goes to `/content/boltz_data/<job>/`; an existing folder is kept and a timestamped sibling is used unless *override* is ticked.
+4. The command is built once, in `boltz2nb.runner.build_boltz_cmd` (shared with batch mode):
    ```bash
-   boltz predict params.yaml \
-     --out_dir job_name \
-     --recycling_steps 3 \
-     --sampling_steps 200 \
-     --diffusion_samples 1 \
-     --step_scale 1.638 \
-     --max_msa_seqs 8192 \
-     --msa_pairing_strategy unpaired_paired \
-     --use_msa_server
+   boltz predict <job>.yaml --out_dir <job> --recycling_steps 3 --sampling_steps 200 \
+     --diffusion_samples 1 --step_scale 1.638 --max_msa_seqs 8192 --output_format pdb \
+     --use_msa_server --msa_pairing_strategy greedy --subsample_msa --num_subsampled_msa 1024 \
+     --max_parallel_samples 5 --write_full_pae [--use_potentials] [--override] [--seed N]
    ```
-5. **Output Generation** - Creates PDB/CIF files with predictions
-6. **Visualization** - Extracts data for 3D rendering
+   `--use_msa_server` is omitted when every protein chain carries an `msa:` entry (uploaded MSA, cache hit, or `empty`).
+5. `boltz.log`, `run_context.json` (engine/torch/CUDA versions, GPU, command, input YAML + SHA-1) and `status.json` are written next to the predictions.
 
-### Configuration Parameters:
+### Configuration Parameters
 
 | Parameter | Default | Range | Meaning |
 |-----------|---------|-------|---------|
-| `recycling_steps` | 3 | 1-10 | Model refinement iterations |
-| `sampling_steps` | 200 | 50-500 | Diffusion sampling iterations |
-| `diffusion_samples` | 1 | 1-10 | Number of structure samples per job |
-| `step_scale` | 1.638 | 0.5-2.0 | Scaling for diffusion steps |
-| `max_msa_seqs` | 8192 | 256-8192 | Max homolog sequences |
-| `msa_pairing_strategy` | unpaired_paired | paired / unpaired / greedy | MSA alignment strategy |
-| `use_potentials` | False | True/False | Physics-based refinement |
-| `override` | False | True/False | Re-run even if output exists |
+| `recycling_steps` | 3 | 1–20 | Trunk recycling iterations |
+| `sampling_steps` | 200 | 10–1000 | Diffusion denoising steps |
+| `diffusion_samples` | 1 | 1–25 | Structures per job (≥3 recommended to get a spread estimate) |
+| `step_scale` | 1.638 | 0.5–5 | Diffusion temperature-like scale |
+| `max_msa_seqs` | 8192 | 1–16384 | MSA depth cap |
+| `subsample_msa` / `num_subsampled_msa` | on / 1024 | — | MSA subsampling |
+| `msa_pairing_strategy` | greedy | greedy / complete | Pairing for multi-chain server MSAs |
+| `use_potentials` | off | — | Physics-based steering potentials |
+| `override` | off | — | Reuse/overwrite the job folder |
 
-<!-- **Success Indicators:**
-- ✅ Model files generated: `{job_name}_model_0.pdb`
-- ✅ Confidence scores computed
-- ✅ 3D coordinates written to output
+### Reading the results
 
-**Failure Handling:**
-- Detailed error logging in HTML output
-- Failed job marked as non-recoverable
-- Suggestions for resolution provided -->
-
----
-
-<!-- ### 3. `analysis.py` - Results Analysis & Visualization
-
-**Purpose:** Analyzes prediction results, extracts metrics, and generates confidence dashboards.
-
-**Key Functions:**
-
-| Function | Purpose |
-|----------|---------|
-| `parse_value()` | Converts string parameters to types |
-| `get_color_shade()` | Interpolates colors based on confidence values |
-| `get_prob_assessment()` | Qualitative binding probability ranking |
-| `get_affinity_assessment()` | Binding strength classification |
-| `create_analysis_card()` | Generates hit discovery visual card |
-
-**Analysis Metrics Extracted:**
-
-1. **pLDDT (Per-Residue Confidence)**
-   - Range: 0-100 (higher = more confident)
-   - Interpretation:
-     - **90-100**: Very high confidence (reliable structure)
-     - **70-90**: High confidence (reliable core)
-     - **50-70**: Medium confidence (may have errors)
-     - **<50**: Low confidence (unreliable)
-
-2. **PAE (Predicted Aligned Error)**
-   - Range: 0-32 Å (lower = better)
-   - Measures interface prediction quality
-   - Used for multi-chain complex validation
-
-3. **Affinity Predictions**
-   - **Binding Probability**: 0-1 scale (0=no binding, 1=strong binding)
-   - **Affinity Value**: Energy-based prediction (negative = favorable)
-   - Classification:
-     - **prob > 0.75**: High confidence binder
-     - **prob 0.4-0.75**: Moderate confidence binder
-     - **prob < 0.4**: Low confidence / likely decoy
-
-4. **Confidence Visualizations**
-   - Donut chart: Binding probability
-   - Color gradient: Per-residue pLDDT
-   - Heatmap: PAE matrix
-   - 3D coloring: Structure colored by pLDDT -->
-
-<!-- **Output Visualizations:**
-
-```
-┌─────────────────────────────────────┐
-│  Hit Discovery Card                 │
-├─────────────────────────────────────┤
-│  Binding Probability: 85%           │ ← Donut chart
-│  → High Confidence Binder           │
-│                                     │
-│  Affinity Assessment                │
-│  Pred. Value: -1.8 kcal/mol         │
-│  → Good Binder                      │
-│                                     │
-│  Structure Quality                  │
-│  Avg pLDDT: 87.5                    │
-│  Max PAE: 2.3 Å                     │
-└─────────────────────────────────────┘
-``` -->
-
-<!-- ---
-
-## Input Guide - Advanced Features
-
-### Entity Types
-
-#### **Protein Sequences**
-```yaml
-protein:
-  id: ["A"]
-  sequence: MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQ
-  msa: /path/to/alignment.a3m        # optional pre-computed MSA
-  modifications:                       # optional PTMs
-    - position: 5
-      ccd: "PTR"                      # phosphotyrosine
-    - position: 10
-      ccd: "HYP"                      # hydroxyproline
-  cyclic: true                        # optional circular chain
-```
-
-#### **DNA/RNA Sequences**
-```yaml
-dna:
-  id: ["D"]
-  sequence: ATGATGATGATG               # DNA sequence
-
-rna:
-  id: ["R"]
-  sequence: AUGAUGAUGAUG               # RNA sequence
-```
-
-#### **Ligands (Small Molecules)**
-```yaml
-# Option 1: SMILES notation
-ligand:
-  id: ["B"]
-  smiles: "CC(=O)Oc1ccccc1C(=O)O"     # Aspirin
-
-# Option 2: PDB CCD code
-ligand:
-  id: ["B"]
-  ccd: "HEM"                          # Heme
-```
-
-### Constraint Types
-
-#### **Covalent Bonds**
-Specify disulfide bonds, custom linkers, or covalent modifications:
-```yaml
-constraints:
-  - bond:
-      atom1: ["A", 50, "SG"]          # chain A, residue 50, atom SG
-      atom2: ["B", 10, "S"]           # chain B, residue 10, atom S
-```
-
-#### **Binding Pockets**
-Define active site or binding pocket regions:
-```yaml
-constraints:
-  - pocket:
-      binder: "B"                     # ligand chain
-      contacts:                       # contact residues in protein
-        - ["A", 50]                   # chain A, residue 50
-        - ["A", 75]
-      max_distance: 8.0               # Å constraint
-      force: false                    # soft vs hard constraint
-```
-
-#### **Contact Constraints**
-Force proximity between specific residues:
-```yaml
-constraints:
-  - contact:
-      token1: ["A", 50]               # protein residue
-      token2: ["B", 20]               # ligand residue
-      max_distance: 5.0               # Å
-      force: true
-```
-
-### Template-Guided Modeling
-
-Provide a reference structure to guide prediction:
-```yaml
-templates:
-  - pdb: /path/to/reference.pdb       # reference structure
-    chain_id: ["A"]                   # which chains to use
-    template_id: ["ref1"]             # identifier
-    force: false                      # hard vs soft constraint
-    threshold: 0.5                    # confidence cutoff
-```
-
-### Affinity Targeting
-
-Mark which chain's affinity to compute:
-```yaml
-properties:
-  - affinity:
-      binder: "B"                     # compute affinity for chain B
-``` -->
-
----
-
-## Usage Examples
-
-### Basic Protein Structure
-```
-Input: Single protein sequence
-Output: PDB file + confidence metrics
-Time: ~2-5 min
-```
-
-### Protein-Ligand Complex with Affinity
-```
-Input: Protein sequence + ligand SMILES
-Output: Complex structure + binding affinity + hit discovery dashboard
-Time: ~3-7 min
-```
-
-### Multi-Chain Complex (e.g., Antibody-Antigen)
-```
-Input: 2-3 protein sequences
-Output: Full complex structure + interface metrics (PAE, pLDDT)
-Time: ~5-10 min
-```
-
-### Template-Guided Modeling
-```
-Input: Protein variant + reference PDB template
-Output: Faster convergence + higher confidence in conserved regions
-Time: ~2-5 min
-```
-
-<!-- ---
-
-## Parameter Tuning Guide
-
-### For Speed (Quick Testing)
-```
-recycling_steps: 1
-sampling_steps: 50
-diffusion_samples: 1
-max_msa_seqs: 256
-use_potentials: False
-```
-⏱️ **Time:** Fast | Quality: ⭐
-
-### For Balance (Default Production)
-```
-recycling_steps: 3
-sampling_steps: 200
-diffusion_samples: 1
-max_msa_seqs: 8192
-use_potentials: False
-```
-⏱️ **Time:** Medium | Quality: ⭐⭐⭐
-
-### For Quality (High Accuracy)
-```
-recycling_steps: 5
-sampling_steps: 200
-diffusion_samples: 5
-max_msa_seqs: 8192
-use_potentials: True
-```
-⏱️ **Time:** Slow | Quality: ⭐⭐⭐⭐⭐
-
----
-
-## Interpretation Guide
-
-### pLDDT Color Scale
-- 🔵 **90-100** (Dark Blue): Very High Confidence
-- 🟦 **70-90** (Light Blue): High Confidence
-- 🟨 **50-70** (Yellow): Medium Confidence
-- 🟥 **<50** (Red): Low Confidence
-
-### Binding Probability (0-1 Scale)
-- **≥0.75** → ✅ High confidence binder
-- **0.4-0.75** → ⚠️ Moderate confidence
-- **<0.4** → ❌ Likely non-binder
-
-### Affinity Value (kcal/mol)
-- **< -2.0** → Strong binder (affinity)
-- **-2.0 to -1.5** → Good binder
-- **-1.5 to -1.0** → Moderate binder
-- **> -1.0** → Weak binder or decoy
-
---- -->
+| Quantity | File | Meaning |
+|---|---|---|
+| pLDDT | `plddt_<job>_model_k.npz` | Per-token confidence, 0–100 (≥90 very high, 70–90 high, 50–70 low, <50 very low). One token per residue; one per heavy atom for ligands and modified residues. |
+| PAE | `pae_<job>_model_k.npz` | Token × token expected position error in Å. **Asymmetric**: row = aligned token, column = scored token. Off-diagonal chain blocks measure interface confidence. |
+| `confidence_score`, `ptm`, `iptm`, `ligand_iptm`, `complex_plddt`, `complex_pde` | `confidence_<job>_model_k.json` | Boltz ranking metrics (model 0 is the top-ranked sample). |
+| `affinity_probability_binary` | `affinity_<job>.json` | Probability that the ligand is a binder (hit discovery). |
+| `affinity_pred_value` | `affinity_<job>.json` | **log10(IC50) in µM** — not kcal/mol. `-2` ≈ 10 nM, `0` = 1 µM, `1` = 10 µM. The report also gives pIC50 (= 6 − value) and an approximate ΔG. Only meaningful for small-molecule ligands. |
 
 ## Troubleshooting
 
+Every failed run prints a *likely cause* and a *suggested fix* derived from the log (`boltz2nb/diagnostics.py`). Common cases:
+
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| **"CUDA out of memory"** | Sequence too long | Reduce max_msa_seqs to 256, use fast profile |
-| **"MSA generation failed"** | Server/connectivity issue | Use custom MSA file instead of server |
-| **"Invalid SMILES"** | Malformed ligand notation | Validate SMILES at chemspider.com |
-| **"No model file found"** | Boltz2 crashed | Check output logs, verify params.yaml |
-| **"pLDDT all low (<50)"** | Novel/ambiguous fold | Try template guidance if available |
-| **Low affinity confidence** | Complex interface | Increase sampling_steps to 500 |
+| **CUDA out of memory** | Complex too large for the GPU | `max_msa_seqs 256`, `diffusion_samples 1`, `max_parallel_samples 1`; use an L4/A100 runtime |
+| **MSA generation failed / timed out** | ColabFold server unavailable | Retry later, upload an `.a3m`, or tick single-sequence mode |
+| **Invalid SMILES** | Malformed ligand string | The parameter step validates SMILES with RDKit and shows formula/MW |
+| **Affinity requested for a protein chain** | Boltz-2 affinity only supports small molecules | Untick affinity for protein–protein jobs |
+| **Python 3.13 runtime** | Official `boltz` wheels need < 3.13 | Handled automatically (community fork); or choose runtime version 2026.7 |
+| **Low pLDDT everywhere** | Novel/disordered region or single-sequence mode | Provide an MSA; try template guidance |
+
+## Running outside Colab
+
+```bash
+git clone https://github.com/AtharvaTilewale/boltz2-notebook && cd boltz2-notebook
+pip install -e ".[ligand,viewer]" "boltz[cuda]==2.2.1"
+export BOLTZ2NB_BASE_DIR=$PWD/boltz_data      # where params.yaml / run_params.txt / results live
+python - <<'PY'
+from boltz2nb.yaml_builder import build_yaml, write_yaml, simple_spec
+from boltz2nb.run_params import serialize_run_params, DEFAULTS
+write_yaml(build_yaml(simple_spec("MKTAYIAKQRQISFVKSHFSRQLEERLGL", ligand_smiles="CC(=O)Oc1ccccc1C(=O)O", affinity=True)), "boltz_data/params.yaml")
+open("boltz_data/run_params.txt", "w").write(serialize_run_params(dict(DEFAULTS, job_name="demo")))
+PY
+python scripts/common/Boltz_Run.py && python scripts/common/analysis.py   # report in boltz_data/demo/analysis/
+pytest                                                                   # unit tests, no GPU required
+```
 
 ---
 
@@ -662,6 +418,8 @@ V2.0.0/
 - **[Version Table](releases/version_table.md)** — Feature comparison across releases
 - **[Changelog](releases/CHANGELOG.md)** — Complete release history
 - **[Batch README](batch/README.md)** — High-throughput batch processing guide
+- **[Privacy](docs/PRIVACY.md)** — What leaves the runtime (nothing but the MSA request) and the opt-in usage ping
+- **[Contributing](CONTRIBUTING.md)** — Package layout, tests, release process
 
 ---
 
@@ -702,7 +460,7 @@ If you use Boltz2-Notebook, please cite:
 ## Credits & Links
 
 - **Notebook:** [Atharva Tilewale](https://github.com/AtharvaTilewale) & Dr. Dhaval Patel (Gujarat Biotechnology University)
-- **Boltz2 Engine:** [boltz-community](https://github.com/Novel-Therapeutics/boltz-community) (community fork of [Boltz](https://github.com/jwohlwend/boltz) with Python 3.13 support & bug fixes)
+- **Boltz-2 engine:** [jwohlwend/boltz](https://github.com/jwohlwend/boltz) (`boltz==2.2.1`); on Python 3.13 runtimes the [boltz-community](https://github.com/Novel-Therapeutics/boltz-community) fork (`2.10.12`) is installed instead
 - **License:** MIT License — See [LICENSE](LICENSE) for details.
 
 ---
@@ -715,4 +473,4 @@ If you use Boltz2-Notebook, please cite:
 
 ---
 
-**Last Updated:** August 2026 | **Version:** 2.0.0 (Latest) | **Status:** ✅ Production Ready
+**Version:** 2.1.0 | **Changelog:** [releases/CHANGELOG.md](releases/CHANGELOG.md)

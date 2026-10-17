@@ -10,3 +10,4 @@ __pycache__/
 /root/.boltz/
 tutorial/output/
 boltz_cache/
+*.egg-info/
