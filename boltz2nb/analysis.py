@@ -280,58 +280,73 @@ def load_job(pred_dir: Path | str, job_name: str | None = None) -> JobResult:
 
 
 # ------------------------------------------------------------------ plotting
-def _plt():
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    return plt
+def _style():
+    from .ui.mpl import style
+    return style()
+
+
+def _save(fig, path) -> None:
+    from .ui.mpl import save_figure
+    save_figure(fig, path)
+
+
+def _band_color(v: float) -> str:
+    from .ui.mpl import BANDS
+    for lo, _hi, c in BANDS:
+        if v >= lo:
+            return c
+    return BANDS[-1][2]
 
 
 def plot_plddt(model: ModelResult, out_path: Path | str) -> Path | None:
     if not model.per_token:
         return None
-    plt = _plt()
-    fig, ax = plt.subplots(figsize=(10, 3.6))
-    x = np.arange(len(model.plddt))
-    ax.plot(x, model.plddt, color="#1f4e79", linewidth=0.9)
-    ax.fill_between(x, model.plddt, color="#1f4e79", alpha=0.15)
-    for cid, start, end in model.chain_boundaries():
-        if start > 0:
-            ax.axvline(start - 0.5, color="#888", linewidth=0.8, linestyle="--")
-        ax.text((start + end) / 2, 103, cid, ha="center", va="bottom", fontsize=9, color="#333")
-    for y, c in ((50, "#d62728"), (70, "#ff7f0e"), (90, "#2ca02c")):
-        ax.axhline(y, color=c, linewidth=0.6, linestyle=":")
-    ax.set_xlim(0, len(x) - 1)
-    ax.set_ylim(0, 112)
-    ax.set_xlabel(f"Token index ({LAYOUT_LABELS.get(model.layout, model.layout)})")
-    ax.set_ylabel("pLDDT")
-    ax.set_title(f"Per-token pLDDT - model {model.model_id}")
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    from .ui.mpl import BANDS, INDIGO, MUTED
+    with _style() as plt:
+        fig, ax = plt.subplots(figsize=(9.2, 3.5))
+        x = np.arange(len(model.plddt))
+        for lo, hi, c in BANDS:
+            ax.axhspan(lo, hi, color=c, alpha=0.055 if lo < 50 else 0.07, lw=0)
+        ax.plot(x, model.plddt, color=INDIGO, lw=1.3, zorder=3)
+        ax.scatter(x, model.plddt, s=7, c=[_band_color(v) for v in model.plddt], zorder=4, lw=0)
+        for cid, start, end in model.chain_boundaries():
+            if start > 0:
+                ax.axvline(start - 0.5, color=MUTED, lw=0.9, ls=(0, (3, 3)))
+            ax.text((start + end) / 2, 104, cid, ha="center", va="bottom", fontsize=9, fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.25", fc="#E9ECFD", ec="none"), color=INDIGO)
+        ax.set_xlim(0, max(len(x) - 1, 1)); ax.set_ylim(0, 100)
+        ax.set_yticks([0, 50, 70, 90, 100])
+        ax.set_xlabel(f"Token ({LAYOUT_LABELS.get(model.layout, model.layout)})")
+        ax.set_ylabel("pLDDT")
+        ax.set_title(f"Per-token confidence, sample {model.model_id}", pad=22)
+        _save(fig, out_path)
+        plt.close(fig)
     return Path(out_path)
 
 
 def plot_pae(model: ModelResult, out_path: Path | str) -> Path | None:
     if model.pae is None or not model.per_token:
         return None
-    plt = _plt()
-    fig, ax = plt.subplots(figsize=(6.4, 5.6))
-    im = ax.imshow(model.pae, cmap="Greens_r", vmin=0, vmax=PAE_MAX, origin="upper", interpolation="none")
-    bounds = model.chain_boundaries()
-    for _cid, start, _end in bounds:
-        if start > 0:
-            ax.axhline(start - 0.5, color="black", linewidth=0.8)
-            ax.axvline(start - 0.5, color="black", linewidth=0.8)
-    ax.set_xticks([(s + e) / 2 for _, s, e in bounds])
-    ax.set_xticklabels([c for c, _, _ in bounds])
-    ax.set_yticks([(s + e) / 2 for _, s, e in bounds])
-    ax.set_yticklabels([c for c, _, _ in bounds])
-    ax.set_xlabel("Scored token")
-    ax.set_ylabel("Aligned token")
-    ax.set_title(f"Predicted aligned error - model {model.model_id}")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04).set_label("Expected position error (Å)")
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    from .ui.mpl import INK
+    with _style() as plt:
+        fig, ax = plt.subplots(figsize=(5.8, 5.0))
+        im = ax.imshow(model.pae, cmap="Greens_r", vmin=0, vmax=PAE_MAX, origin="upper", interpolation="none")
+        bounds = model.chain_boundaries()
+        for _cid, start, _end in bounds:
+            if start > 0:
+                ax.axhline(start - 0.5, color=INK, lw=0.9)
+                ax.axvline(start - 0.5, color=INK, lw=0.9)
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(True)
+        ticks = [(s + e) / 2 for _, s, e in bounds]
+        ax.set_xticks(ticks); ax.set_xticklabels([c for c, _, _ in bounds])
+        ax.set_yticks(ticks); ax.set_yticklabels([c for c, _, _ in bounds])
+        ax.set_xlabel("Scored token"); ax.set_ylabel("Aligned token")
+        ax.set_title(f"Predicted aligned error, sample {model.model_id}")
+        cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+        cb.set_label("Expected position error (A)"); cb.outline.set_edgecolor("#C5CEDF")
+        _save(fig, out_path)
+        plt.close(fig)
     return Path(out_path)
 
 
@@ -339,47 +354,55 @@ def plot_affinity_card(job: JobResult, out_path: Path | str) -> Path | None:
     summ = job.affinity_summary()
     if not summ:
         return None
-    plt = _plt()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.4))
-    prob = summ["binding_probability"]
-    ax1.pie([prob, 1 - prob], colors=["#2563eb", "#e5e7eb"], startangle=90, counterclock=False,
-            wedgeprops={"width": 0.3})
-    ax1.text(0, 0, f"{prob * 100:.0f}%", ha="center", va="center", fontsize=18, fontweight="bold")
-    ax1.set_title("Binding probability\n" + summ["probability_class"], fontsize=10)
-    members = summ["ensemble_members"]
-    labels = ["ensemble"] + [f"model {m['model']}" for m in members]
-    values = [summ["log10_ic50_um"]] + [m["value"] for m in members]
-    ax2.barh(labels, values, color=["#1f4e79"] + ["#9ecae1"] * len(members))
-    ax2.axvline(0, color="#333", linewidth=0.8)
-    ax2.set_xlabel("Predicted log10 IC50 (µM)  ← tighter")
-    ax2.set_title(f"IC50 ≈ {summ['ic50']}  |  {summ['potency_class']}", fontsize=10)
-    ax2.invert_yaxis()
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    from .ui.mpl import AXIS, ERR, INDIGO, OK, PERI, WARN
+    with _style() as plt:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.4, 3.3), gridspec_kw={"width_ratios": [1, 1.5]})
+        prob = summ["binding_probability"]
+        color = OK if prob >= 0.75 else WARN if prob >= 0.4 else ERR
+        ax1.pie([prob, 1 - prob], colors=[color, "#E4EAF5"], startangle=90, counterclock=False, wedgeprops={"width": 0.26, "edgecolor": "white"})
+        ax1.text(0, 0.05, f"{prob * 100:.0f}%", ha="center", va="center", fontsize=20, fontweight="bold")
+        ax1.text(0, -0.28, "binder", ha="center", va="center", fontsize=9, color="#586784")
+        ax1.set_title("Binding probability", loc="center")
+        members = summ["ensemble_members"]
+        labels = ["ensemble"] + [f"member {m['model']}" for m in members]
+        values = [summ["log10_ic50_um"]] + [m["value"] for m in members]
+        ax2.barh(labels, values, color=[INDIGO] + [PERI] * len(members), height=0.55)
+        ax2.axvline(0, color=AXIS, lw=1)
+        ax2.invert_yaxis()
+        ax2.set_xlabel("predicted log10 IC50 (uM), lower binds tighter")
+        ax2.set_title(f"IC50 about {summ['ic50']}")
+        span = max(abs(v) for v in values) or 1.0
+        for i, v in enumerate(values):
+            ax2.text(max(v, 0) + 0.03 * span, i, f"{v:.2f}", va="center", ha="left", fontsize=9, color="#3D4C68")
+        lo, hi = min(min(values), 0), max(max(values), 0)
+        ax2.set_xlim(lo - 0.08 * span, hi + 0.18 * span)
+        fig.tight_layout()
+        _save(fig, out_path)
+        plt.close(fig)
     return Path(out_path)
 
 
 def plot_ensemble(job: JobResult, out_path: Path | str) -> Path | None:
     if len(job.models) < 2 or not any(r.get("confidence_score") is not None for r in job.metrics_table()):
         return None
-    plt = _plt()
+    from .ui.mpl import SERIES
     rows = job.metrics_table()
     keys = [k for k in ("confidence_score", "ptm", "iptm", "ligand_iptm") if any(r.get(k) is not None for r in rows)]
-    fig, ax = plt.subplots(figsize=(7, 3.4))
-    width = 0.8 / max(len(keys), 1)
-    x = np.arange(len(rows))
-    for i, k in enumerate(keys):
-        ax.bar(x + i * width, [r.get(k) or 0 for r in rows], width, label=k)
-    ax.set_xticks(x + width * (len(keys) - 1) / 2)
-    ax.set_xticklabels([f"model {r['model']}" for r in rows])
-    ax.set_ylim(0, 1)
-    ax.set_ylabel("score")
-    ax.set_title("Per-sample confidence (model 0 is Boltz's top-ranked sample)")
-    ax.legend(fontsize=8, ncol=len(keys))
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    with _style() as plt:
+        fig, ax = plt.subplots(figsize=(7.2, 3.3))
+        width = 0.8 / max(len(keys), 1)
+        x = np.arange(len(rows))
+        for i, k in enumerate(keys):
+            ax.bar(x + i * width, [r.get(k) or 0 for r in rows], width * 0.92, label=k.replace("_", " "), color=SERIES[i % len(SERIES)])
+        ax.set_xticks(x + width * (len(keys) - 1) / 2)
+        ax.set_xticklabels([f"sample {r['model']}" for r in rows])
+        ax.set_ylim(0, 1.05); ax.set_ylabel("score")
+        ax.yaxis.grid(True); ax.set_axisbelow(True)
+        ax.set_title("Per-sample confidence (sample 0 is Boltz's top-ranked)")
+        ax.legend(ncol=len(keys), loc="upper center", bbox_to_anchor=(0.5, -0.12))
+        fig.tight_layout()
+        _save(fig, out_path)
+        plt.close(fig)
     return Path(out_path)
 
 

@@ -1,0 +1,356 @@
+<div class="bz bz-form" id="bz-root-@@UID@@" data-theme="auto" data-mode="@@MODE@@" data-step="1">
+@@SPRITE@@
+<header class="bz-hero">
+  @@MARK@@
+  <div style="min-width:0">
+    <h1>Boltz-2 Input Builder</h1>
+    <p>Describe your molecular system, review the generated YAML, then choose how to run it.</p>
+  </div>
+  <div class="bz-hero-actions">
+    <span class="bz-chip bz-chip--glass">v@@VERSION@@</span>
+    <span class="bz-chip bz-chip--glass">@@MODE_LABEL@@</span>
+    <button type="button" class="bz-btn bz-btn--icon" data-act="theme" title="Colour theme: automatic" aria-label="Switch colour theme">@@ICON:sun@@</button>
+  </div>
+</header>
+
+<div class="bz-body">
+  <ol class="bz-steps" aria-label="Progress">
+    <li><button type="button" class="bz-step" data-go="1" aria-current="step"><span class="bz-step-num">1</span><span class="bz-step-txt"><span class="bz-step-label">Molecules</span><span class="bz-step-sub">Chains and ligands</span></span></button></li>
+    <li data-adv><button type="button" class="bz-step" data-go="2"><span class="bz-step-num">2</span><span class="bz-step-txt"><span class="bz-step-label">Constraints</span><span class="bz-step-sub">Templates, bonds, pockets</span></span></button></li>
+    <li><button type="button" class="bz-step" data-go="3"><span class="bz-step-num" data-num-run>3</span><span class="bz-step-txt"><span class="bz-step-label">Run settings</span><span class="bz-step-sub">Quality and speed</span></span></button></li>
+  </ol>
+
+  <div class="bz-layout">
+    <div class="bz-main">
+
+      <!-- STEP 1: molecules -------------------------------------------------------------- -->
+      <section class="bz-panel" data-panel="1" aria-labelledby="h1-@@UID@@">
+        <div class="bz-card bz-import">
+          <div class="bz-card-h">
+            <span class="bz-tile">@@ICON:upload@@</span>
+            <div class="bz-card-t"><h2 id="h1-@@UID@@">Start from a structure <span class="bz-chip" style="margin-left:6px">optional</span></h2>
+              <p>Import chains and ligands from a PDB or mmCIF file instead of typing them.</p></div>
+          </div>
+          <div class="bz-card-b">
+            <label class="bz-drop" data-drop="structure" tabindex="0">
+              <input type="file" accept=".pdb,.ent,.cif,.mmcif" class="bz-sr" tabindex="-1" data-f="structure-file" aria-label="Choose a PDB or mmCIF file">
+              <span class="bz-drop-i">@@ICON:upload@@</span>
+              <span><b>Drop a file here</b> or <u>browse</u><small>.pdb, .ent, .cif, .mmcif - read in your browser session only</small></span>
+            </label>
+            <div class="bz-import-result" data-f="import-result" hidden></div>
+          </div>
+        </div>
+
+        <div class="bz-card" style="margin-top:16px">
+          <div class="bz-card-h">
+            <span class="bz-tile">@@ICON:layers@@</span>
+            <div class="bz-card-t"><h2>Molecules <span class="bz-count" data-n="0" data-f="mol-count">0</span></h2>
+              <p>Every chain and ligand that goes into the prediction. Identical copies share one entry: give them several chain IDs.</p></div>
+            <button type="button" class="bz-btn bz-btn--ghost bz-btn--sm" data-act="reset">@@ICON:refresh@@<span>Reset</span></button>
+          </div>
+          <div class="bz-card-b">
+            <div class="bz-entities" data-f="entities"></div>
+            <div class="bz-addbar" role="group" aria-label="Add a molecule">
+              <button type="button" class="bz-add" data-act="add-protein"><span class="bz-tile bz-tile--protein bz-tile--sm">P</span><span>Protein</span>@@ICON:plus@@</button>
+              <button type="button" class="bz-add" data-act="add-dna" data-adv><span class="bz-tile bz-tile--dna bz-tile--sm">D</span><span>DNA</span>@@ICON:plus@@</button>
+              <button type="button" class="bz-add" data-act="add-rna" data-adv><span class="bz-tile bz-tile--rna bz-tile--sm">R</span><span>RNA</span>@@ICON:plus@@</button>
+              <button type="button" class="bz-add" data-act="add-ligand"><span class="bz-tile bz-tile--ligand bz-tile--sm">L</span><span>Ligand</span>@@ICON:plus@@</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bz-card" style="margin-top:16px" data-f="affinity-card" hidden>
+          <div class="bz-card-h">
+            <span class="bz-tile bz-tile--ligand">@@ICON:zap@@</span>
+            <div class="bz-card-t"><h2>Binding affinity</h2><p>Boltz-2 can estimate whether a small molecule binds and how tightly.</p></div>
+          </div>
+          <div class="bz-card-b">
+            <label class="bz-switch"><input type="checkbox" data-f="affinity-on"><span><b>Predict binding affinity</b><small>Adds a short second pass for the chosen ligand. Only meaningful for small molecules, not peptides or proteins.</small></span></label>
+            <div class="bz-field" style="margin-top:14px;max-width:320px" data-f="affinity-pick" hidden>
+              <label class="bz-label" for="aff-@@UID@@">Ligand chain</label>
+              <select class="bz-select" id="aff-@@UID@@" data-f="affinity-chain"></select>
+              <div class="bz-hint" data-f="affinity-hint"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: constraints ------------------------------------------------------------ -->
+      <section class="bz-panel" data-panel="2" hidden aria-label="Advanced modelling" data-adv>
+        <div class="bz-alert" style="margin-bottom:14px">@@ICON:info@@<div><strong>Everything on this page is optional.</strong> Use it to guide the model with a known structure, a covalent attachment or a binding-site hint.</div></div>
+
+        <details class="bz-acc" data-kind="templates">
+          <summary><span class="bz-tile">@@ICON:file@@</span><span><span class="bz-acc-t">Structural templates</span><br><span class="bz-acc-d">Guide the fold with .cif or .pdb files</span></span><span class="bz-count" data-n="0" data-f="count-templates" style="margin-left:6px">0</span><span class="bz-chev">@@ICON:chevron-down@@</span></summary>
+          <div class="bz-acc-b"><div class="bz-hint">Upload a template, then (optionally) map its chains onto your chains. <b>Force</b> keeps the prediction within the threshold of the template.</div>
+            <div data-f="templates"></div>
+            <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="add-template" style="margin-top:12px">@@ICON:plus@@<span>Add template</span></button></div>
+        </details>
+
+        <details class="bz-acc" data-kind="bonds">
+          <summary><span class="bz-tile">@@ICON:link@@</span><span><span class="bz-acc-t">Covalent bonds</span><br><span class="bz-acc-d">Attach a ligand or modification to a residue</span></span><span class="bz-count" data-n="0" data-f="count-bonds" style="margin-left:6px">0</span><span class="bz-chev">@@ICON:chevron-down@@</span></summary>
+          <div class="bz-acc-b"><div class="bz-hint">Name two atoms (chain, residue number, atom name) to be bonded, for example a cysteine <code>SG</code> and a ligand atom <code>C1</code>.</div>
+            <div data-f="bonds"></div>
+            <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="add-bond" style="margin-top:12px">@@ICON:plus@@<span>Add bond</span></button></div>
+        </details>
+
+        <details class="bz-acc" data-kind="pockets">
+          <summary><span class="bz-tile">@@ICON:target@@</span><span><span class="bz-acc-t">Pocket conditioning</span><br><span class="bz-acc-d">Tell the model where a binder should sit</span></span><span class="bz-count" data-n="0" data-f="count-pockets" style="margin-left:6px">0</span><span class="bz-chev">@@ICON:chevron-down@@</span></summary>
+          <div class="bz-acc-b"><div class="bz-hint">Choose the binder chain and list the residues that line the pocket as <code>chain:residue</code>, for example <code>A:145</code>.</div>
+            <div data-f="pockets"></div>
+            <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="add-pocket" style="margin-top:12px">@@ICON:plus@@<span>Add pocket</span></button></div>
+        </details>
+
+        <details class="bz-acc" data-kind="contacts">
+          <summary><span class="bz-tile">@@ICON:zap@@</span><span><span class="bz-acc-t">Contact conditioning</span><br><span class="bz-acc-d">Ask for two specific residues or atoms to touch</span></span><span class="bz-count" data-n="0" data-f="count-contacts" style="margin-left:6px">0</span><span class="bz-chev">@@ICON:chevron-down@@</span></summary>
+          <div class="bz-acc-b"><div class="bz-hint">Each side is a chain plus a residue number, or an atom name for a ligand.</div>
+            <div data-f="contacts"></div>
+            <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="add-contact" style="margin-top:12px">@@ICON:plus@@<span>Add contact</span></button></div>
+        </details>
+      </section>
+
+      <!-- STEP 3: run settings ----------------------------------------------------------- -->
+      <section class="bz-panel" data-panel="3" hidden aria-label="Run settings">
+        <div class="bz-alert bz-alert--ok" data-f="saved" hidden role="status">@@ICON:check-circle@@<div><strong>Configuration saved.</strong> <span data-f="saved-msg"></span></div></div>
+
+        <div class="bz-card" data-f="run-card">
+          <div class="bz-card-h"><span class="bz-tile">@@ICON:zap@@</span><div class="bz-card-t"><h2>Quality preset</h2><p>Start from a preset, then fine-tune below if you need to.</p></div></div>
+          <div class="bz-card-b">
+            <div class="bz-presets" role="radiogroup" aria-label="Quality preset" data-f="presets"></div>
+          </div>
+        </div>
+
+        <div class="bz-card" style="margin-top:16px">
+          <div class="bz-card-h"><span class="bz-tile">@@ICON:sliders@@</span><div class="bz-card-t"><h2>Job and sampling</h2><p>How the structure is generated.</p></div><span class="bz-chip bz-chip--primary" data-f="preset-badge">Balanced</span></div>
+          <div class="bz-card-b">
+            <div class="bz-grid">
+              <div class="bz-field bz-col-6"><label class="bz-label" for="job-@@UID@@">Job name <span class="bz-req" aria-hidden="true">*</span></label>
+                <input class="bz-input" id="job-@@UID@@" data-r="job_name" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. kinase_aspirin" maxlength="60">
+                <div class="bz-hint">Letters, digits, <code>_</code> <code>-</code> <code>.</code> only. Names the output folder.</div>
+                <div class="bz-error" data-e="job_name" role="alert" hidden></div></div>
+              <div class="bz-field bz-col-3"><label class="bz-label" for="smp-@@UID@@">Diffusion samples</label>
+                <input class="bz-input bz-num" id="smp-@@UID@@" data-r="diffusion_samples" type="number" min="1" max="25" step="1">
+                <div class="bz-hint">3 or more gives a spread estimate.</div></div>
+              <div class="bz-field bz-col-3"><label class="bz-label" for="rec-@@UID@@">Recycling steps</label>
+                <input class="bz-input bz-num" id="rec-@@UID@@" data-r="recycling_steps" type="number" min="1" max="20" step="1">
+                <div class="bz-hint">Trunk refinement passes.</div></div>
+              <div class="bz-field bz-col-6"><label class="bz-label" for="ss-@@UID@@">Sampling steps</label>
+                <div class="bz-range"><input id="ss-@@UID@@" data-r="sampling_steps" type="range" min="10" max="500" step="10"><output class="bz-num" data-o="sampling_steps">200</output></div>
+                <div class="bz-hint">Diffusion denoising steps. More is slower; 200 is the Boltz default.</div></div>
+              <div class="bz-field bz-col-6"><label class="bz-label" for="sc-@@UID@@">Step scale</label>
+                <div class="bz-range"><input id="sc-@@UID@@" data-r="step_scale" type="range" min="0.5" max="5" step="0.05"><output class="bz-num" data-o="step_scale">1.64</output></div>
+                <div class="bz-hint">Lower values give more diverse samples, higher values more conservative ones.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bz-card" style="margin-top:16px">
+          <div class="bz-card-h"><span class="bz-tile">@@ICON:dna@@</span><div class="bz-card-t"><h2>Sequence alignment (MSA)</h2><p>Applies to protein chains that use the MSA server.</p></div></div>
+          <div class="bz-card-b">
+            <div class="bz-grid">
+              <div class="bz-field bz-col-4"><label class="bz-label" for="mm-@@UID@@">Max MSA sequences</label>
+                <select class="bz-select" id="mm-@@UID@@" data-r="max_msa_seqs"></select></div>
+              <div class="bz-field bz-col-4"><label class="bz-label" for="mp-@@UID@@">Pairing strategy</label>
+                <select class="bz-select" id="mp-@@UID@@" data-r="msa_pairing_strategy"></select>
+                <div class="bz-hint">How chains of a complex are paired.</div></div>
+              <div class="bz-field bz-col-4"><label class="bz-label" for="ns-@@UID@@">Subsampled sequences</label>
+                <select class="bz-select" id="ns-@@UID@@" data-r="num_subsampled_msa"></select></div>
+              <div class="bz-field bz-col-12"><label class="bz-switch"><input type="checkbox" data-r="subsample_msa"><span><b>Subsample the MSA</b><small>Randomly keep a smaller set of sequences per recycling step. Faster and lighter on memory.</small></span></label></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bz-card" style="margin-top:16px">
+          <div class="bz-card-h"><span class="bz-tile">@@ICON:cpu@@</span><div class="bz-card-t"><h2>Options</h2><p>Physical plausibility and reproducibility.</p></div></div>
+          <div class="bz-card-b">
+            <div class="bz-grid">
+              <div class="bz-field bz-col-6"><label class="bz-switch"><input type="checkbox" data-r="use_potentials"><span><b>Steering potentials</b><small>Physics-based guidance that reduces clashes and bad geometry. Slower.</small></span></label></div>
+              <div class="bz-field bz-col-6"><label class="bz-switch"><input type="checkbox" data-r="override"><span><b>Reuse job folder</b><small>Overwrite results with the same job name. When off, a new timestamped folder is used.</small></span></label></div>
+              <div class="bz-field bz-col-4"><label class="bz-label" for="sd-@@UID@@">Random seed</label>
+                <input class="bz-input bz-num" id="sd-@@UID@@" data-r="seed" type="number" min="0" step="1" placeholder="random">
+                <div class="bz-hint">Set a value to make runs repeatable.</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="bz-rail" aria-label="Summary">
+      <div class="bz-card bz-sticky">
+        <div class="bz-card-h" style="align-items:center">
+          <div class="bz-card-t"><h3>Your system</h3></div>
+          <span class="bz-chip" data-f="status-chip">Empty</span>
+        </div>
+        <div class="bz-card-b" style="padding-top:12px">
+          <div class="bz-seg" role="tablist" aria-label="Summary view">
+            <label><input type="radio" name="tab-@@UID@@" value="summary" checked><span>@@ICON:list@@Summary</span></label>
+            <label><input type="radio" name="tab-@@UID@@" value="yaml"><span>@@ICON:code@@YAML</span></label>
+          </div>
+          <div data-view="summary" style="margin-top:14px">
+            <ul class="bz-mols" data-f="rail-mols"></ul>
+            <div class="bz-stats" data-f="rail-stats"></div>
+            <div data-f="rail-messages" aria-live="polite"></div>
+          </div>
+          <div data-view="yaml" hidden style="margin-top:14px">
+            <pre class="bz-pre" data-f="yaml" tabindex="0" aria-label="Generated YAML"></pre>
+            <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="copy-yaml" style="margin-top:10px">@@ICON:copy@@<span>Copy YAML</span></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="bz-actions">
+      <button type="button" class="bz-btn bz-btn--secondary" data-act="back">@@ICON:arrow-left@@<span>Back</span></button>
+      <div class="bz-actions-msg" data-f="action-msg" role="status" aria-live="polite"></div>
+      <button type="button" class="bz-btn bz-btn--primary" data-act="next"><span data-f="next-label">Continue</span>@@ICON:arrow-right@@</button>
+    </div>
+  </div>
+</div>
+
+<!-- templates --------------------------------------------------------------------------- -->
+<template data-t="polymer">
+  <article class="bz-card bz-entity" data-type="protein">
+    <div class="bz-card-h" style="align-items:center">
+      <span class="bz-tile bz-tile--protein" data-f="tile">P</span>
+      <div class="bz-ent-title"><h3 data-f="title">Protein</h3><p data-f="sub">Add a sequence</p></div>
+      <div class="bz-seg bz-seg--sm" data-adv role="radiogroup" aria-label="Molecule type">
+        <label><input type="radio" name="ty-__ID__" value="protein" checked><span>Protein</span></label>
+        <label><input type="radio" name="ty-__ID__" value="dna"><span>DNA</span></label>
+        <label><input type="radio" name="ty-__ID__" value="rna"><span>RNA</span></label>
+      </div>
+      <button type="button" class="bz-btn bz-btn--icon" data-act="dup" title="Duplicate" aria-label="Duplicate molecule">@@ICON:copy@@</button>
+      <button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove" title="Remove" aria-label="Remove molecule">@@ICON:trash@@</button>
+    </div>
+    <div class="bz-card-b">
+      <div class="bz-grid">
+        <div class="bz-field bz-col-4"><label class="bz-label" id="lid-__ID__">Chain IDs <span class="bz-req" aria-hidden="true">*</span></label>
+          <div class="bz-chips" data-f="ids" role="group" aria-labelledby="lid-__ID__"></div>
+          <div class="bz-hint">Press Enter, comma or space after each ID. Several IDs create identical copies.</div>
+          <div class="bz-error" data-e="ids" role="alert" hidden></div></div>
+        <div class="bz-field bz-col-8" data-only="protein"><span class="bz-label" id="lmsa-__ID__">Evolutionary information (MSA)</span>
+          <div class="bz-seg" role="radiogroup" aria-labelledby="lmsa-__ID__">
+            <label><input type="radio" name="msa-__ID__" value="server" checked><span>Auto (server)</span></label>
+            <label><input type="radio" name="msa-__ID__" value="custom"><span>Upload</span></label>
+            <label><input type="radio" name="msa-__ID__" value="empty"><span>None</span></label>
+          </div>
+          <div class="bz-hint" data-f="msa-hint">Generated for you with the ColabFold MSA server.</div></div>
+        <div class="bz-field bz-col-12"><label class="bz-label" for="seq-__ID__"><span data-f="seq-label">Sequence</span> <span class="bz-req" aria-hidden="true">*</span></label>
+          <textarea class="bz-textarea bz-textarea--mono" id="seq-__ID__" data-f="seq" rows="4" spellcheck="false" autocomplete="off" autocapitalize="characters" placeholder="Paste a sequence or a FASTA record"></textarea>
+          <div class="bz-meta"><span data-f="seq-meta"></span><span data-f="seq-count" class="bz-num"></span></div>
+          <div class="bz-error" data-e="seq" role="alert" hidden></div>
+          <div class="bz-alert bz-alert--warn" data-f="split" hidden>@@ICON:info@@<div><span data-f="split-msg"></span> <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="split" style="margin-left:6px">Split into chains</button></div></div></div>
+        <div class="bz-field bz-col-12" data-only="protein" data-f="msa-upload" hidden>
+          <label class="bz-drop bz-drop--sm" tabindex="0"><input type="file" accept=".a3m,.csv" class="bz-sr" tabindex="-1" data-f="msa-file" aria-label="Upload an MSA file">
+            <span class="bz-drop-i">@@ICON:upload@@</span><span><b>Upload an MSA</b> or drop it here<small>.a3m for one chain, or .csv with <code>key</code> and <code>sequence</code> columns for paired complexes</small></span></label>
+          <div data-f="msa-file-status"></div>
+          <div class="bz-error" data-e="msa" role="alert" hidden></div></div>
+        <div class="bz-col-12" data-only="protein" data-f="msa-warn" hidden><div class="bz-alert bz-alert--warn">@@ICON:alert@@<div><strong>Single-sequence mode.</strong> Without an alignment the model has no evolutionary context and accuracy drops noticeably. Use it only when no meaningful alignment exists (designed proteins, short peptides).</div></div></div>
+        <div class="bz-field bz-col-6" data-adv><label class="bz-switch"><input type="checkbox" data-f="cyclic"><span><b>Cyclic polymer</b><small data-f="cyclic-hint">Head-to-tail cyclic chain, for example a macrocyclic peptide.</small></span></label></div>
+      </div>
+      <details class="bz-acc" style="margin-top:14px" data-adv data-f="mods-acc">
+        <summary><span class="bz-acc-t" style="font-size:13.5px">Modified residues</span><span class="bz-count" data-n="0" data-f="mods-count">0</span><span class="bz-chev">@@ICON:chevron-down@@</span></summary>
+        <div class="bz-acc-b"><div class="bz-hint">Positions are 1-based. Use the CCD code of the modified component, for example <code>SEP</code> for phosphoserine.</div>
+          <div data-f="mods"></div>
+          <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="add-mod" style="margin-top:10px">@@ICON:plus@@<span>Add modification</span></button></div>
+      </details>
+    </div>
+  </article>
+</template>
+
+<template data-t="ligand">
+  <article class="bz-card bz-entity" data-type="ligand">
+    <div class="bz-card-h" style="align-items:center">
+      <span class="bz-tile bz-tile--ligand" data-f="tile">L</span>
+      <div class="bz-ent-title"><h3 data-f="title">Ligand</h3><p data-f="sub">Small molecule</p></div>
+      <button type="button" class="bz-btn bz-btn--icon" data-act="dup" title="Duplicate" aria-label="Duplicate molecule">@@ICON:copy@@</button>
+      <button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove" title="Remove" aria-label="Remove molecule">@@ICON:trash@@</button>
+    </div>
+    <div class="bz-card-b">
+      <div class="bz-grid">
+        <div class="bz-field bz-col-4"><label class="bz-label" id="lid-__ID__">Chain IDs <span class="bz-req" aria-hidden="true">*</span></label>
+          <div class="bz-chips" data-f="ids" role="group" aria-labelledby="lid-__ID__"></div>
+          <div class="bz-error" data-e="ids" role="alert" hidden></div></div>
+        <div class="bz-field bz-col-8"><span class="bz-label" id="lkind-__ID__">Describe it with</span>
+          <div class="bz-seg" role="radiogroup" aria-labelledby="lkind-__ID__">
+            <label><input type="radio" name="lk-__ID__" value="smiles" checked><span>SMILES</span></label>
+            <label><input type="radio" name="lk-__ID__" value="ccd"><span>CCD code</span></label>
+          </div></div>
+        <div class="bz-field bz-col-8"><label class="bz-label" for="lv-__ID__"><span data-f="val-label">SMILES string</span> <span class="bz-req" aria-hidden="true">*</span></label>
+          <input class="bz-input bz-input--mono" id="lv-__ID__" data-f="value" type="text" spellcheck="false" autocomplete="off" placeholder="CC(=O)Oc1ccccc1C(=O)O">
+          <div class="bz-hint" data-f="val-hint">Paste a SMILES from PubChem, ChEMBL or your drawing tool.</div>
+          <div class="bz-error" data-e="value" role="alert" hidden></div>
+          <div class="bz-inline" data-f="props" style="margin-top:2px"></div></div>
+        <div class="bz-col-4" data-f="preview-col"><div class="bz-plate bz-preview" data-f="preview" aria-live="polite"><span class="bz-muted">2-D preview</span></div></div>
+      </div>
+    </div>
+  </article>
+</template>
+
+<template data-t="template">
+  <div class="bz-row" data-row="template">
+    <div class="bz-row-h">@@ICON:file@@<span>Template</span><button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove-row" aria-label="Remove template">@@ICON:trash@@</button></div>
+    <div class="bz-grid">
+      <div class="bz-field bz-col-12"><label class="bz-drop bz-drop--sm" tabindex="0"><input type="file" accept=".cif,.mmcif,.pdb" class="bz-sr" tabindex="-1" data-f="tpl-file" aria-label="Upload a template file">
+        <span class="bz-drop-i">@@ICON:upload@@</span><span><b>Upload template</b> or drop it here<small>.cif, .mmcif or .pdb</small></span></label>
+        <div data-f="tpl-status"></div></div>
+      <div class="bz-field bz-col-6"><span class="bz-label">Your chains</span><div class="bz-chips" data-f="tpl-chains" role="group" aria-label="Chains in your input that the template covers"></div><div class="bz-hint">Leave empty to match automatically.</div></div>
+      <div class="bz-field bz-col-6"><span class="bz-label">Template chains</span><div class="bz-chips" data-f="tpl-ids" role="group" aria-label="Matching chain IDs in the template file"></div><div class="bz-hint">Same order as your chains.</div></div>
+      <div class="bz-field bz-col-6"><label class="bz-switch"><input type="checkbox" data-f="tpl-force"><span><b>Force template</b><small>Penalise predictions that stray from it.</small></span></label></div>
+      <div class="bz-field bz-col-6"><label class="bz-label">Threshold (A)</label><input class="bz-input bz-num" data-f="tpl-threshold" type="number" min="0.1" max="20" step="0.5" value="2" disabled aria-label="Template threshold in angstrom"></div>
+    </div>
+  </div>
+</template>
+
+<template data-t="bond">
+  <div class="bz-row" data-row="bond">
+    <div class="bz-row-h">@@ICON:link@@<span>Covalent bond</span><button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove-row" aria-label="Remove bond">@@ICON:trash@@</button></div>
+    <div class="bz-grid">
+      <div class="bz-col-12"><span class="bz-label">First atom</span></div>
+      <div class="bz-field bz-col-4"><select class="bz-select" data-f="chain1" aria-label="First atom chain" data-chain-select></select></div>
+      <div class="bz-field bz-col-4 bz-col-keep"><input class="bz-input bz-num" data-f="res1" type="number" min="1" value="1" aria-label="First atom residue number" placeholder="Residue"></div>
+      <div class="bz-field bz-col-4 bz-col-keep"><input class="bz-input bz-input--mono" data-f="atom1" type="text" placeholder="SG" aria-label="First atom name" spellcheck="false"></div>
+      <div class="bz-col-12"><span class="bz-label">Second atom</span></div>
+      <div class="bz-field bz-col-4"><select class="bz-select" data-f="chain2" aria-label="Second atom chain" data-chain-select></select></div>
+      <div class="bz-field bz-col-4 bz-col-keep"><input class="bz-input bz-num" data-f="res2" type="number" min="1" value="1" aria-label="Second atom residue number" placeholder="Residue"></div>
+      <div class="bz-field bz-col-4 bz-col-keep"><input class="bz-input bz-input--mono" data-f="atom2" type="text" placeholder="C1" aria-label="Second atom name" spellcheck="false"></div>
+    </div>
+  </div>
+</template>
+
+<template data-t="pocket">
+  <div class="bz-row" data-row="pocket">
+    <div class="bz-row-h">@@ICON:target@@<span>Pocket</span><button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove-row" aria-label="Remove pocket">@@ICON:trash@@</button></div>
+    <div class="bz-grid">
+      <div class="bz-field bz-col-4"><label class="bz-label">Binder chain</label><select class="bz-select" data-f="binder" data-chain-select aria-label="Binder chain"></select></div>
+      <div class="bz-field bz-col-8"><label class="bz-label">Pocket residues</label><div class="bz-chips" data-f="pocket-residues" role="group" aria-label="Pocket residues as chain:residue"></div><div class="bz-hint">Type <code>A:145</code> and press Enter. Several residues are allowed.</div><div class="bz-error" data-e="contacts" role="alert" hidden></div></div>
+      <div class="bz-field bz-col-6"><label class="bz-label">Max distance (A)</label><div class="bz-range"><input data-f="maxd" type="range" min="4" max="20" step="0.5" value="6" aria-label="Maximum distance in angstrom"><output class="bz-num">6</output></div></div>
+      <div class="bz-field bz-col-6"><label class="bz-switch"><input type="checkbox" data-f="force"><span><b>Force pocket</b><small>Enforce the distance strictly.</small></span></label></div>
+    </div>
+  </div>
+</template>
+
+<template data-t="contact">
+  <div class="bz-row" data-row="contact">
+    <div class="bz-row-h">@@ICON:zap@@<span>Contact</span><button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove-row" aria-label="Remove contact">@@ICON:trash@@</button></div>
+    <div class="bz-grid">
+      <div class="bz-col-12"><span class="bz-label">Token 1</span></div>
+      <div class="bz-field bz-col-6 bz-col-keep"><select class="bz-select" data-f="chain1" aria-label="Token 1 chain" data-chain-select></select></div>
+      <div class="bz-field bz-col-6 bz-col-keep"><input class="bz-input bz-input--mono" data-f="ref1" type="text" placeholder="145 or NZ" aria-label="Token 1 residue number or atom" spellcheck="false"></div>
+      <div class="bz-col-12"><span class="bz-label">Token 2</span></div>
+      <div class="bz-field bz-col-6 bz-col-keep"><select class="bz-select" data-f="chain2" aria-label="Token 2 chain" data-chain-select></select></div>
+      <div class="bz-field bz-col-6 bz-col-keep"><input class="bz-input bz-input--mono" data-f="ref2" type="text" placeholder="1 or C1" aria-label="Token 2 residue number or atom" spellcheck="false"></div>
+      <div class="bz-field bz-col-6"><label class="bz-label">Max distance (A)</label><div class="bz-range"><input data-f="maxd" type="range" min="4" max="20" step="0.5" value="6" aria-label="Maximum distance in angstrom"><output class="bz-num">6</output></div></div>
+      <div class="bz-field bz-col-6"><label class="bz-switch"><input type="checkbox" data-f="force"><span><b>Force contact</b><small>Enforce the distance strictly.</small></span></label></div>
+    </div>
+  </div>
+</template>
+
+<template data-t="mod">
+  <div class="bz-row" data-row="mod">
+    <div class="bz-grid" style="align-items:end">
+      <div class="bz-field bz-col-4"><label class="bz-label">Position</label><input class="bz-input bz-num" data-f="pos" type="number" min="1" placeholder="15" aria-label="Residue position"></div>
+      <div class="bz-field bz-col-6"><label class="bz-label">CCD code</label><input class="bz-input bz-input--mono" data-f="ccd" type="text" maxlength="5" placeholder="SEP" spellcheck="false" style="text-transform:uppercase" aria-label="CCD code of the modified residue"></div>
+      <div class="bz-col-2" style="display:flex;justify-content:flex-end"><button type="button" class="bz-btn bz-btn--icon bz-btn--danger" data-act="remove-row" aria-label="Remove modification">@@ICON:trash@@</button></div>
+    </div>
+  </div>
+</template>
+</div>

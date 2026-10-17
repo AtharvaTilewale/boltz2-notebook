@@ -5,11 +5,14 @@
 ```
 boltz2nb/          importable package - all logic lives here and is unit-tested
 scripts/common/    the three cells' implementations (setup / Boltz_Run / analysis), run via %run
-scripts/v1, v2/    thin shims + the two parameter-builder GUIs (HTML/JS with Python callbacks)
+scripts/v1, v2/    thin shims + launchers for the standard / advanced input builder
+boltz2nb/ui/       the interface: design-system CSS, form HTML/JS (assets/), renderers, Python callbacks, live panel, result card
 scripts/batch_utils.py   compatibility shim over boltz2nb.batch
 colab/, batch/, notebooks/, Boltz2.ipynb   the notebooks (thin shells)
 tests/             pytest suite; engine tests skip unless a Boltz cache is present
 tools/check_notebooks.py   compiles notebook cells and checks %run targets
+tools/build_notebook_headers.py   regenerates the first cell of the three main notebooks (`--check` in CI)
+tools/fetch_test_fonts.py  downloads Inter / JetBrains Mono for the browser tests
 ```
 
 ## Development
@@ -18,9 +21,27 @@ tools/check_notebooks.py   compiles notebook cells and checks %run targets
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev,ligand,viewer]"
 pytest                          # unit tests (no GPU, no Boltz needed)
-ruff check boltz2nb tests scripts/common
+ruff check boltz2nb tests scripts/common tools
 python tools/check_notebooks.py
+python tools/build_notebook_headers.py --check
 ```
+
+### Interface and browser tests
+
+The interface lives in `boltz2nb/ui/assets/` (`theme.css`, `form.css`, `results.css`, `form.html`, `form.js`) and is plain
+ES2017 with no build step. All values the page needs (defaults, presets, ranges) come from `boltz2nb.run_params`; do not duplicate them in JS.
+A new asset file needs no packaging change (`assets/*` is package data), but run `pytest tests/test_packaging.py`.
+
+Browser tests drive the real form against the real Python callbacks in headless Firefox:
+
+```bash
+pip install selenium                       # plus Firefox and geckodriver on PATH (or set BZ_FIREFOX / BZ_GECKODRIVER)
+python tools/fetch_test_fonts.py fonts     # text metrics matter for the overflow checks
+BZ_FONT_DIR=$PWD/fonts pytest tests/ui
+```
+
+They skip themselves when selenium or Firefox is missing. Headless Firefox cannot open a window narrower than about 500 px, so the
+360 / 414 px checks load the page in an iframe of exactly that width. WebGL is not available in CI browsers, so the 3-D viewer is tested against a stub of 3Dmol.
 
 To run the engine-level tests and a real prediction locally:
 

@@ -32,6 +32,9 @@ Issues = "https://github.com/AtharvaTilewale/boltz2-notebook/issues"
 [tool.setuptools.packages.find]
 include = ["boltz2nb*"]
 
+[tool.setuptools.package-data]
+"boltz2nb.ui" = ["assets/*"]     # CSS/JS/HTML of the interface; the notebooks install the package non-editably
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

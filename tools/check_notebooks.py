@@ -15,7 +15,7 @@ for nb in sorted(ROOT.rglob("*.ipynb")):
         if c["cell_type"] != "code":
             continue
         src = "".join(c["source"])
-        py = "\n".join(("pass  # " + l) if l.lstrip().startswith(("%", "!")) else l for l in src.splitlines())
+        py = "\n".join(("pass  # " + ln) if ln.lstrip().startswith(("%", "!")) else ln for ln in src.splitlines())
         try:
             ast.parse(py)
         except SyntaxError as e:

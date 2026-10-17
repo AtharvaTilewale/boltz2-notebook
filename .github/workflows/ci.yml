@@ -22,12 +22,40 @@ jobs:
       - name: Install package (no Boltz engine; engine-dependent tests are skipped)
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,ligand]"
+          python -m pip install -e ".[dev,ligand]" setuptools wheel
       - name: Lint
-        run: ruff check boltz2nb tests scripts/common scripts/batch_utils.py
+        run: ruff check boltz2nb tests scripts/common scripts/batch_utils.py tools
       - name: Unit tests
         run: pytest --cov=boltz2nb --cov-report=term-missing
       - name: Notebook cells compile
+        run: python tools/check_notebooks.py
+      - name: Notebook headers are up to date
+        run: python tools/build_notebook_headers.py --check
+
+  browser-ui:
+    # Drives the input builder, run panel, result card and report in a real headless Firefox, wired to the real Python callbacks.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: browser-actions/setup-firefox@v1
+        id: firefox
+      - uses: browser-actions/setup-geckodriver@latest
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,ligand]" selenium
+      - name: Fetch the web fonts the interface uses (text metrics matter for the overflow checks)
+        run: python tools/fetch_test_fonts.py "$RUNNER_TEMP/fonts"
+      - name: Browser tests
+        env:
+          BZ_FIREFOX: ${{ steps.firefox.outputs.firefox-path }}
+          BZ_FONT_DIR: ${{ runner.temp }}/fonts
+        run: pytest tests/ui -p no:cacheprovider
+      - name: Interface scripts compile
         run: python tools/check_notebooks.py
 
   install-smoke:

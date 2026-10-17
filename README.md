@@ -149,6 +149,24 @@
 
 ---
 
+## Interface
+
+Every screen shares one design system: a three-step input builder, a live run panel, a result card and a self-contained report.
+It follows the system light or dark theme (with a toggle) and is laid out for screens from 360 px wide upwards.
+
+| Input builder | Run settings |
+|:--|:--|
+| ![Input builder with a protein, a ligand with its 2-D depiction, and the live summary rail](assets/ui/input-builder.png) | ![Quality presets and run settings](assets/ui/run-settings.png) |
+
+| Live run panel | Result card |
+|:--|:--|
+| ![Run panel with phase tracker, timer and log, in running and failed states](assets/ui/run-panel.png) | ![Result card with confidence tiles and the binding-affinity summary](assets/ui/result-card.png) |
+
+Highlights: chain-ID chips, FASTA paste, PDB / mmCIF import, ligand preview, Fast / Balanced / Scientific presets, a live YAML preview,
+validation messages next to the field that caused them, and failure messages that name the likely cause and the fix.
+
+---
+
 ## Architecture & Workflow
 
 The notebooks are thin shells. Cell 1 clones a **pinned tag** of this repository and installs the `boltz2nb`
@@ -160,13 +178,13 @@ the remaining cells `%run` three scripts that call into the package.
 │ Cell 1  setup.py          pinned engine + boltz2nb, GPU check         │
 │ Cell 2  warm-up           weights/CCD download (~6 GB once per runtime)│
 ├──────────────────────────────────────────────────────────────────────┤
-│ Cell 3  param_gen.py      HTML form → boltz2nb.yaml_builder            │
+│ Cell 3  param_gen.py      boltz2nb.ui input builder → yaml_builder     │
 │                           validates alphabets, chain IDs, constraints, │
 │                           SMILES (RDKit) → params.yaml + run_params.txt│
 ├──────────────────────────────────────────────────────────────────────┤
 │ Cell 4  Boltz_Run.py      boltz2nb.runner: builds `boltz predict …`,   │
-│                           streams the log, writes run_context.json,    │
-│                           never overwrites an existing job folder      │
+│                           live run panel (phases, timer, log),         │
+│                           result card; never overwrites a job folder   │
 ├──────────────────────────────────────────────────────────────────────┤
 │ Cell 5  analysis.py       boltz2nb.analysis/report: token mapping,     │
 │                           pLDDT, PAE, interface PAE, affinity, ensemble│
@@ -175,8 +193,8 @@ the remaining cells `%run` three scripts that call into the package.
 ```
 
 Package layout: `boltz2nb/` (`yaml_builder`, `run_params`, `runner`, `tokens`, `analysis`, `report`, `batch`,
-`diagnostics`, `msa_cache`, `ligand`, `telemetry`, `install`), `scripts/common/` (cell implementations),
-`scripts/v1|v2/` (parameter GUIs + shims), `tests/`.
+`diagnostics`, `msa_cache`, `ligand`, `pdb_import`, `telemetry`, `install`, and `ui/` with the interface assets and renderers),
+`scripts/common/` (cell implementations), `scripts/v1|v2/` (thin launchers for the standard and advanced form), `tests/`.
 
 **Typical Time:** 2-10 minutes on T4 GPU (depending on complexity)
 
