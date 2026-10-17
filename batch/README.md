@@ -18,11 +18,11 @@ Click the button below to launch the latest Boltz2 Batch notebook in Google Cola
 
 **Boltz2 Batch v1.0.0 (pre-release)** 
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Batch/Boltz2_Batch_v1_beta.ipynb) 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb) 
 
 **or use this link:**
 ```
-https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Batch/Boltz2_Batch_v1_beta.ipynb
+https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb
 ```
 
 > **Note:** Google Colab provides free GPU access. For best performance, select GPU runtime in Colab (`Runtime → Change runtime type → GPU`).
@@ -57,7 +57,7 @@ The notebook supports **4 input modes**:
   - **Fast** - Quick sanity checks (fewer recycling steps)
   - **Balanced** - Default trade-off between speed and quality
   - **Scientific** - High-quality production runs
-- Output format selection (PDB, MMCIF, or CIF)
+- Output format selection (PDB or mmCIF)
 - Job filtering options (skip completed, retry failed)
 
 ### 5. **Batch Execution Engine**
@@ -88,14 +88,17 @@ The notebook supports **4 input modes**:
 | Column | Description | Example |
 |--------|-------------|---------|
 | `job_name` | Unique identifier for the job | `protein_001` |
-| `protein_sequence` | Protein sequence in 1-letter code | `MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQ` |
+| `protein_sequence` | Protein sequence(s) in 1-letter code; separate chains with `:` | `MKTAYIAK:MKTAYIAK` |
 
 **Optional Columns:**
 | Column | Description | Example | Notes |
 |--------|-------------|---------|-------|
 | `ligand_smiles` | Small molecule SMILES string | `CC(=O)Oc1ccccc1C(=O)O` | Use for small molecules |
 | `ligand_ccd` | CCD code from PDB | `HEM` | Alternative to SMILES |
-| `binder` | Ligand chain ID | `B` | Required if ligand is provided |
+| `binder` | Ligand chain ID | `B` | Defaults to the next free letter |
+| `affinity` | Request affinity prediction | `true` | Defaults to `true` when a ligand and `binder` are given |
+| `dna_sequence` | DNA chain(s), `:`-separated | `ACGTACGT` | |
+| `rna_sequence` | RNA chain(s), `:`-separated | `ACGUACGU` | |
 | `protein_id` | Custom protein identifier | `P123` | Optional metadata |
 | `ligand_id` | Custom ligand identifier | `L456` | Optional metadata |
 | `msa_mode` | MSA strategy | `server` or `none` | Default: `server` |
@@ -247,9 +250,9 @@ Session 2: Resume remaining 900
 
 | Profile | Use Case | Recycling Steps | Sampling Steps | Speed | Quality |
 |---------|----------|-----------------|----------------|-------|---------|
-| **Fast** | Pipeline testing, sanity checks | 2 | 100 | ⚡⚡⚡ | ⭐ |
-| **Balanced** | General production use (default) | 3 | 250 | ⚡⚡ | ⭐⭐⭐ |
-| **Scientific** | High-accuracy research runs | 5 | 500+ | ⚡ | ⭐⭐⭐⭐⭐ |
+| **Fast** | Pipeline testing, sanity checks | 2 | 50 (MSA 256) | ⚡⚡⚡ | ⭐ |
+| **Balanced** | General production use (default) | 3 | 200 | ⚡⚡ | ⭐⭐⭐ |
+| **Scientific** | High-accuracy research runs | 5 | 200, 5 samples, potentials | ⚡ | ⭐⭐⭐⭐⭐ |
 
 ---
 
@@ -263,11 +266,14 @@ Session 2: Resume remaining 900
 | `iptm` | Interface prediction TM-score | Yes |
 | `complex_plddt` | Complex pLDDT (confidence per residue) | Yes |
 | `ptm` | PAE-TM score | Yes |
-| `affinity_pred_value` | Predicted binding affinity | Depends* |
+| `affinity_pred_value` | Predicted log10 IC50 in µM (−2 ≈ 10 nM, 0 = 1 µM) | No (lower = tighter) |
 | `affinity_probability_binary` | Probability of binding (0-1) | Yes |
-| `complex_pde` | Complex PAE score | No |
+| `complex_pde` | Complex predicted distance error | No |
+| `min_interface_pae` | Lowest mean inter-chain PAE (Å) | No |
+| `confidence_score_sd` | SD of confidence across diffusion samples | — (spread) |
+| `affinity_member_spread` | Disagreement between the two affinity ensemble members (log units) | — (spread) |
 
-*Lower affinity values may indicate better binding depending on energy units
+`RANK_METRIC = "auto"` picks `affinity_probability_binary` when any job has a ligand, else `iptm`, else `confidence_score`.
 
 ## Outputs
 
@@ -344,12 +350,10 @@ Step 4:
 ## File Structure
 
 ```
-Batch/
-├── Boltz2_Batch_v1_beta.ipynb    (Main notebook)
-├── Boltz2_Batch_v1.ipynb         (Stable version)
-├── README.md                       (This file)
-└── scripts/
-    └── batch_utils.py             (Helper functions)
+batch/
+├── Boltz2_Batch_v1_beta.ipynb    (notebook)
+└── README.md                     (this file)
+boltz2nb/batch.py                 (engine; scripts/batch_utils.py is a compatibility shim)
 ```
 
 ---
@@ -375,11 +379,11 @@ For issues or feature requests, check the notebook's built-in help cells marked 
 
 ## Version History
 
+- **v2.1.0** - Engine moved to `boltz2nb.batch` (tested); multi-chain, DNA/RNA and `affinity` CSV columns; ensemble metrics; `auto` ranking; validation errors reported per job
 - **v1.0.0-beta** - Initial batch processing with 7-step workflow
 - Supports: CSV, FASTA, YAML inputs
 - Features: GPU acceleration, live progress, result ranking, 3D visualization
 
 ---
 
-**Last Updated:** April 2026  
-**Notebook Version:** v1.0-beta
+**Notebook Version:** v2.1.0 (batch v1 beta)

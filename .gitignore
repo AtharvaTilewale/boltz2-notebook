@@ -8,3 +8,5 @@ __pycache__/
 
 # Local cache (large files)
 /root/.boltz/
+tutorial/output/
+boltz_cache/

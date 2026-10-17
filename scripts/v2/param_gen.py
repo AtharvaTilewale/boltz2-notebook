@@ -1,246 +1,84 @@
-
 # @title Generate Parameters (YAML file & Run Config)
-from IPython.display import HTML, display
-from google.colab import output
-import yaml
+"""Parameter builder GUI. The HTML/JS form below calls back into Python through
+google.colab.output; all YAML construction and validation lives in boltz2nb.yaml_builder."""
+import base64
 import os
 import re
-import base64
-import uuid
 from pathlib import Path
 
-BASE_DIR = Path("/content/boltz_data")
-UPLOAD_DIR = BASE_DIR / "uploads"
-TEMPLATE_DIR = UPLOAD_DIR / "templates"
-MSA_DIR = UPLOAD_DIR / "msas"
+from IPython.display import HTML, display
 
-BASE_DIR.mkdir(parents=True, exist_ok=True)
-TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
-MSA_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    from google.colab import output as _colab_output
+except Exception:  # pragma: no cover - allows importing the file outside Colab
+    _colab_output = None
+
+from boltz2nb.ligand import describe_smiles
+from boltz2nb.paths import base_dir, ensure_dirs, upload_dir
+from boltz2nb.run_params import parse_run_params_text, validate_run_params
+from boltz2nb.yaml_builder import SpecError, build_yaml, pop_warnings, spec_summary, write_yaml
+
+ensure_dirs()
+BASE_DIR = base_dir()
+TEMPLATE_DIR = upload_dir("templates")
+MSA_DIR = upload_dir("msas")
 os.chdir(BASE_DIR)
 
-class IdList(list):
-    pass
-
-class QuotedString(str):
-    pass
-
-class MyDumper(yaml.SafeDumper):
-    pass
-
-def represent_id_list(dumper, data):
-    return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
-
-def quoted_str_presenter(dumper, data):
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style="'")
-
-def str_presenter(dumper, data):
-    if '\n' in data:
-        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-
-MyDumper.add_representer(IdList, represent_id_list)
-MyDumper.add_representer(QuotedString, quoted_str_presenter)
-MyDumper.add_representer(str, str_presenter)
-
-def _clean_ids(values):
-    if isinstance(values, str):
-        values = values.split(',')
-    cleaned = [str(v).strip().upper().replace(' ', '') for v in values if str(v).strip()]
-    return IdList(cleaned)
-
-def _clean_token_list(values):
-    if isinstance(values, str):
-        values = values.split(',')
-    return [str(v).strip() for v in values if str(v).strip()]
-
-def _clean_sequence(seq):
-    return re.sub(r'\s+', '', str(seq or '')).upper()
 
 def _save_uploaded_file(file_kind, filename, content_b64):
     try:
-        filename = os.path.basename(filename)
-        ext = Path(filename).suffix.lower()
-        allowed = {
-            "template": {".cif", ".pdb"},
-            "msa": {".a3m", ".csv"},
-        }
-        if file_kind not in allowed:
-            return {"status": "error", "message": f"Unsupported file kind: {file_kind}"}
-        if ext not in allowed[file_kind]:
-            return {"status": "error", "message": f"Invalid extension {ext} for {file_kind} upload."}
-
+        safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", Path(str(filename)).name) or "upload"
         dest_dir = TEMPLATE_DIR if file_kind == "template" else MSA_DIR
-        safe_name = f"{uuid.uuid4().hex[:8]}_{filename}"
-        dest_path = dest_dir / safe_name
-        with open(dest_path, "wb") as fh:
-            fh.write(base64.b64decode(content_b64))
-        return {"status": "ok", "path": str(dest_path)}
-    except Exception as e:
+        allowed = {".pdb", ".cif", ".mmcif"} if file_kind == "template" else {".a3m", ".csv"}
+        if Path(safe).suffix.lower() not in allowed:
+            return {"status": "error", "message": f"{file_kind} must be one of {sorted(allowed)}."}
+        dest = dest_dir / safe
+        raw = content_b64.split(",", 1)[1] if "," in content_b64 else content_b64
+        dest.write_bytes(base64.b64decode(raw))
+        return {"status": "ok", "path": str(dest)}
+    except Exception as e:  # noqa: BLE001
         return {"status": "error", "message": str(e)}
 
-def _build_sequences(raw_sequences):
-    sequences_fixed = []
-    for entry in raw_sequences:
-        entity_type = entry.get("type")
-        item = entry.get("data", {})
-        ids = _clean_ids(item.get("id", []))
-        if not ids:
-            raise ValueError(f"{entity_type} entry is missing IDs.")
-
-        if entity_type in {"protein", "dna", "rna"}:
-            sequence = _clean_sequence(item.get("sequence", ""))
-            if not sequence:
-                raise ValueError(f"{entity_type} entry {ids} is missing sequence.")
-            polymer = {"id": ids, "sequence": sequence}
-            msa = item.get("msa")
-            if entity_type == "protein" and msa not in (None, ""):
-                polymer["msa"] = msa
-            modifications = []
-            for mod in item.get("modifications", []):
-                position = mod.get("position")
-                ccd = str(mod.get("ccd", "")).strip().upper()
-                if position and ccd:
-                    modifications.append({"position": int(position), "ccd": ccd})
-            if modifications:
-                polymer["modifications"] = modifications
-            if item.get("cyclic"):
-                polymer["cyclic"] = True
-            sequences_fixed.append({entity_type: polymer})
-
-        elif entity_type == "ligand":
-            ligand = {"id": ids}
-            ccd = str(item.get("ccd", "")).strip().upper()
-            smiles = str(item.get("smiles", "")).strip()
-            if bool(ccd) == bool(smiles):
-                raise ValueError(f"Ligand entry {ids} must have exactly one of CCD or SMILES.")
-            if ccd:
-                ligand["ccd"] = ccd
-            if smiles:
-                ligand["smiles"] = QuotedString(smiles)
-            sequences_fixed.append({"ligand": ligand})
-        else:
-            raise ValueError(f"Unsupported entity type: {entity_type}")
-    return sequences_fixed
 
 def _save_params(data):
     try:
-        if not isinstance(data, dict) or "sequences" not in data:
-            return {"status": "error", "message": 'Invalid data structure: "sequences" key missing.'}
-
-        final_yaml_data = {"version": 1}
-        final_yaml_data["sequences"] = _build_sequences(data.get("sequences", []))
-
-        constraints = []
-        for bond in data.get("constraints", {}).get("bonds", []):
-            atom1 = [str(bond.get("chain1", "")).strip().upper(), int(bond.get("res1", 1)), str(bond.get("atom1", "")).strip()]
-            atom2 = [str(bond.get("chain2", "")).strip().upper(), int(bond.get("res2", 1)), str(bond.get("atom2", "")).strip()]
-            if atom1[0] and atom1[2] and atom2[0] and atom2[2]:
-                constraints.append({"bond": {"atom1": atom1, "atom2": atom2}})
-
-        for pocket in data.get("constraints", {}).get("pockets", []):
-            binder = str(pocket.get("binder", "")).strip().upper()
-            max_distance = pocket.get("max_distance")
-            raw_contacts = pocket.get("contacts", [])
-            contacts = []
-            for token in raw_contacts:
-                chain = str(token.get("chain", "")).strip().upper()
-                ref = str(token.get("ref", "")).strip()
-                if chain and ref:
-                    try:
-                        ref_val = int(ref)
-                    except ValueError:
-                        ref_val = ref
-                    contacts.append([chain, ref_val])
-            if binder and contacts:
-                pocket_dict = {"binder": binder, "contacts": contacts}
-                if max_distance not in (None, "", 0):
-                    pocket_dict["max_distance"] = float(max_distance)
-                if pocket.get("force"):
-                    pocket_dict["force"] = True
-                constraints.append({"pocket": pocket_dict})
-
-        for contact in data.get("constraints", {}).get("contacts", []):
-            ch1 = str(contact.get("chain1", "")).strip().upper()
-            ref1 = str(contact.get("ref1", "")).strip()
-            ch2 = str(contact.get("chain2", "")).strip().upper()
-            ref2 = str(contact.get("ref2", "")).strip()
-            if ch1 and ref1 and ch2 and ref2:
-                try:
-                    ref1_val = int(ref1)
-                except ValueError:
-                    ref1_val = ref1
-                try:
-                    ref2_val = int(ref2)
-                except ValueError:
-                    ref2_val = ref2
-                contact_dict = {
-                    "token1": [ch1, ref1_val],
-                    "token2": [ch2, ref2_val],
-                }
-                if contact.get("max_distance") not in (None, "", 0):
-                    contact_dict["max_distance"] = float(contact["max_distance"])
-                if contact.get("force"):
-                    contact_dict["force"] = True
-                constraints.append({"contact": contact_dict})
-
-        if constraints:
-            final_yaml_data["constraints"] = constraints
-
-        templates = []
-        for template in data.get("templates", []):
-            path = template.get("path", "").strip()
-            if not path:
-                continue
-            tmpl = {}
-            ext = Path(path).suffix.lower()
-            if ext == ".cif":
-                tmpl["cif"] = path
-            elif ext == ".pdb":
-                tmpl["pdb"] = path
-            else:
-                continue
-            chain_ids = _clean_token_list(template.get("chain_id", []))
-            template_ids = _clean_token_list(template.get("template_id", []))
-            if chain_ids:
-                tmpl["chain_id"] = chain_ids if len(chain_ids) > 1 else chain_ids[0]
-            if template_ids:
-                tmpl["template_id"] = template_ids if len(template_ids) > 1 else template_ids[0]
-            if template.get("force"):
-                tmpl["force"] = True
-                if template.get("threshold") not in (None, ""):
-                    tmpl["threshold"] = float(template["threshold"])
-            templates.append(tmpl)
-        if templates:
-            final_yaml_data["templates"] = templates
-
-        props = []
-        affinity = data.get("properties", {}).get("affinity_binder")
-        if affinity:
-            props.append({"affinity": {"binder": str(affinity).strip().upper()}})
-        if props:
-            final_yaml_data["properties"] = props
-
-        filename = "params.yaml"
-        with open(filename, "w") as f:
-            yaml.dump(final_yaml_data, f, Dumper=MyDumper, sort_keys=False, default_flow_style=False, indent=2)
-        return {"status": "ok", "filename": filename}
-    except Exception as e:
+        doc = build_yaml(data)
+        warnings = pop_warnings(doc)
+        path = write_yaml(doc, BASE_DIR / "params.yaml")
+        info = spec_summary(doc)
+        notes = []
+        if info["single_sequence_chains"]:
+            notes.append(f"{info['single_sequence_chains']} protein chain(s) run in single-sequence mode (lower accuracy).")
+        for s in doc["sequences"]:
+            if "ligand" in s and s["ligand"].get("smiles"):
+                d = describe_smiles(s["ligand"]["smiles"])
+                if d.get("valid"):
+                    notes.append(f"Ligand {s['ligand']['id'][0]}: {d['formula']}, MW {d['mol_weight']}, {d['heavy_atoms']} heavy atoms.")
+                if d.get("message"):
+                    warnings.append(d["message"])
+        return {"status": "ok", "filename": str(path), "summary": info, "notes": notes, "warnings": warnings}
+    except SpecError as e:
         return {"status": "error", "message": str(e)}
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": f"{type(e).__name__}: {e}"}
+
 
 def _save_run_params(data):
     try:
-        filename = data.get("filename", "run_params.txt")
-        content = data.get("content", "")
-        with open(filename, "w") as f:
-            f.write(content)
+        content = str(data.get("content", ""))
+        problems = validate_run_params({**parse_run_params_text(content)})
+        if problems:
+            return {"status": "error", "message": " ".join(problems)}
+        (BASE_DIR / str(data.get("filename", "run_params.txt"))).write_text(content.strip() + "\n")
         return {"status": "ok"}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"status": "error", "message": str(e)}
 
-output.register_callback("save_params", _save_params)
-output.register_callback("save_run_params", _save_run_params)
-output.register_callback("save_uploaded_file", _save_uploaded_file)
+
+if _colab_output is not None:
+    _colab_output.register_callback("save_params", _save_params)
+    _colab_output.register_callback("save_run_params", _save_run_params)
+    _colab_output.register_callback("save_uploaded_file", _save_uploaded_file)
 
 html = r"""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -1063,9 +901,9 @@ async function saveYaml() {
     const result = await google.colab.kernel.invokeFunction('save_params', [payload], {});
     if (result && result.status === 'ok') {
       let msg = `Parameter file saved successfully.`;
-      const emptyMsaCount = sequences.filter(x => x.type === 'protein' && x.data.msa === 'empty').length;
-      if (emptyMsaCount > 0) msg += ` ${emptyMsaCount} protein chain(s) are using single-sequence mode.`;
-      setStatus(msg, emptyMsaCount > 0 ? 'warning' : 'success');
+      const notes = (result.notes || []).concat(result.warnings || []);
+      if (notes.length) msg += '<br>' + notes.map(n => '• ' + n).join('<br>');
+      setStatus(msg, (result.warnings || []).length ? 'warning' : 'success');
       document.getElementById('nextBtn').style.display = 'inline-flex';
     } else {
       setStatus(`<strong>Error:</strong> ${result?.message || 'Unknown error occurred.'}`, 'error');

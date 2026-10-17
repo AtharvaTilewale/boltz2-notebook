@@ -1,108 +1,90 @@
 # @title Generate Parameters (YAML file & Run Config)
-# Colab HTML UI -> Python File Savers
-from IPython.display import HTML, display
-import yaml
-from google.colab import output
+"""Parameter builder GUI. The HTML/JS form below calls back into Python through
+google.colab.output; all YAML construction and validation lives in boltz2nb.yaml_builder."""
+import base64
 import os
 import re
-import json
-import base64
-import subprocess
-import sys
-from io import StringIO
+from pathlib import Path
 
-# Install required libraries
-print("🔧 Installing required dependencies...")
+from IPython.display import HTML, display
+
 try:
-    import Bio
-    print("✓ BioPython already installed")
-except ImportError:
-    print("📦 Installing BioPython...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "biopython"])
-    print("✓ BioPython installed successfully")
+    from google.colab import output as _colab_output
+except Exception:  # pragma: no cover - allows importing the file outside Colab
+    _colab_output = None
 
-from Bio.PDB import PDBParser
-from Bio.PDB.Polypeptide import is_aa
+from boltz2nb.ligand import describe_smiles
+from boltz2nb.paths import base_dir, ensure_dirs, upload_dir
+from boltz2nb.run_params import parse_run_params_text, validate_run_params
+from boltz2nb.yaml_builder import SpecError, build_yaml, pop_warnings, spec_summary, write_yaml
 
-# Ensure the directory exists before changing into it
-if not os.path.exists("/content/boltz_data/"):
-    os.makedirs("/content/boltz_data/")
-os.chdir("/content/boltz_data/")
+ensure_dirs()
+BASE_DIR = base_dir()
+TEMPLATE_DIR = upload_dir("templates")
+MSA_DIR = upload_dir("msas")
+os.chdir(BASE_DIR)
 
-# --- START: Custom YAML Formatting (No changes needed here) ---
-class IdList(list): pass
 
-def represent_id_list(dumper, data):
-    return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
+def _save_uploaded_file(file_kind, filename, content_b64):
+    try:
+        safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", Path(str(filename)).name) or "upload"
+        dest_dir = TEMPLATE_DIR if file_kind == "template" else MSA_DIR
+        allowed = {".pdb", ".cif", ".mmcif"} if file_kind == "template" else {".a3m", ".csv"}
+        if Path(safe).suffix.lower() not in allowed:
+            return {"status": "error", "message": f"{file_kind} must be one of {sorted(allowed)}."}
+        dest = dest_dir / safe
+        raw = content_b64.split(",", 1)[1] if "," in content_b64 else content_b64
+        dest.write_bytes(base64.b64decode(raw))
+        return {"status": "ok", "path": str(dest)}
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": str(e)}
 
-def str_presenter(dumper, data):
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-
-class MyDumper(yaml.SafeDumper):
-    pass
-
-class QuotedString(str): pass
-
-def quoted_str_presenter(dumper, data):
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style="'")
-
-MyDumper.add_representer(QuotedString, quoted_str_presenter)
-MyDumper.add_representer(IdList, represent_id_list)
-MyDumper.add_representer(str, str_presenter)
-# --- END: Custom YAML Formatting ---
 
 def _save_params(data):
-    if not isinstance(data, dict) or 'sequences' not in data:
-        return {'status': 'error', 'message': 'Invalid data structure: "sequences" key missing.'}
-
-    sequences_fixed = []
-    for entry in data['sequences']:
-        if 'protein' in entry:
-            ids = IdList([i.upper().replace(' ', '') for i in entry['protein'].get('id', [])])
-            seq = re.sub(r'\s+', '', entry['protein'].get('sequence', '').upper())
-            protein_dict = {'id': ids, 'sequence': seq}
-            sequences_fixed.append({'protein': protein_dict})
-        elif 'ligand' in entry:
-            ids = IdList([i.upper().replace(' ', '') for i in entry['ligand'].get('id', [])])
-            ligand_dict = {'id': ids}
-            if 'ccd' in entry['ligand']:
-                ligand_dict['ccd'] = entry['ligand']['ccd'].upper().replace(' ', '')
-            if 'smiles' in entry['ligand']:
-                smiles_val = entry['ligand']['smiles'].replace(' ', '')
-                ligand_dict['smiles'] = QuotedString(smiles_val)
-            sequences_fixed.append({'ligand': ligand_dict})
-
-    # Reconstruct the final dictionary to be dumped in the desired order
-    final_yaml_data = {'version': 1}
-    final_yaml_data['sequences'] = sequences_fixed # Add sequences first
-    if 'properties' in data:
-        final_yaml_data['properties'] = data['properties'] # Add properties last
-
-    filename = "params.yaml"
     try:
-        with open(filename, 'w') as f:
-            yaml.dump(
-                final_yaml_data,
-                f, Dumper=MyDumper, sort_keys=False, default_flow_style=False, indent=2
-            )
-        return {'status': 'ok', 'filename': filename}
-    except Exception as e:
-        return {'status': 'error', 'message': str(e)}
+        doc = build_yaml(data)
+        warnings = pop_warnings(doc)
+        path = write_yaml(doc, BASE_DIR / "params.yaml")
+        info = spec_summary(doc)
+        notes = []
+        if info["single_sequence_chains"]:
+            notes.append(f"{info['single_sequence_chains']} protein chain(s) run in single-sequence mode (lower accuracy).")
+        for s in doc["sequences"]:
+            if "ligand" in s and s["ligand"].get("smiles"):
+                d = describe_smiles(s["ligand"]["smiles"])
+                if d.get("valid"):
+                    notes.append(f"Ligand {s['ligand']['id'][0]}: {d['formula']}, MW {d['mol_weight']}, {d['heavy_atoms']} heavy atoms.")
+                if d.get("message"):
+                    warnings.append(d["message"])
+        return {"status": "ok", "filename": str(path), "summary": info, "notes": notes, "warnings": warnings}
+    except SpecError as e:
+        return {"status": "error", "message": str(e)}
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": f"{type(e).__name__}: {e}"}
+
 
 def _save_run_params(data):
     try:
-        filename = data.get('filename', 'run_params.txt')
-        content = data.get('content', '')
-        with open(filename, 'w') as f:
-            f.write(content)
-        return {'status': 'ok'}
-    except Exception as e:
-        return {'status': 'error', 'message': str(e)}
+        content = str(data.get("content", ""))
+        problems = validate_run_params({**parse_run_params_text(content)})
+        if problems:
+            return {"status": "error", "message": " ".join(problems)}
+        (BASE_DIR / str(data.get("filename", "run_params.txt"))).write_text(content.strip() + "\n")
+        return {"status": "ok"}
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "message": str(e)}
 
-output.register_callback('save_params', _save_params)
-output.register_callback('save_run_params', _save_run_params)
 
-# --- PDB PARSING FUNCTIONS ---
+if _colab_output is not None:
+    _colab_output.register_callback("save_params", _save_params)
+    _colab_output.register_callback("save_run_params", _save_run_params)
+    _colab_output.register_callback("save_uploaded_file", _save_uploaded_file)
+
+import json
+from io import StringIO
+from Bio.PDB import PDBParser
+from Bio.PDB.Polypeptide import is_aa
+
 def parse_pdb_file_biopython(pdb_content):
     """
     Parse PDB using BioPython (primary method)
@@ -355,9 +337,9 @@ def _process_pdb_upload(data):
         print(f"[DEBUG] Returning exception error: {result}")
         return result
 
-output.register_callback('process_pdb_upload', _process_pdb_upload)
+if _colab_output is not None:
+    _colab_output.register_callback('process_pdb_upload', _process_pdb_upload)
 
-# HTML + JS with a Revamped UI and a second page
 html = r"""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
@@ -928,7 +910,8 @@ async function saveYaml() {
     try {
         const result = await google.colab.kernel.invokeFunction('save_params', [payload], {});
         if (result && result.status === 'ok') {
-            setStatus(`Parameter File Saved Successfully`, 'success');
+            const notes = (result.notes || []).concat(result.warnings || []);
+            setStatus('Parameter file saved successfully.' + (notes.length ? '<br>' + notes.map(n => '• ' + n).join('<br>') : ''), (result.warnings || []).length ? 'warning' : 'success');
         } else {
             setStatus(`<strong>Error:</strong> ${result?.message || 'Unknown error occurred.'}`, 'error');
         }

@@ -1,0 +1,70 @@
+import os
+import shutil
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "assets"
+
+
+@pytest.fixture(scope="session")
+def example_pred_dir(tmp_path_factory) -> Path:
+    """Assemble a Boltz-style predictions directory from the shipped example data."""
+    job = "prot_lig"
+    d = tmp_path_factory.mktemp("pred") / job / f"boltz_results_{job}" / "predictions" / job
+    d.mkdir(parents=True)
+    shutil.copy(ASSETS / "pdb" / "prot_lig.pdb", d / f"{job}_model_0.pdb")
+    shutil.copy(ASSETS / "pred_data" / "plddt.npz", d / f"plddt_{job}_model_0.npz")
+    shutil.copy(ASSETS / "pred_data" / "pae.npz", d / f"pae_{job}_model_0.npz")
+    shutil.copy(ASSETS / "pred_data" / "affinity.json", d / f"affinity_{job}.json")
+    (d / f"confidence_{job}_model_0.json").write_text(
+        '{"confidence_score": 0.91, "ptm": 0.93, "iptm": 0.88, "ligand_iptm": 0.86, "protein_iptm": 0.0,'
+        ' "complex_plddt": 0.92, "complex_iplddt": 0.90, "complex_pde": 1.1, "complex_ipde": 1.5,'
+        ' "chains_ptm": {"0": 0.93, "1": 0.8}, "pair_chains_iptm": {"0": {"0": 0.93, "1": 0.86}, "1": {"0": 0.86, "1": 0.8}}}')
+    return d
+
+
+@pytest.fixture
+def base_dir(tmp_path, monkeypatch) -> Path:
+    monkeypatch.setenv("BOLTZ2NB_BASE_DIR", str(tmp_path / "boltz_data"))
+    return tmp_path / "boltz_data"
+
+
+@pytest.fixture
+def fake_boltz(tmp_path, monkeypatch) -> Path:
+    """A stand-in `boltz` executable that writes plausible outputs for any YAML."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    script = bindir / "boltz"
+    script.write_text(f"""#!{os.environ.get('PYTHON_FOR_FAKE', 'python3')}
+import sys, json, shutil, numpy as np, yaml
+from pathlib import Path
+args = sys.argv[1:]
+assert args[0] == 'predict', args
+yaml_path = Path(args[1]); out = Path(args[args.index('--out_dir') + 1])
+n_samples = int(args[args.index('--diffusion_samples') + 1]) if '--diffusion_samples' in args else 1
+doc = yaml.safe_load(yaml_path.read_text())
+if any('FAILME' in (s.get('protein') or {{}}).get('sequence', '') for s in doc['sequences']):
+    print('RuntimeError: CUDA out of memory. Tried to allocate 2 GiB', file=sys.stderr); sys.exit(1)
+stem = yaml_path.stem
+pred = out / f'boltz_results_{{stem}}' / 'predictions' / stem
+pred.mkdir(parents=True, exist_ok=True)
+assets = Path({str(ASSETS)!r})
+for i in range(n_samples):
+    shutil.copy(assets / 'pdb' / 'prot_lig.pdb', pred / f'{{stem}}_model_{{i}}.pdb')
+    shutil.copy(assets / 'pred_data' / 'plddt.npz', pred / f'plddt_{{stem}}_model_{{i}}.npz')
+    shutil.copy(assets / 'pred_data' / 'pae.npz', pred / f'pae_{{stem}}_model_{{i}}.npz')
+    (pred / f'confidence_{{stem}}_model_{{i}}.json').write_text(json.dumps({{'confidence_score': 0.9 - 0.05*i, 'ptm': 0.9, 'iptm': 0.85, 'ligand_iptm': 0.8, 'protein_iptm': 0.0, 'complex_plddt': 0.9, 'complex_iplddt': 0.88, 'complex_pde': 1.0, 'complex_ipde': 1.4}}))
+if doc.get('properties'):
+    shutil.copy(assets / 'pred_data' / 'affinity.json', pred / f'affinity_{{stem}}.json')
+if '--use_msa_server' in args:
+    msa = out / f'boltz_results_{{stem}}' / 'msa'; msa.mkdir(parents=True, exist_ok=True)
+    for k, s in enumerate(doc['sequences']):
+        if 'protein' in s:
+            (msa / f'{{stem}}_{{k}}.csv').write_text('key,sequence\\n-1,' + s['protein']['sequence'] + '\\n')
+print('Boltz fake run complete'); sys.exit(0)
+""")
+    script.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
+    return script
