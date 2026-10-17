@@ -3,6 +3,13 @@
 ## v2.1.0 (unreleased)
 
 ### Fixed
+- **Batch job names from long FASTA headers** crashed the manifest builder (`OSError: File name too long`); names are now cut
+  to 80 characters (`batch.MAX_JOB_NAME`) and never start or end with a dot.
+- **Batch work root** is re-read from `BOLTZ2NB_BATCH_ROOT` each time the `Batch_Utils` shim is imported, so a kernel that
+  imported `boltz2nb.batch` earlier still writes into the folder Step 1 chose.
+- `python -m boltz2nb.doctor`: `--help` works, a missing path exits with 2 and a message, a folder without predictions exits with 1.
+- Website: the landing page no longer throws when the 3Dmol library fails to load from its CDN.
+- `tools/build_notebook_headers.py`: an `and`/`or` precedence slip in the citation-cell check (no change to the generated headers).
 - **Cell 1 no longer runs stale notebook code.** Re-running it in a runtime that already held a clone reused that clone as it was, so a fix
   pushed to the branch never arrived unless `FORCE_REINSTALL` was ticked (which also reinstalls the engine). A clone that follows a branch is now
   fast-forwarded (tags stay as fetched), the cell prints the commit it runs, and it says so when a restart is needed because an older
@@ -63,7 +70,7 @@ so the form, the validator and the runner cannot drift apart.
   written at the top of the form instead of leaving a rendered-but-dead page (and if the script never runs at all, the markup
   itself reveals a "this form has not started" note after four seconds). This fixes a form that looked complete but ignored every
   click when the output renderer re-created the `<script>` tags without their ids (or ran the script before the markup was inserted).
-- **Tests.** 79 browser tests drive the real form against the real Python callbacks in headless Firefox (happy path, validation, FASTA,
+- **Tests.** 139 browser tests drive the real form against the real Python callbacks in headless Firefox (happy path, validation, FASTA,
   PDB import, uploads, presets, themes, no horizontal overflow at 360 / 414 / 768 / 1024 / 1280 px, accessible names) and embed it the
   ways notebook front-ends do (`tests/ui/test_embedding_browser.py`: scripts re-created without ids, `document.write`, markup arriving
   after the script, sandboxed frame with an opaque origin, no kernel bridge; standard and advanced forms), plus unit tests

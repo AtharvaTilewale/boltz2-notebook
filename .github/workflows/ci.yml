@@ -22,7 +22,7 @@ jobs:
       - name: Install package (no Boltz engine; engine-dependent tests are skipped)
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,ligand]" setuptools wheel
+          python -m pip install -e ".[dev,ligand,viewer]" setuptools wheel
       - name: Lint
         run: ruff check boltz2nb tests scripts/common scripts/batch_utils.py tools
       - name: Unit tests

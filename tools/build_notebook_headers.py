@@ -86,7 +86,7 @@ def main(check: bool) -> int:
         cells = nb["cells"]
         want = lines(header(mode))
         # v1 has no closing credits cell: keep its existing credits and citation text verbatim and move it to the end
-        if not any(c["cell_type"] == "markdown" and "Citation" in "".join(c["source"]) or "Cite" in "".join(c["source"]) for c in cells[1:]):
+        if not any(c["cell_type"] == "markdown" and ("Citation" in "".join(c["source"]) or "Cite" in "".join(c["source"])) for c in cells[1:]):
             old = "".join(cells[0]["source"])
             start = old.find("##  Credits & Authorship")
             end = old.find("> **Before you start:**")

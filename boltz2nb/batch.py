@@ -46,9 +46,13 @@ def ensure_workspace() -> Path:
     return WORK_ROOT
 
 
+MAX_JOB_NAME = 80   # job names become folder and file names; keep well under the 255-byte filesystem limit
+
+
 def slugify(name: str) -> str:
-    s = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(name).strip()).strip("_")
-    return s or "job"
+    """A job name that is safe as a folder name: ASCII letters, digits, ``_ . -``; never empty; never longer than MAX_JOB_NAME."""
+    s = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(name).strip()).strip("_.")
+    return (s[:MAX_JOB_NAME].rstrip("_.") or "job") if s else "job"
 
 
 def clean_sequence(seq: str) -> str:

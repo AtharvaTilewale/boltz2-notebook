@@ -139,3 +139,17 @@ def test_shim_reexports():
     for name in ("run_manifest", "apply_run_profile", "discover_uploads", "save_uploaded_file", "capture_run_context",
                  "build_manifest_from_fasta", "create_export_zip", "failure_diagnostics_table"):
         assert callable(getattr(mod, name)), name
+
+
+def test_job_names_from_headers_are_safe_folder_names(tmp_path):
+    """A FASTA header can be arbitrarily long; the job name becomes a folder, so it must stay within filesystem limits."""
+    from boltz2nb.batch import MAX_JOB_NAME, build_manifest_from_fasta, slugify
+
+    assert len(slugify("x" * 500)) == MAX_JOB_NAME
+    assert slugify("../etc/passwd") == "etc_passwd" and slugify("..") == "job" and slugify("") == "job"
+    assert slugify(">sp|P1|ONE first") == "sp_P1_ONE_first"
+    f = tmp_path / "long.fasta"
+    f.write_text(">" + "h" * 400 + "\nMKTAYIAK\n")
+    import pandas as pd
+    df = pd.read_csv(build_manifest_from_fasta(str(f), "m"))     # used to raise OSError: File name too long
+    assert len(df) == 1 and len(df.iloc[0]["job_name"]) <= MAX_JOB_NAME

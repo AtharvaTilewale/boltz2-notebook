@@ -53,11 +53,18 @@ def report(target: Path | str) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv:
+    if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
+        return 0 if argv else 2
+    target = Path(argv[0])
+    if not target.exists():
+        print(f"No such file or directory: {target}", file=sys.stderr)
         return 2
-    info = report(argv[0])
+    info = report(target)
     print(json.dumps(info, indent=2))
+    if info["predictions_dir"] is None:
+        print(f"\nNo Boltz prediction files (plddt_*_model_*.npz) found under {target}.", file=sys.stderr)
+        return 1
     unmatched = [m for m in info["models"] if m.get("match") is None and "layout_counts" in m]
     if unmatched:
         print("\nNo known token layout matches these models - please send this output to the maintainers:")

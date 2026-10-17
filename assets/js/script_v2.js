@@ -239,6 +239,10 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('DOMContentLoaded', function() {
     const viewer = document.getElementById('viewer');
     if (!viewer) return;
+    if (typeof $3Dmol === 'undefined') {           // the library comes from a CDN; without it the page must still work
+      viewer.textContent = 'The 3-D viewer needs an internet connection to load.';
+      return;
+    }
 
     let config = { backgroundColor: '#07111f' };
     let v = $3Dmol.createViewer(viewer, config);
@@ -334,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
 (function initBgViewer() {
   setTimeout(() => {
     const bgViewer = document.getElementById('bgViewer');
-    if (!bgViewer) return;
+    if (!bgViewer || typeof $3Dmol === 'undefined') return;
 
     try {
       let bgConfig = { backgroundColor: 'rgba(0,0,0,0)' };
