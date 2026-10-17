@@ -52,3 +52,23 @@ def test_paths(monkeypatch, tmp_path):
     monkeypatch.delenv("COLAB_RELEASE_TAG", raising=False)
     sys.modules.pop("google.colab", None)
     assert is_colab() is False
+
+
+def test_doctor_report(example_pred_dir, tmp_path, capsys):
+    import shutil
+
+    import numpy as np
+
+    from boltz2nb.doctor import main, report
+    # copy: the fixture is session-scoped and other tests rely on its contents
+    pred = tmp_path / "prot_lig" / "boltz_results_prot_lig" / "predictions" / "prot_lig"
+    shutil.copytree(example_pred_dir, pred)
+    example_pred_dir = pred
+    info = report(example_pred_dir)
+    m = info["models"][0]
+    assert m["plddt_len"] == 608 and m["match"] == "atomised" and m["pae_shape"] == [608, 608]
+    assert info["affinity_files"] == ["affinity_prot_lig.json"]
+    assert main([str(example_pred_dir)]) == 0
+    np.savez_compressed(example_pred_dir / "plddt_prot_lig_model_0.npz", plddt=np.full(20, 0.8))
+    assert main([str(example_pred_dir)]) == 1
+    assert "No known token layout matches" in capsys.readouterr().out

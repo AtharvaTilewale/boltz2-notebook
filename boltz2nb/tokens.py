@@ -22,6 +22,10 @@ STANDARD_RNA = {"A", "C", "G", "U", "N"}
 STANDARD = STANDARD_PROTEIN | STANDARD_DNA | STANDARD_RNA
 
 
+class LayoutMismatch(ValueError):
+    """Raised when no known token layout matches the confidence array length."""
+
+
 @dataclass(frozen=True)
 class Token:
     index: int
@@ -40,8 +44,16 @@ def _load_structure(path: Path | str):
     return PDBParser(QUIET=True).get_structure("model", str(path))
 
 
-def token_layout(structure_path: Path | str) -> list[Token]:
-    """Enumerate tokens in Boltz order from a written model (PDB or mmCIF)."""
+def _enumerate(structure_path: Path | str, mode: str) -> list[Token]:
+    """Enumerate tokens under one of the known layout conventions.
+
+    ``atomised``      Boltz-2 default: one token per polymer residue, one per heavy atom
+                      of every non-polymer / non-standard residue.
+    ``atomised_std``  like ``atomised`` but modified residues written as ATOM records
+                      (PTMs under their CCD name) count as a single token.
+    ``atomised_all``  like ``atomised`` but hydrogens present in the file also count.
+    ``residue``       one token per residue, ligands included.
+    """
     structure = _load_structure(structure_path)
     model = next(iter(structure))
     tokens: list[Token] = []
@@ -49,15 +61,59 @@ def token_layout(structure_path: Path | str) -> list[Token]:
         for residue in chain:
             hetflag, resseq, _ = residue.id
             resname = residue.get_resname().strip()
-            is_polymer_residue = hetflag == " " and resname in STANDARD
-            if is_polymer_residue:
+            is_het = hetflag != " "
+            if mode == "residue":
+                atomise = False
+            elif mode == "atomised_std":
+                atomise = is_het
+            else:
+                atomise = is_het or resname not in STANDARD
+            if not atomise:
                 tokens.append(Token(len(tokens), chain.id, "residue", resname, resseq))
             else:
                 for atom in residue:
-                    if atom.element == "H":
+                    if mode != "atomised_all" and atom.element == "H":
                         continue
                     tokens.append(Token(len(tokens), chain.id, "atom", resname, resseq, atom.get_id()))
     return tokens
+
+
+LAYOUTS = ("atomised", "atomised_std", "atomised_all", "residue")
+LAYOUT_LABELS = {
+    "atomised": "residue, or heavy atom for ligands and modified residues",
+    "atomised_std": "residue, or heavy atom for ligands",
+    "atomised_all": "residue, or atom (hydrogens included) for ligands",
+    "residue": "residue (ligands counted once)",
+}
+
+
+def token_layout(structure_path: Path | str, mode: str = "atomised") -> list[Token]:
+    """Enumerate tokens in Boltz order from a written model (PDB or mmCIF)."""
+    return _enumerate(structure_path, mode)
+
+
+def layout_counts(structure_path: Path | str) -> dict[str, int]:
+    """Token count under each known convention - used for diagnostics."""
+    return {mode: len(_enumerate(structure_path, mode)) for mode in LAYOUTS}
+
+
+def resolve_layout(structure_path: Path | str, n_expected: int) -> tuple[list[Token], str]:
+    """Pick the layout whose token count matches the confidence arrays.
+
+    Boltz 2.2.x writes one value per token (``atomised``); forks and future releases
+    may differ, so the convention is matched against the array length instead of
+    assumed, and the one that was used is reported alongside the tokens.
+    """
+    counts: dict[str, int] = {}
+    for mode in LAYOUTS:
+        tokens = _enumerate(structure_path, mode)
+        counts[mode] = len(tokens)
+        if len(tokens) == n_expected:
+            return tokens, mode
+    raise LayoutMismatch(
+        f"The confidence arrays have {n_expected} entries, which matches none of the token layouts "
+        f"derivable from {Path(structure_path).name} ({counts}). Per-token analysis (pLDDT, PAE) is "
+        "not possible for this model; ranking metrics and affinity are unaffected.")
 
 
 def chain_indices(tokens: Sequence[Token]) -> dict[str, list[int]]:

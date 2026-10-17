@@ -23,7 +23,7 @@ from typing import Any
 
 import numpy as np
 
-from .tokens import Token, chain_indices, chain_kinds, check_token_count, token_layout
+from .tokens import LAYOUT_LABELS, LayoutMismatch, Token, chain_indices, chain_kinds, resolve_layout
 
 PAE_MAX = 32.0  # Boltz PAE bins end at ~32 Å; fixed scale keeps plots comparable
 
@@ -90,16 +90,23 @@ def plddt_assessment(mean_plddt: float) -> str:
 class ModelResult:
     model_id: int
     structure_path: Path
-    plddt: np.ndarray                  # 0-100 per token
-    pae: np.ndarray | None          # token x token, Å
+    plddt: np.ndarray | None           # 0-100 per token (None when the layout is unknown)
+    pae: np.ndarray | None             # token x token, Å
     confidence: dict[str, Any]
     tokens: list[Token]
+    layout: str = "atomised"           # which token convention matched the arrays
+    layout_note: str = ""              # set when per-token analysis had to be skipped
     chain_index: dict[str, list[int]] = field(default_factory=dict)
     chain_kind: dict[str, str] = field(default_factory=dict)
 
     @property
     def chain_ids(self) -> list[str]:
         return list(self.chain_index)
+
+    @property
+    def per_token(self) -> bool:
+        """False when the confidence arrays could not be mapped onto the structure."""
+        return self.plddt is not None and bool(self.chain_index)
 
     def chain_plddt(self, chain_id: str) -> np.ndarray:
         return self.plddt[self.chain_index[chain_id]]
@@ -125,7 +132,7 @@ class ModelResult:
     def interface_pae(self) -> dict[str, float]:
         """Mean PAE of each off-diagonal chain pair, averaged over both directions."""
         out: dict[str, float] = {}
-        if self.pae is None:
+        if self.pae is None or not self.per_token:
             return out
         ids = self.chain_ids
         for i, a in enumerate(ids):
@@ -150,6 +157,14 @@ class JobResult:
         # Boltz writes models sorted by confidence_score; model_0 is the best.
         return self.models[0]
 
+    @property
+    def per_token(self) -> bool:
+        return all(m.per_token for m in self.models)
+
+    @property
+    def layout_notes(self) -> list[str]:
+        return [m.layout_note for m in self.models if m.layout_note]
+
     def ensemble_summary(self) -> dict[str, Any]:
         """Mean ± SD of headline metrics across diffusion samples."""
         keys = ["confidence_score", "ptm", "iptm", "ligand_iptm", "protein_iptm",
@@ -161,9 +176,10 @@ class JobResult:
                 arr = np.asarray(vals, dtype=float)
                 summary[k] = {"mean": float(arr.mean()), "sd": float(arr.std(ddof=1)) if len(arr) > 1 else 0.0,
                               "min": float(arr.min()), "max": float(arr.max()), "values": [float(v) for v in arr]}
-        mean_plddts = np.asarray([m.plddt.mean() for m in self.models])
-        summary["mean_plddt"] = {"mean": float(mean_plddts.mean()),
-                                 "sd": float(mean_plddts.std(ddof=1)) if len(mean_plddts) > 1 else 0.0}
+        if self.per_token:
+            mean_plddts = np.asarray([m.plddt.mean() for m in self.models])
+            summary["mean_plddt"] = {"mean": float(mean_plddts.mean()),
+                                     "sd": float(mean_plddts.std(ddof=1)) if len(mean_plddts) > 1 else 0.0}
         ipae = [m.interface_pae() for m in self.models]
         if ipae and ipae[0]:
             summary["interface_pae"] = {pair: {"mean": float(np.mean([d[pair] for d in ipae])),
@@ -202,7 +218,8 @@ class JobResult:
                          "confidence_score": c.get("confidence_score"), "ptm": c.get("ptm"), "iptm": c.get("iptm"),
                          "ligand_iptm": c.get("ligand_iptm"), "protein_iptm": c.get("protein_iptm"),
                          "complex_plddt": c.get("complex_plddt"), "complex_iplddt": c.get("complex_iplddt"),
-                         "complex_pde": c.get("complex_pde"), "mean_plddt": float(m.plddt.mean()),
+                         "complex_pde": c.get("complex_pde"),
+                         "mean_plddt": float(m.plddt.mean()) if m.per_token else None,
                          **{f"pae_{k}": v for k, v in m.interface_pae().items()}})
         return rows
 
@@ -232,9 +249,16 @@ def load_model(pred_dir: Path | str, stem: str, model_id: int) -> ModelResult:
     conf_path = pred_dir / f"confidence_{stem}_model_{model_id}.json"
     confidence = json.loads(conf_path.read_text()) if conf_path.exists() else {}
     structure_path = _structure_for(pred_dir, stem, model_id)
-    tokens = token_layout(structure_path)
-    check_token_count(tokens, len(plddt))
-    return ModelResult(model_id, structure_path, plddt, pae, confidence, tokens,
+    try:
+        tokens, layout = resolve_layout(structure_path, len(plddt))
+    except LayoutMismatch as exc:
+        # Keep the ranking metrics and affinity usable rather than failing the whole analysis.
+        return ModelResult(model_id, structure_path, None, None, confidence, [], "unknown", str(exc))
+    if pae is not None and pae.shape[0] != len(tokens):
+        return ModelResult(model_id, structure_path, None, None, confidence, tokens,
+                           layout, f"PAE matrix is {pae.shape[0]}x{pae.shape[1]} but the model has "
+                                   f"{len(tokens)} tokens; per-token analysis skipped.")
+    return ModelResult(model_id, structure_path, plddt, pae, confidence, tokens, layout, "",
                        chain_indices(tokens), chain_kinds(tokens))
 
 
@@ -245,8 +269,13 @@ def load_job(pred_dir: Path | str, job_name: str | None = None) -> JobResult:
     if not ids:
         raise FileNotFoundError(f"No plddt_{stem}_model_*.npz files in {pred_dir}")
     models = [load_model(pred_dir, stem, i) for i in ids]
-    aff_path = pred_dir / f"affinity_{stem}.json"
-    affinity = json.loads(aff_path.read_text()) if aff_path.exists() else None
+    # Boltz 2.2.x writes affinity_<stem>.json; the community fork writes one file per
+    # binder copy as affinity_<stem>_<chain>.json.
+    aff_files = sorted(pred_dir.glob(f"affinity_{stem}*.json"))
+    affinity = json.loads(aff_files[0].read_text()) if aff_files else None
+    if affinity is not None and len(aff_files) > 1:
+        affinity["_additional_binders"] = {f.stem.replace(f"affinity_{stem}_", ""): json.loads(f.read_text())
+                                           for f in aff_files[1:]}
     return JobResult(stem, pred_dir, models, affinity)
 
 
@@ -258,7 +287,9 @@ def _plt():
     return plt
 
 
-def plot_plddt(model: ModelResult, out_path: Path | str) -> Path:
+def plot_plddt(model: ModelResult, out_path: Path | str) -> Path | None:
+    if not model.per_token:
+        return None
     plt = _plt()
     fig, ax = plt.subplots(figsize=(10, 3.6))
     x = np.arange(len(model.plddt))
@@ -272,7 +303,7 @@ def plot_plddt(model: ModelResult, out_path: Path | str) -> Path:
         ax.axhline(y, color=c, linewidth=0.6, linestyle=":")
     ax.set_xlim(0, len(x) - 1)
     ax.set_ylim(0, 112)
-    ax.set_xlabel("Token index (residue, or heavy atom for ligands / modified residues)")
+    ax.set_xlabel(f"Token index ({LAYOUT_LABELS.get(model.layout, model.layout)})")
     ax.set_ylabel("pLDDT")
     ax.set_title(f"Per-token pLDDT - model {model.model_id}")
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -281,7 +312,7 @@ def plot_plddt(model: ModelResult, out_path: Path | str) -> Path:
 
 
 def plot_pae(model: ModelResult, out_path: Path | str) -> Path | None:
-    if model.pae is None:
+    if model.pae is None or not model.per_token:
         return None
     plt = _plt()
     fig, ax = plt.subplots(figsize=(6.4, 5.6))
@@ -330,7 +361,7 @@ def plot_affinity_card(job: JobResult, out_path: Path | str) -> Path | None:
 
 
 def plot_ensemble(job: JobResult, out_path: Path | str) -> Path | None:
-    if len(job.models) < 2:
+    if len(job.models) < 2 or not any(r.get("confidence_score") is not None for r in job.metrics_table()):
         return None
     plt = _plt()
     rows = job.metrics_table()
@@ -359,8 +390,9 @@ def generate_plots(job: JobResult, plots_dir: Path | str, model_ids: Sequence[in
     for m in job.models:
         if model_ids is not None and m.model_id not in model_ids:
             continue
+        plddt_path = plot_plddt(m, plots_dir / f"{job.job_name}_model_{m.model_id}_plddt.png")
         out["models"][m.model_id] = {
-            "plddt": str(plot_plddt(m, plots_dir / f"{job.job_name}_model_{m.model_id}_plddt.png")),
+            "plddt": str(plddt_path) if plddt_path else None,
             "pae": (lambda p: str(p) if p else None)(plot_pae(m, plots_dir / f"{job.job_name}_model_{m.model_id}_pae.png")),
         }
     aff = plot_affinity_card(job, plots_dir / f"{job.job_name}_affinity.png")
@@ -376,7 +408,9 @@ def summary_dict(job: JobResult) -> dict[str, Any]:
         "job_name": job.job_name,
         "n_models": len(job.models),
         "best_model": best.model_id,
-        "chains": [best.chain_stats(c) for c in best.chain_ids],
+        "token_layout": best.layout,
+        "layout_notes": job.layout_notes,
+        "chains": [best.chain_stats(c) for c in best.chain_ids] if best.per_token else [],
         "interface_pae": best.interface_pae(),
         "confidence": best.confidence,
         "ensemble": job.ensemble_summary(),

@@ -30,6 +30,15 @@
   random session id only) and documented in `docs/PRIVACY.md`.
 
 ### Added
+- Token-layout resolution: the convention used by the confidence arrays is matched against the
+  structure (`atomised`, `atomised_std`, `atomised_all`, `residue`) instead of assumed, so output
+  from the community fork and future engine versions is handled. If nothing matches, the report is
+  still produced from the ranking metrics and affinity, with the per-token section marked unavailable
+  instead of the analysis failing (found by a real Colab run on `boltz-community 2.10.12`).
+- `python -m boltz2nb.doctor <job dir>` prints engine version, array lengths, per-convention token
+  counts and the matching layout - enough to diagnose an output mismatch without sharing sequences.
+- Affinity files are discovered as `affinity_<job>*.json`, covering the community fork's per-binder
+  naming (`affinity_<job>_<chain>.json`).
 - `boltz2nb` Python package: all logic moved out of the notebooks into testable modules
   (`yaml_builder`, `run_params`, `runner`, `tokens`, `analysis`, `report`, `batch`, `diagnostics`,
   `msa_cache`, `ligand`, `telemetry`, `install`). 40+ unit tests, GitHub Actions CI on Python 3.10-3.13,

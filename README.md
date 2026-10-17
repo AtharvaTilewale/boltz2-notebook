@@ -323,7 +323,7 @@ Package layout: `boltz2nb/` (`yaml_builder`, `run_params`, `runner`, `tokens`, `
 | PAE | `pae_<job>_model_k.npz` | Token × token expected position error in Å. **Asymmetric**: row = aligned token, column = scored token. Off-diagonal chain blocks measure interface confidence. |
 | `confidence_score`, `ptm`, `iptm`, `ligand_iptm`, `complex_plddt`, `complex_pde` | `confidence_<job>_model_k.json` | Boltz ranking metrics (model 0 is the top-ranked sample). |
 | `affinity_probability_binary` | `affinity_<job>.json` | Probability that the ligand is a binder (hit discovery). |
-| `affinity_pred_value` | `affinity_<job>.json` | **log10(IC50) in µM** — not kcal/mol. `-2` ≈ 10 nM, `0` = 1 µM, `1` = 10 µM. The report also gives pIC50 (= 6 − value) and an approximate ΔG. Only meaningful for small-molecule ligands. |
+| `affinity_pred_value` | `affinity_<job>*.json` | **log10(IC50) in µM** — not kcal/mol. `-2` ≈ 10 nM, `0` = 1 µM, `1` = 10 µM. The report also gives pIC50 (= 6 − value) and an approximate ΔG. Only meaningful for small-molecule ligands. |
 
 ## Troubleshooting
 
@@ -337,6 +337,16 @@ Every failed run prints a *likely cause* and a *suggested fix* derived from the 
 | **Affinity requested for a protein chain** | Boltz-2 affinity only supports small molecules | Untick affinity for protein–protein jobs |
 | **Python 3.13 runtime** | Official `boltz` wheels need < 3.13 | Handled automatically (community fork); or choose runtime version 2026.7 |
 | **Low pLDDT everywhere** | Novel/disordered region or single-sequence mode | Provide an MSA; try template guidance |
+
+## Diagnosing an output mismatch
+
+Engine versions differ in how the confidence arrays line up with the written structure. The analysis
+step detects the convention; if it cannot, it still reports the ranking metrics and affinity and says
+so. To see exactly what was found:
+
+```bash
+python -m boltz2nb.doctor /content/boltz_data/<job>
+```
 
 ## Running outside Colab
 

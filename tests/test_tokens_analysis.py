@@ -106,3 +106,47 @@ def test_ensemble_with_multiple_models(example_pred_dir, tmp_path):
     assert ens["confidence_score"]["mean"] == pytest.approx(0.81, abs=1e-6) and ens["confidence_score"]["sd"] == pytest.approx(0.1, abs=1e-6)
     assert an.plot_ensemble(job, tmp_path / "ens.png") is not None
     assert len(job.metrics_table()) == 3
+
+
+def test_layout_resolution_and_graceful_mismatch(example_pred_dir, tmp_path):
+    import shutil
+
+    import numpy as np
+
+    from boltz2nb.tokens import LayoutMismatch, layout_counts, resolve_layout
+    counts = layout_counts(ASSETS / "pdb" / "prot_lig.pdb")
+    assert counts == {"atomised": 608, "atomised_std": 608, "atomised_all": 608, "residue": 586}
+    # the DNA/ligand example file carries hydrogens, so the layouts differ there
+    assert layout_counts(ASSETS / "pdb" / "prot_lig_dna.pdb") == {"atomised": 678, "atomised_std": 678,
+                                                                 "atomised_all": 740, "residue": 582}
+    toks, mode = resolve_layout(ASSETS / "pdb" / "prot_lig.pdb", 586)
+    assert mode == "residue" and len(toks) == 586
+    with pytest.raises(LayoutMismatch, match="matches none of the token layouts"):
+        resolve_layout(ASSETS / "pdb" / "prot_lig.pdb", 20)
+
+    # A model whose arrays do not match any layout must not break the analysis:
+    d = tmp_path / "prot_lig" / "boltz_results_prot_lig" / "predictions" / "prot_lig"
+    shutil.copytree(example_pred_dir, d)
+    np.savez_compressed(d / "plddt_prot_lig_model_0.npz", plddt=np.full(20, 0.8))
+    job = an.load_job(d)
+    m = job.best
+    assert m.per_token is False and m.layout == "unknown" and "20 entries" in m.layout_note
+    assert job.layout_notes and m.interface_pae() == {}
+    s = an.summary_dict(job)
+    assert s["chains"] == [] and s["confidence"]["confidence_score"] == 0.91
+    assert s["affinity"]["ic50"] == "2.77 µM"          # affinity is unaffected
+    out = write_report(job, tmp_path / "rep")
+    html = Path(out["report"]).read_text()
+    assert "Per-token analysis unavailable" in html and "2.77 µM" in html
+    assert out["plots"]["models"][0]["plddt"] is None and out["plots"]["models"][0]["pae"] is None
+    assert an.summary_dict(job)["models"][0]["mean_plddt"] is None
+
+
+def test_affinity_per_binder_files(example_pred_dir, tmp_path):
+    import json as _json
+    import shutil
+    d = tmp_path / "prot_lig" / "boltz_results_prot_lig" / "predictions" / "prot_lig"
+    shutil.copytree(example_pred_dir, d)
+    (d / "affinity_prot_lig_C.json").write_text(_json.dumps({"affinity_pred_value": -1.0, "affinity_probability_binary": 0.9}))
+    job = an.load_job(d)
+    assert job.affinity["_additional_binders"]["C"]["affinity_probability_binary"] == 0.9
