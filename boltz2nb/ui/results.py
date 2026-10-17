@@ -10,6 +10,7 @@ from typing import Any
 from .. import __version__
 from .icons import brand_mark, icon, sprite
 from .render import FONT_LINKS, read_asset
+from .theme import theme_attr, theme_button, theme_script
 
 PLDDT_BANDS = [(90, "#0053D6", "Very high (90-100)"), (70, "#65CBF3", "High (70-90)"), (50, "#FFDB13", "Low (50-70)"), (0, "#FF7D45", "Very low (<50)")]
 
@@ -171,7 +172,7 @@ def render_provenance(ctx: dict[str, Any] | None) -> str:
     return f'<div><div class="bz-sec-h"><h3>Provenance</h3><span>everything needed to reproduce this run</span></div><dl class="bz-prov">{rows}</dl>{cmd}{yml}</div>'
 
 
-def _head(summary: dict[str, Any], ctx: dict[str, Any] | None, uid: str, runtime: float | None) -> str:
+def _head(summary: dict[str, Any], ctx: dict[str, Any] | None, uid: str, runtime: float | None, theme: str | None = None) -> str:
     chips = []
     if ctx and ctx.get("engine"):
         chips.append(f'<span class="bz-chip bz-chip--glass">{esc(ctx["engine"])}</span>')
@@ -181,11 +182,11 @@ def _head(summary: dict[str, Any], ctx: dict[str, Any] | None, uid: str, runtime
         chips.append(f'<span class="bz-chip bz-chip--glass">{int(runtime // 60)}:{int(runtime % 60):02d} min</span>')
     chips.append(f'<span class="bz-chip bz-chip--glass">{summary["n_models"]} sample{"s" if summary["n_models"] != 1 else ""}</span>')
     return (f'<div class="bz-res-h">{brand_mark("r" + uid)}<div style="min-width:0"><h2>Results</h2><p><code>{esc(summary["job_name"])}</code></p></div>'
-            f'<div class="bz-inline" style="margin-left:auto;justify-content:flex-end">{"".join(chips)}</div></div>')
+            f'<div class="bz-inline" style="margin-left:auto;justify-content:flex-end">{"".join(chips)}{theme_button(theme)}</div></div>')
 
 
 def render_result_card(summary: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None, runtime: float | None = None,
-                       uid: str | None = None, standalone_css: bool = True, next_hint: bool = True) -> str:
+                       uid: str | None = None, standalone_css: bool = True, next_hint: bool = True, theme: str | None = None) -> str:
     """Compact card shown right after a run: headline numbers, tables and the 3-D structure."""
     uid = uid or uuid.uuid4().hex[:8]
     notes = "".join(f'<div class="bz-alert bz-alert--warn">{icon("alert")}<div>{esc(n)}</div></div>' for n in summary.get("layout_notes", []))
@@ -194,13 +195,13 @@ def render_result_card(summary: dict[str, Any], pdb_text: str | None = None, ctx
     css = (FONT_LINKS + "<style>" + read_asset("theme.css") + "\n" + read_asset("results.css") + "</style>") if standalone_css else ""
     viewer = render_viewer(pdb_text, uid)
     tables = render_chain_table(summary) + render_sample_table(summary)
-    return (f'{css}<div class="bz bz-res" data-theme="auto" id="bz-res-{uid}">{sprite()}{_head(summary, ctx, uid, runtime)}'
-            f'<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{viewer}{tables}{GUIDE}{nxt}</div></div>')
+    return (f'{css}<div class="bz bz-res"{theme_attr(theme)} id="bz-res-{uid}">{sprite()}{_head(summary, ctx, uid, runtime, theme)}'
+            f'<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{viewer}{tables}{GUIDE}{nxt}</div></div>{theme_script() if standalone_css else ""}')
 
 
 def render_report_fragment(summary: dict[str, Any], figures: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None,
                            ligand_svg: str | None = None, runtime: float | None = None, standalone_css: bool = True, uid: str | None = None,
-                           files: list[tuple[str, str]] | None = None) -> str:
+                           files: list[tuple[str, str]] | None = None, theme: str | None = None, hint: bool = True) -> str:
     """The full report as an embeddable block (used inline in the notebook and inside the HTML document)."""
     uid = uid or uuid.uuid4().hex[:8]
     figs = ""
@@ -219,15 +220,17 @@ def render_report_fragment(summary: dict[str, Any], figures: dict[str, Any], pdb
         rows = "\n".join(f"{label:<10}{path}" for label, path in files)
         files_sec = f'<div><div class="bz-sec-h"><h3>Saved files</h3><span>download from the Colab file browser or the Drive cell</span></div><pre class="bz-pre">{esc(rows)}</pre></div>'
     css = (FONT_LINKS + "<style>" + read_asset("theme.css") + "\n" + read_asset("results.css") + "</style>") if standalone_css else ""
-    return (f'{css}<div class="bz bz-res bz-report" data-theme="auto">{sprite()}{_head(summary, ctx, uid, runtime)}<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{lig}'
+    return (f'{css}<div class="bz bz-res bz-report"{theme_attr(theme, hint)}>{sprite()}{_head(summary, ctx, uid, runtime, theme)}<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{lig}'
             f'{render_chain_table(summary)}{render_sample_table(summary)}{fig_sec}{render_viewer(pdb_text, uid)}{GUIDE}{render_provenance(ctx)}{files_sec}'
-            f'<p class="bz-hint" style="text-align:center">Generated by boltz2nb {__version__}</p></div></div>')
+            f'<p class="bz-hint" style="text-align:center">Generated by boltz2nb {__version__}</p></div></div>{theme_script() if standalone_css else ""}')
 
 
 def render_report_document(summary: dict[str, Any], figures: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None,
-                           ligand_svg: str | None = None, runtime: float | None = None) -> str:
-    """Self-contained HTML report (figures embedded as base64)."""
-    body = render_report_fragment(summary, figures, pdb_text, ctx, ligand_svg, runtime, standalone_css=False)
+                           ligand_svg: str | None = None, runtime: float | None = None, theme: str | None = None) -> str:
+    """Self-contained HTML report (figures embedded as base64). Light unless ``theme`` is given or the reader switched it
+    (the switch is remembered by the browser, so no theme is written into the file)."""
+    body = render_report_fragment(summary, figures, pdb_text, ctx, ligand_svg, runtime, standalone_css=False,
+                                  theme=theme, hint=theme is not None)
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>Boltz-2 report - {esc(summary["job_name"])}</title>{FONT_LINKS}<style>{read_asset("theme.css")}\n{read_asset("results.css")}</style></head>'
-            f'<body class="bz-page">{body}</body></html>')
+            f'<body class="bz-page">{body}{theme_script()}</body></html>')

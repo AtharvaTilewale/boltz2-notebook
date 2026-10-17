@@ -28,7 +28,7 @@ def wheel(tmp_path_factory):
 def test_wheel_contains_every_ui_asset(wheel):
     names = set(zipfile.ZipFile(wheel).namelist())
     src = sorted(p.name for p in (ROOT / "boltz2nb" / "ui" / "assets").iterdir() if p.is_file())
-    assert {"theme.css", "form.css", "form.html", "form.js", "results.css"} <= set(src)
+    assert {"theme.css", "theme.js", "form.css", "form.html", "form.js", "results.css"} <= set(src)
     missing = [f for f in src if f"boltz2nb/ui/assets/{f}" not in names]
     assert not missing, f"assets missing from the wheel: {missing}"
     assert "boltz2nb/ui/__init__.py" in names and "boltz2nb/pdb_import.py" in names

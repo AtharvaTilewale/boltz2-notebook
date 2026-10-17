@@ -28,7 +28,7 @@ python tools/build_notebook_headers.py --check
 
 ### Interface and browser tests
 
-The interface lives in `boltz2nb/ui/assets/` (`theme.css`, `form.css`, `results.css`, `form.html`, `form.js`) and is plain
+The interface lives in `boltz2nb/ui/assets/` (`theme.css`, `form.css`, `results.css`, `form.html`, `form.js`, `theme.js`) and is plain
 ES2017 with no build step. All values the page needs (defaults, presets, ranges) come from `boltz2nb.run_params`; do not duplicate them in JS.
 A new asset file needs no packaging change (`assets/*` is package data), but run `pytest tests/test_packaging.py`.
 

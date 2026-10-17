@@ -5,6 +5,17 @@ import pytest
 from .harness import Server, find_firefox
 
 
+@pytest.fixture(autouse=True)
+def _fresh_theme(monkeypatch):
+    """The session's theme is process-wide state; every test starts from the default."""
+    from boltz2nb.ui.theme import reset_theme
+
+    monkeypatch.delenv("BOLTZ2NB_THEME", raising=False)
+    reset_theme()
+    yield
+    reset_theme()
+
+
 @pytest.fixture(scope="session")
 def server(tmp_path_factory):
     with Server(tmp_path_factory.mktemp("bz_ui_base")) as s:

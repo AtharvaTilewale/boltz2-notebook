@@ -41,11 +41,17 @@ so the form, the validator and the runner cannot drift apart.
 - **Result card and report.** KPI tiles, binding-probability ring, chain and sample tables, an interactive 3Dmol viewer (colour by
   pLDDT or chain; cartoon, lines or spheres) with a clear message when WebGL is unavailable, a self-contained HTML report and a print style sheet.
 - **Figures.** One brand style for pLDDT (confidence bands), PAE (chain labels) and affinity; palette PNGs about half the size.
-- **Look and feel.** Inter and JetBrains Mono (loaded from Google Fonts, with system fallbacks), light / dark / auto theme with a toggle,
+- **Look and feel.** Inter and JetBrains Mono (loaded from Google Fonts, with system fallbacks), light by default with a light / dark switch (see **Theme**),
   layouts checked from 360 px to desktop. Text contrast is at least 4.5:1 and control outlines at least 3:1, enforced by tests;
   every control has an accessible name, a visible focus ring, and reduced-motion is respected.
 - **Packaging.** The interface assets ship as package data (`boltz2nb/ui/assets`); a test builds the wheel and renders the form from
   an installed copy, because the notebooks install `boltz2nb` non-editably.
+- **Theme.** Every panel opens in the light theme, whatever the operating system prefers (the earlier "follow the system" mode is gone), and
+  every panel has a light / dark switch in its header: the input builder, the run panel, the result card and the HTML report. One shared
+  script (`boltz2nb/ui/assets/theme.js`) applies the choice to every panel on the page; it is kept on the page (so the run panel's
+  one-second refreshes do not flash back to light), in the browser (a saved report remembers it), and in the Python session (so the run
+  panel, result card and inline report drawn after you switched start in the same theme). `BOLTZ2NB_THEME=dark` changes the default.
+  Printing is always light. The 3-D viewer and the figure plates stay white so pLDDT colours read the same in both themes.
 - **Start-up that survives notebook front-ends.** The form is one self-contained `<script>` (the Python-side configuration is embedded
   in it, not in a second element looked up by id), it waits for its markup to exist, each start-up step is isolated, and any failure is
   written at the top of the form instead of leaving a rendered-but-dead page (and if the script never runs at all, the markup

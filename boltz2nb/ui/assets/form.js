@@ -842,24 +842,6 @@ function save() {
 }
 
 // ------------------------------------------------------------------------------------ theme + misc
-function initTheme() {
-  var btn = $('[data-act="theme"]'), stored = null;
-  try { stored = window.localStorage.getItem('bz-theme'); } catch (e) { /* storage may be blocked */ }
-  function effective() { return root.getAttribute('data-theme') !== 'auto' ? root.getAttribute('data-theme') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
-  function paint() {
-    var dark = effective() === 'dark';
-    btn.innerHTML = ICON(dark ? 'sun' : 'moon');
-    btn.title = dark ? 'Switch to light theme' : 'Switch to dark theme';
-  }
-  if (stored === 'light' || stored === 'dark') { root.setAttribute('data-theme', stored); }
-  paint();
-  btn.addEventListener('click', function () {
-    var next = effective() === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    try { window.localStorage.setItem('bz-theme', next); } catch (e) { /* ignore */ }
-    paint();
-  });
-}
 function copyText(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) { return navigator.clipboard.writeText(text); }
   return new Promise(function (resolve, reject) {
@@ -935,7 +917,7 @@ function step(name, fn) {
 }
 step('import panel', setupImport);
 step('run settings', initRun);
-step('theme', initTheme);
+step('theme', function () { if (window.__bzTheme) { window.__bzTheme.apply(); } });   // adopt the theme once the markup exists
 step('first molecule', function () { addEntity('protein'); });
 step('step tracker', function () { go(1); });
 step('live preview', previewNow);

@@ -9,6 +9,7 @@ from pathlib import Path
 from .. import __version__
 from ..run_params import DEFAULTS, PAIRING_STRATEGIES, PROFILES, RANGES
 from .icons import brand_mark, icon, sprite
+from .theme import resolve, theme_button, theme_js
 
 ASSETS = Path(__file__).parent / "assets"
 FONT_LINKS = (
@@ -52,17 +53,20 @@ def script_json(obj) -> str:
             .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
 
 
-def render_form(mode: str = "advanced", uid: str | None = None, fonts: bool = True) -> str:
-    """HTML for the input builder. ``standard`` hides DNA/RNA and the advanced-modelling step."""
+def render_form(mode: str = "advanced", uid: str | None = None, fonts: bool = True, theme: str | None = None) -> str:
+    """HTML for the input builder. ``standard`` hides DNA/RNA and the advanced-modelling step.
+
+    ``theme`` (``"light"`` / ``"dark"``) overrides the session's theme, which is light unless the user switched it."""
     if mode not in MODE_LABELS:
         raise ValueError(f"mode must be one of {sorted(MODE_LABELS)}")
     uid = uid or uuid.uuid4().hex[:8]
     markup = read_asset("form.html")
     markup = (markup.replace("@@UID@@", uid).replace("@@MODE@@", mode).replace("@@MODE_LABEL@@", MODE_LABELS[mode])
-              .replace("@@VERSION@@", __version__).replace("@@SPRITE@@", sprite()).replace("@@MARK@@", brand_mark(uid)))
+              .replace("@@VERSION@@", __version__).replace("@@SPRITE@@", sprite()).replace("@@MARK@@", brand_mark(uid))
+              .replace("@@THEME@@", resolve(theme)).replace("@@THEME_BUTTON@@", theme_button(theme)))
     markup = expand_icons(markup)
     css = read_asset("theme.css") + "\n" + read_asset("form.css")
     js = read_asset("form.js").replace("@@UID@@", uid)
     assert CONFIG_MARK in js, "form.js lost its config placeholder"
     js = js.replace(CONFIG_MARK, script_json(client_config(mode)))
-    return f"{FONT_LINKS if fonts else ''}<style>{css}</style>{markup}<script>{js}</script>"
+    return f"{FONT_LINKS if fonts else ''}<style>{css}</style>{markup}<script>{theme_js()}\n{js}</script>"

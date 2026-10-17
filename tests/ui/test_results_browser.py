@@ -39,7 +39,7 @@ def _strip_links(html: str) -> str:
 
 
 def _page(body: str, theme: str = "light") -> str:
-    body = body.replace('data-theme="auto"', f'data-theme="{theme}"')
+    body = body.replace('data-theme="light"', f'data-theme="{theme}"')
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<style>html,body{{margin:0}}body{{padding:12px}}</style></head><body>{_strip_links(body)}</body></html>')
 

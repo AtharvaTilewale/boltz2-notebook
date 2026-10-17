@@ -75,10 +75,8 @@ class _Handler(BaseHTTPRequestHandler):
             return
         q = parse_qs(urlparse(self.path).query)
         mode = q.get("mode", ["advanced"])[0]
-        theme = q.get("theme", ["auto"])[0]
-        form = render_form(mode=mode, uid="t", fonts=False)
-        if theme in ("light", "dark"):
-            form = form.replace('data-theme="auto"', f'data-theme="{theme}"', 1)
+        theme = q.get("theme", ["light"])[0]
+        form = render_form(mode=mode, uid="t", fonts=False, theme=theme if theme in ("light", "dark") else None)
         bg = "#0b1020" if theme == "dark" else "#ffffff"
         body = PAGE.replace("{fonts}", FONT_FACES if os.environ.get("BZ_FONT_DIR") else "").replace("{bg}", bg).replace("{shim}", SHIM).replace("{form}", form).encode()
         self.send_response(200)

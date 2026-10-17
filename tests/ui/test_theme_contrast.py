@@ -1,4 +1,4 @@
-"""WCAG 2.1 contrast of every colour pair the design system uses, in light, dark and auto-dark."""
+"""WCAG 2.1 contrast of every colour pair the design system uses, in light and dark."""
 import re
 from pathlib import Path
 
@@ -13,12 +13,11 @@ def _tokens(block: str) -> dict[str, str]:
 
 def _blocks():
     light = re.search(r"\.bz\{(.*?)\n\}", CSS, re.S).group(1)
-    dark = re.search(r'\.bz\[data-theme="dark"\]\{(.*?)\n\}', CSS, re.S).group(1)
-    auto = re.search(r'@media \(prefers-color-scheme:dark\)\{\s*\.bz\[data-theme="auto"\]\{(.*?)\n  \}', CSS, re.S).group(1)
-    return _tokens(light), _tokens(dark), _tokens(auto)
+    dark = re.search(r'\.bz\[data-theme="dark"\],\s*html\[data-bz-theme="dark"\] \.bz:not\(\[data-theme\]\)\{(.*?)\n\}', CSS, re.S).group(1)
+    return _tokens(light), _tokens(dark)
 
 
-LIGHT, DARK, AUTO = _blocks()
+LIGHT, DARK = _blocks()
 
 
 def _lum(hex_: str) -> float:
@@ -60,12 +59,6 @@ def test_text_contrast(name, tokens, fg, bg):
 @pytest.mark.parametrize("fg,bg", UI_PAIRS)
 def test_ui_component_contrast(name, tokens, fg, bg):
     assert ratio(tokens[fg], tokens[bg]) >= 3.0, f"{name}: {fg} on {bg} = {ratio(tokens[fg], tokens[bg]):.2f}"
-
-
-def test_auto_dark_block_matches_explicit_dark():
-    for k, v in AUTO.items():
-        assert DARK.get(k) == v, f"{k}: auto={v} dark={DARK.get(k)}"
-    assert set(AUTO) == set(DARK) - {"--bz-plate"} | ({"--bz-plate"} & set(AUTO))
 
 
 def test_hero_and_gradient_text_contrast():

@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 
 from .icons import brand_mark, icon, sprite
 from .render import FONT_LINKS, read_asset
+from .theme import theme_attr, theme_button, theme_script
 
 PHASES = [("prepare", "Prepare input"), ("msa", "Alignments"), ("fold", "Fold"), ("affinity", "Affinity"), ("finish", "Finish")]
 _ANSI = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -106,7 +107,10 @@ def render_styles() -> str:
     return FONT_LINKS + "<style>" + read_asset("theme.css") + "\n" + read_asset("results.css") + "</style>"
 
 
-def render_live(state: RunState, uid: str = "live", now: float | None = None, standalone_css: bool = True) -> str:
+def render_live(state: RunState, uid: str = "live", now: float | None = None, standalone_css: bool = True,
+                theme: str | None = None, hint: bool = True) -> str:
+    """The run panel. The first drawing (``hint=True``) carries the theme script and the session's theme; refreshes (``hint=False``)
+    leave the theme to the page, so a switch made mid-run is not undone."""
     now = now or time.time()
     keys = [k for k, _ in state.phases()]
     cur = keys.index(state.phase) if state.phase in keys else len(keys) - 1
@@ -162,11 +166,11 @@ def render_live(state: RunState, uid: str = "live", now: float | None = None, st
                 f'<span class="bz-acc-d">exact boltz invocation</span><span class="bz-chev">{icon("chevron-down")}</span></summary>'
                 f'<pre class="bz-pre" style="border:0;border-top:1px solid var(--bz-border);border-radius:0 0 13px 13px;white-space:pre-wrap">{html.escape(state.command)}</pre></details>')
     css = render_styles() if standalone_css else ""
-    return (f'{css}<div class="bz bz-live" data-theme="auto" id="bz-live-{uid}">{sprite()}'
+    return (f'{css}<div class="bz bz-live"{theme_attr(theme, hint)} id="bz-live-{uid}">{sprite()}'
             f'<div class="bz-live-h">{brand_mark("l" + uid)}<div style="min-width:0"><h2>Boltz-2 prediction</h2>'
-            f'<p><code>{html.escape(state.job_name)}</code></p></div><div style="margin-left:auto">{chip}</div></div>'
+            f'<p><code>{html.escape(state.job_name)}</code></p></div><div class="bz-inline" style="margin-left:auto;gap:8px">{chip}{theme_button(theme)}</div></div>'
             f'<div class="bz-live-b"><ol class="bz-phases">{"".join(steps)}</ol>{bar}'
-            f'<div class="bz-live-meta">{"".join(f"<span>{m}</span>" for m in meta)}</div>{err}{log}</div></div>{tick}')
+            f'<div class="bz-live-meta">{"".join(f"<span>{m}</span>" for m in meta)}</div>{err}{log}</div></div>{tick}{theme_script() if hint else "<script>if(window.__bzTheme){window.__bzTheme.apply();}</script>"}')
 
 
 class LivePanel:
@@ -211,7 +215,7 @@ class LivePanel:
 
     def _push(self) -> None:
         if self._handle is not None:
-            self._handle.update(self._HTML(render_live(self.state, standalone_css=False)))
+            self._handle.update(self._HTML(render_live(self.state, standalone_css=False, hint=False)))
             self._last = time.time()
 
     def finish(self, ok: bool, cause: str = "", fix: str = "") -> None:

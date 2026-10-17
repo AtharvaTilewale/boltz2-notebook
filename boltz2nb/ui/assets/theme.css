@@ -23,7 +23,8 @@
   --bz-plate:#FFFFFF;
   color-scheme:light;
 }
-.bz[data-theme="dark"]{
+.bz[data-theme="dark"],
+html[data-bz-theme="dark"] .bz:not([data-theme]){
   --bz-bg:#0A1226; --bz-surface:#101A34; --bz-surface-2:#16213F; --bz-surface-3:#202F57;
   --bz-border:#24335A; --bz-border-strong:#40527F; --bz-field-border:#60739F;
   --bz-text:#E9EEFB; --bz-text-2:#B8C3DC; --bz-text-3:#93A0BF;
@@ -42,28 +43,6 @@
   --bz-plate:#FFFFFF;
   color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){
-  .bz[data-theme="auto"]{
-    --bz-bg:#0A1226; --bz-surface:#101A34; --bz-surface-2:#16213F; --bz-surface-3:#202F57;
-    --bz-border:#24335A; --bz-border-strong:#40527F; --bz-field-border:#60739F;
-    --bz-text:#E9EEFB; --bz-text-2:#B8C3DC; --bz-text-3:#93A0BF;
-    --bz-primary:#8C9BFF; --bz-primary-hover:#A6B2FF; --bz-on-primary:#0A1226; --bz-primary-soft:#1B2654; --bz-link:#AAB5FF;
-    --bz-ring:rgba(140,155,255,.38);
-    --bz-ok:#52D9A3; --bz-ok-soft:#0F2E26; --bz-ok-border:#1D5A47;
-    --bz-warn:#F6BC55; --bz-warn-soft:#33260B; --bz-warn-border:#6B4E14;
-    --bz-err:#FF93A6; --bz-err-soft:#3A1420; --bz-err-border:#7A2C40;
-    --bz-info:#82BBF6; --bz-info-soft:#0F2742; --bz-info-border:#244F7E;
-    --bz-protein:#8C9BFF; --bz-protein-soft:#1B2654;
-    --bz-dna:#52D8C6; --bz-dna-soft:#0E2F2C;
-    --bz-rna:#C29AFF; --bz-rna-soft:#2A1D4A;
-    --bz-ligand:#F6A95C; --bz-ligand-soft:#3A2410;
-    --bz-shadow:0 1px 2px rgba(0,0,0,.35),0 14px 36px -16px rgba(0,0,0,.65);
-    --bz-shadow-sm:0 1px 2px rgba(0,0,0,.45);
-    --bz-plate:#FFFFFF;
-    color-scheme:dark;
-  }
-}
-
 /* ---- base ------------------------------------------------------------------------------ */
 .bz,.bz *,.bz *::before,.bz *::after{box-sizing:border-box}
 .bz{font:400 14px/1.55 var(--bz-font);color:var(--bz-text);background:var(--bz-bg);border:1px solid var(--bz-border);
@@ -108,7 +87,14 @@
 .bz-btn--icon{width:34px;height:34px;padding:0;border-radius:9px;color:var(--bz-text-3);background:transparent}
 .bz-btn--icon:hover{background:var(--bz-surface-2);color:var(--bz-text)}
 .bz-btn--danger:hover{background:var(--bz-err-soft);color:var(--bz-err)}
-.bz-hero .bz-btn--icon{color:#C9D3EC}.bz-hero .bz-btn--icon:hover{background:rgba(255,255,255,.12);color:#fff}
+.bz-hero .bz-btn--icon,.bz-live-h .bz-btn--icon,.bz-res-h .bz-btn--icon{color:#C9D3EC}
+.bz-hero .bz-btn--icon:hover,.bz-live-h .bz-btn--icon:hover,.bz-res-h .bz-btn--icon:hover{background:rgba(255,255,255,.12);color:#fff}
+/* theme switch: the moon invites dark mode, the sun returns to light */
+.bz-hero .bz-themebtn,.bz-live-h .bz-themebtn,.bz-res-h .bz-themebtn{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);color:#E5EBFA}
+.bz-hero .bz-themebtn:hover,.bz-live-h .bz-themebtn:hover,.bz-res-h .bz-themebtn:hover{background:rgba(255,255,255,.20);color:#fff}
+.bz-themebtn .bz-ico{display:inline-flex}.bz-themebtn .bz-ico--sun{display:none}
+.bz[data-theme="dark"] .bz-themebtn .bz-ico--sun,html[data-bz-theme="dark"] .bz:not([data-theme]) .bz-themebtn .bz-ico--sun{display:inline-flex}
+.bz[data-theme="dark"] .bz-themebtn .bz-ico--moon,html[data-bz-theme="dark"] .bz:not([data-theme]) .bz-themebtn .bz-ico--moon{display:none}
 .bz-spin{width:1.05em;height:1.05em;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:bz-rot .7s linear infinite;flex:none}
 @keyframes bz-rot{to{transform:rotate(360deg)}}
 

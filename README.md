@@ -152,7 +152,7 @@
 ## Interface
 
 Every screen shares one design system: a three-step input builder, a live run panel, a result card and a self-contained report.
-It follows the system light or dark theme (with a toggle) and is laid out for screens from 360 px wide upwards.
+It is light by default, with a light / dark switch in the header of every panel (input builder, run panel, result card and the HTML report), and is laid out for screens from 360 px wide upwards.
 
 | Input builder | Run settings |
 |:--|:--|

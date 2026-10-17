@@ -61,7 +61,8 @@
 
 /* standalone report */
 .bz-report{max-width:1120px;margin:0 auto;border-radius:0}
-body.bz-page{margin:0;padding:24px 16px;background:var(--bz-bg,#F4F6FB)}
+body.bz-page{margin:0;padding:24px 16px;background:#F4F6FB}
+html[data-bz-theme="dark"] body.bz-page{background:#070D1D}
 @media (max-width:860px){.bz-two{grid-template-columns:1fr}.bz-aff{grid-template-columns:1fr;justify-items:start}.bz-viewer{height:340px}}
 @media (max-width:560px){.bz-live-h,.bz-res-h{padding:14px 14px 16px;flex-wrap:wrap}.bz-res-b,.bz-live-b{padding:14px}.bz-figs{grid-template-columns:minmax(0,1fr)}
   /* phase tracker: one equal column per phase, label under the marker, no connectors */
@@ -69,4 +70,4 @@ body.bz-page{margin:0;padding:24px 16px;background:var(--bz-bg,#F4F6FB)}
   .bz-phase{flex-direction:column;gap:6px;font-size:11.5px;text-align:center;white-space:normal;line-height:1.25}
   .bz-phase:not(:last-child)::after{display:none}}
 .bz-pre,.bz-table-wrap{scrollbar-width:thin;scrollbar-color:var(--bz-border-strong) transparent}
-@media print{body.bz-page{background:#fff;padding:0}.bz{border:0;box-shadow:none;max-width:none}.bz-viewer,.bz-viewer-bar,.bz-legend[data-screen]{display:none}.bz-fig,.bz-kpi,.bz-aff{break-inside:avoid}}
+@media print{.bz-themebtn{display:none}html[data-bz-theme="dark"] body.bz-page,body.bz-page{background:#fff;padding:0}.bz{border:0;box-shadow:none;max-width:none}.bz-viewer,.bz-viewer-bar,.bz-legend[data-screen]{display:none}.bz-fig,.bz-kpi,.bz-aff{break-inside:avoid}}

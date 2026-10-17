@@ -16,6 +16,7 @@ from ..paths import base_dir, ensure_dirs, upload_dir
 from ..pdb_import import parse_structure_text
 from ..run_params import parse_run_params_text, validate_run_params
 from ..yaml_builder import SpecError, build_yaml, dump_yaml, pop_warnings, spec_summary, write_yaml
+from .theme import set_theme
 
 LARGE_COMPLEX_RESIDUES = 1500  # same threshold as the batch preflight
 
@@ -117,6 +118,14 @@ def process_pdb_upload(data: dict[str, Any]) -> dict[str, Any]:
     return parse_structure_text(str(data.get("pdb_content", "")), str(data.get("filename", "")))
 
 
+def save_theme(theme: str) -> dict[str, Any]:
+    """The colour theme chosen with the switch; panels drawn later (run panel, result card, report) start in it."""
+    try:
+        return {"status": "ok", "theme": set_theme(theme)}
+    except ValueError as exc:
+        return {"status": "error", "message": str(exc)}
+
+
 CALLBACKS = {
     "preview_params": preview_params,
     "save_params": save_params,
@@ -124,6 +133,7 @@ CALLBACKS = {
     "save_uploaded_file": save_uploaded_file,
     "describe_ligand": describe_ligand,
     "process_pdb_upload": process_pdb_upload,
+    "set_theme": save_theme,
 }
 
 
