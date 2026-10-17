@@ -13,7 +13,7 @@ ligand) and writes `tutorial/output/prot_lig/analysis/prot_lig_report.html`. Exp
 ```
 chain A  protein  tokens= 585 mean pLDDT=93.8  Very high confidence
 chain B  ligand   tokens=  23 mean pLDDT=59.5  Low confidence
-interface PAE (Å): {'A-B': ...}
+interface PAE (Å): {'A-B': 14.2}
 affinity: p(binder)=0.38  log10 IC50=0.44  IC50=2.77 µM  spread=1.07
 ```
 
