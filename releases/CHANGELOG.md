@@ -52,6 +52,12 @@ so the form, the validator and the runner cannot drift apart.
   one-second refreshes do not flash back to light), in the browser (a saved report remembers it), and in the Python session (so the run
   panel, result card and inline report drawn after you switched start in the same theme). `BOLTZ2NB_THEME=dark` changes the default.
   Printing is always light. The 3-D viewer and the figure plates stay white so pLDDT colours read the same in both themes.
+- **Website theme switch.** `index.html`, `docs/faq.html` and `docs/use-cases.html` get a light / dark switch in the top bar. The site
+  keeps its dark design as the default; a light palette (white cards, navy text, tinted chips; code boxes and 3-D viewers stay dark) is
+  layered on top, scoped to `html[data-theme="light"]` so the dark pages are unchanged. The choice is remembered in the browser and applied
+  from a two-line snippet in `<head>` before the stylesheet, so there is no flash; printing is always light. Fixed on the way: the FAQ
+  page's secondary buttons ("Clear") had the browser's default black label on dark glass. Every visible text in the light theme is
+  checked against WCAG AA in a browser test.
 - **Start-up that survives notebook front-ends.** The form is one self-contained `<script>` (the Python-side configuration is embedded
   in it, not in a second element looked up by id), it waits for its markup to exist, each start-up step is isolated, and any failure is
   written at the top of the form instead of leaving a rendered-but-dead page (and if the script never runs at all, the markup
