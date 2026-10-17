@@ -43,6 +43,15 @@ def client_config(mode: str) -> dict:
     }
 
 
+CONFIG_MARK = "/*@@CONFIG@@*/ {}"
+
+
+def script_json(obj) -> str:
+    """JSON that is safe to place inside an inline <script>: no '<' (so no '</script>' or '<!--'), no line separators."""
+    return (json.dumps(obj, separators=(",", ":")).replace("<", "\\u003c").replace(">", "\\u003e")
+            .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
+
+
 def render_form(mode: str = "advanced", uid: str | None = None, fonts: bool = True) -> str:
     """HTML for the input builder. ``standard`` hides DNA/RNA and the advanced-modelling step."""
     if mode not in MODE_LABELS:
@@ -52,8 +61,8 @@ def render_form(mode: str = "advanced", uid: str | None = None, fonts: bool = Tr
     markup = (markup.replace("@@UID@@", uid).replace("@@MODE@@", mode).replace("@@MODE_LABEL@@", MODE_LABELS[mode])
               .replace("@@VERSION@@", __version__).replace("@@SPRITE@@", sprite()).replace("@@MARK@@", brand_mark(uid)))
     markup = expand_icons(markup)
-    config = json.dumps(client_config(mode), separators=(",", ":"))
     css = read_asset("theme.css") + "\n" + read_asset("form.css")
     js = read_asset("form.js").replace("@@UID@@", uid)
-    return (f"{FONT_LINKS if fonts else ''}<style>{css}</style>{markup}"
-            f'<script type="application/json" id="bz-config-{uid}">{config}</script><script>{js}</script>')
+    assert CONFIG_MARK in js, "form.js lost its config placeholder"
+    js = js.replace(CONFIG_MARK, script_json(client_config(mode)))
+    return f"{FONT_LINKS if fonts else ''}<style>{css}</style>{markup}<script>{js}</script>"

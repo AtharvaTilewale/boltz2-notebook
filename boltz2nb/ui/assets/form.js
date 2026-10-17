@@ -2,9 +2,25 @@
 (function () {
 'use strict';
 var UID = '@@UID@@';
-var root = document.getElementById('bz-root-' + UID);
-if (!root) { return; }
-var CFG = JSON.parse(document.getElementById('bz-config-' + UID).textContent);
+// Defaults, presets and ranges come from Python and are embedded here, in this one script element: notebook front-ends
+// differ in how they re-insert <script> tags, and a second element looked up by id may not survive that.
+var CFG = /*@@CONFIG@@*/ {};
+
+// Shown in place of silence: if anything in the form fails, the message appears at the top of the form.
+function showProblem(root, title, lines) {
+  var box = root.querySelector('[data-f="ui-problem"]');
+  if (!box) {
+    box = document.createElement('div');
+    box.setAttribute('data-f', 'ui-problem'); box.setAttribute('role', 'alert'); box.className = 'bz-alert bz-alert--err';
+    box.style.cssText = 'margin:12px;white-space:pre-wrap;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace';
+    root.insertBefore(box, root.firstChild);
+  }
+  box.textContent = title + '\n' + lines.slice(0, 6).join('\n') + '\n\nCopy this message into a GitHub issue (the browser console has the full details).';
+}
+
+function start(root) {
+var bootNote = root.querySelector('[data-f="boot-note"]');   // static fallback text for a script that never runs
+if (bootNote) { bootNote.remove(); }
 var ADV = CFG.mode === 'advanced';
 
 // ------------------------------------------------------------------------------------ helpers
@@ -909,11 +925,41 @@ root.addEventListener('focusout', function (ev) {
 });
 $$('[data-f="rail-mols"] .bz-token').forEach(function () {});
 
-setupImport();
-initRun();
-initTheme();
-addEntity('protein');
-go(1);
-previewNow();
+// Each start-up step is isolated, so one failing part cannot leave the rest of the form dead.
+var failures = [];
+function step(name, fn) {
+  try { fn(); } catch (err) {
+    failures.push(name + ': ' + (err && err.message ? err.message : err));
+    if (window.console) { console.error('[boltz2nb ui] ' + name, err); }
+  }
+}
+step('import panel', setupImport);
+step('run settings', initRun);
+step('theme', initTheme);
+step('first molecule', function () { addEntity('protein'); });
+step('step tracker', function () { go(1); });
+step('live preview', previewNow);
 root._bz = { state: state, collect: collect, go: go, save: save, addEntity: addEntity, addRow: addRow, readRun: readRun, applyPreset: applyPreset };
+if (failures.length) { showProblem(root, 'Part of the form did not start:', failures); }
+
+// An error raised right after the user touches the form is reported on screen too (not only in the console).
+var lastUse = 0;
+['pointerdown', 'keydown', 'input', 'change'].forEach(function (t) { root.addEventListener(t, function () { lastUse = Date.now(); }, true); });
+window.addEventListener('error', function (ev) {
+  if (root.isConnected && Date.now() - lastUse < 1500) { showProblem(root, 'The form hit an error:', [String(ev.message)]); }
+});
+}
+
+// Start as soon as the markup is in the document. Some front-ends run a script before they have inserted the HTML that
+// precedes it, so wait briefly instead of giving up.
+(function boot(tries) {
+  var root = document.getElementById('bz-root-' + UID);
+  if (!root) { if (tries < 50) { setTimeout(function () { boot(tries + 1); }, 100); } return; }
+  if (root._bzStarted) { return; }
+  root._bzStarted = true;
+  try { start(root); } catch (err) {
+    if (window.console) { console.error('[boltz2nb ui] start failed', err); }
+    showProblem(root, 'The form could not start:', [String(err && err.stack ? err.stack : err).split('\n').slice(0, 4).join('\n')]);
+  }
+})(0);
 })();

@@ -114,3 +114,8 @@
   .bz-entity>.bz-card-h .bz-seg{order:5;flex:1 1 100%}      /* type switch on its own full-width row, actions stay beside the title */
   .bz-entity>.bz-card-h .bz-seg label{flex:1;text-align:center}
 }
+
+/* Revealed only if the script never removes it: a form whose script did not run explains itself instead of looking alive. */
+.bz-bootnote{margin:12px;opacity:0;max-height:0;overflow:hidden;padding-top:0;padding-bottom:0;border-width:0;
+  animation:bz-bootnote 0s linear 4s forwards}
+@keyframes bz-bootnote{to{opacity:1;max-height:240px;padding:11px 14px;border-width:1px}}

@@ -84,6 +84,11 @@ def settle(driver, extra=0.0):
     time.sleep(0.25 + extra)
 
 
+def token_text(el):
+    """Chip text read from the DOM: Selenium's .text is empty while a freshly added card is still fading in."""
+    return (el.get_attribute("textContent") or "").strip()
+
+
 def type_chip(card_or_driver, selector, text):
     box = card_or_driver.find_element(By.CSS_SELECTOR, selector)
     inp = box.find_element(By.CSS_SELECTOR, "input")
@@ -120,7 +125,7 @@ def test_initial_state(driver, server):
     open_form(driver, server)
     cards = qa(driver, ".bz-entity")
     assert len(cards) == 1 and cards[0].get_attribute("data-type") == "protein"
-    chips = [t.text for t in cards[0].find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')]
+    chips = [token_text(t) for t in cards[0].find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')]
     assert chips == ["A"]
     assert q(driver, '.bz-step[aria-current="step"]').get_attribute("data-go") == "1"
     assert q(driver, '[data-f="status-chip"]').text == "Incomplete"
@@ -132,14 +137,14 @@ def test_chain_ids_auto_assign_and_chips(driver, server):
     open_form(driver, server)
     click(driver, '[data-act="add-protein"]')   # the pristine first card is replaced
     click(driver, '[data-act="add-ligand"]')
-    ids = [[t.text for t in c.find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')] for c in qa(driver, ".bz-entity")]
+    ids = [[token_text(t) for t in c.find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')] for c in qa(driver, ".bz-entity")]
     assert ids == [["A"], ["B"]]
     inp = type_chip(last_card(driver), '[data-f="ids"]', "C d,e")
     inp.send_keys(Keys.ENTER)
-    toks = [t.text for t in last_card(driver).find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')]
+    toks = [token_text(t) for t in last_card(driver).find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')]
     assert toks == ["B", "C", "D", "E"]
     inp.send_keys(Keys.BACKSPACE)
-    toks = [t.text for t in last_card(driver).find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')]
+    toks = [token_text(t) for t in last_card(driver).find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')]
     assert toks == ["B", "C", "D"]
     assert errors(driver) == []
 
@@ -173,7 +178,7 @@ def test_fasta_header_and_split(driver, server):
     assert split.is_displayed() and "2 FASTA records" in split.text
     split.find_element(By.CSS_SELECTOR, '[data-act="split"]').click()
     seqs = [c.find_element(By.CSS_SELECTOR, '[data-f="seq"]').get_attribute("value") for c in qa(driver, ".bz-entity")]
-    ids = [[t.text for t in c.find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')] for c in qa(driver, ".bz-entity")]
+    ids = [[token_text(t) for t in c.find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')] for c in qa(driver, ".bz-entity")]
     assert seqs == ["MKTAYIAKQRQISF", "GSHMLEER"] and ids == [["A"], ["B"]]
     assert errors(driver) == []
 
@@ -236,7 +241,7 @@ def test_happy_path_advanced(driver, server, wrap):
     Select(row.find_element(By.CSS_SELECTOR, '[data-f="binder"]')).select_by_value("B")
     inp = row.find_element(By.CSS_SELECTOR, '[data-f="pocket-residues"] input')
     inp.send_keys("a:5"); inp.send_keys(Keys.ENTER); inp.send_keys("A:9"); inp.send_keys(Keys.ENTER)
-    assert [t.text for t in row.find_elements(By.CSS_SELECTOR, ".bz-token")] == ["A:5", "A:9"]
+    assert [token_text(t) for t in row.find_elements(By.CSS_SELECTOR, ".bz-token")] == ["A:5", "A:9"]
     # step 3: preset + name + save
     click(driver, '[data-act="next"]')
     click(driver, '.bz-preset[data-preset="scientific"]')
@@ -327,7 +332,7 @@ def test_pdb_import_groups_chains_and_adds_ligands(driver, server):
     click(driver, '[data-imp="all"]')
     cards = qa(driver, ".bz-entity")
     kinds = [c.get_attribute("data-type") for c in cards]
-    ids = [[t.text for t in c.find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')] for c in cards]
+    ids = [[token_text(t) for t in c.find_elements(By.CSS_SELECTOR, '[data-f="ids"] .bz-token')] for c in cards]
     assert kinds == ["protein", "dna", "dna"] and ids == [["A", "B"], ["E"], ["F"]]
     assert len(cards[0].find_element(By.CSS_SELECTOR, '[data-f="seq"]').get_attribute("value")) == 260
     click(driver, '[data-imp="lig0"]')

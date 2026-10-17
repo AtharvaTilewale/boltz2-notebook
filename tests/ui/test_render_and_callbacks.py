@@ -81,6 +81,37 @@ def test_js_parses(html):
     esprima.parseScript(js)
 
 
+def test_form_is_one_self_contained_script(html):
+    """Notebook front-ends re-insert <script> tags in different ways (often dropping ids), so the form must not depend on a
+    second element: exactly one executable script, no JSON data element, and the Python config embedded inside it."""
+    body = html[0]
+    scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", body, re.S)
+    assert len(scripts) == 1, [a for a, _ in scripts]
+    attrs, js = scripts[0]
+    assert "type=" not in attrs and "src=" not in attrs
+    assert "bz-config-" not in body and "@@" not in js
+    assert re.search(r"var CFG = \{\"", js), "config is not embedded in the script"
+
+
+def test_embedded_config_is_exactly_the_python_config_and_script_safe():
+    for mode in ("standard", "advanced"):
+        js = re.search(r"<script>(.*)</script>", render_form(mode, uid="x"), re.S).group(1)
+        literal = re.search(r"var CFG = (\{.*?\});\n", js, re.S).group(1)
+        assert json.loads(literal) == json.loads(json.dumps(client_config(mode)))
+        assert "<" not in literal and ">" not in literal
+    # nothing in the script can end it early or open an HTML comment context
+    assert "</script" not in js.lower() and "<!--" not in js
+
+
+def test_script_json_escapes_everything_that_could_break_out():
+    from boltz2nb.ui.render import script_json
+
+    nasty = {"a": "</script><!-- \u2028 \u2029 >", "b": [1, 2.5, None, True]}
+    out = script_json(nasty)
+    assert "<" not in out and ">" not in out and "\u2028" not in out and "\u2029" not in out
+    assert json.loads(out) == nasty
+
+
 def test_client_config_matches_python_sources():
     cfg = client_config("advanced")
     assert cfg["profiles"] == run_params.PROFILES

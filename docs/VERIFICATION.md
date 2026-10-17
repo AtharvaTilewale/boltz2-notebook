@@ -2,9 +2,11 @@
 
 | What | How | Result |
 |---|---|---|
-| Unit suite | `pytest` without a browser (168 tests, no GPU) | pass |
-| Browser suite | `pytest tests/ui` in headless Firefox 157 (64 tests): real form + real callbacks, both RPC shapes, validation, FASTA, PDB import, uploads, presets, theme, no horizontal overflow at 360 / 414 / 768 / 1024 / 1280 px in light and dark, accessible names, phone header layout; run panel, result card and report at four widths | pass (230 passed, 6 skipped with everything installed) |
+| Unit suite | `pytest` without a browser (178 passed, 7 skipped, no GPU) | pass |
+| Browser suite | `pytest tests/ui` in headless Firefox 157 (79 tests): real form + real callbacks, both RPC shapes, validation, FASTA, PDB import, uploads, presets, theme, no horizontal overflow at 360 / 414 / 768 / 1024 / 1280 px in light and dark, accessible names, phone header layout; run panel, result card and report at four widths | pass (230 passed, 6 skipped with everything installed) |
 | Notebook cells end to end | `tests/test_run_scripts.py`: `Boltz_Run.py` then `analysis.py` against a fake `boltz` executable that prints real-style log lines and writes real prediction files - success, out-of-memory failure, existing job folder kept, and the IPython display path (CSS sent once, refreshes carry only the panel) | pass |
+| Notebook-style embedding | `tests/ui/test_embedding_browser.py`: the form inserted into a sandboxed iframe by `innerHTML` + re-created scripts (same-origin and opaque origin), scripts re-created without ids, `document.write`, template + appended scripts, and markup arriving 600 ms after the script; standard and advanced forms; no kernel bridge. Also checks that a failing start-up step is reported on screen with the rest of the form still working, and that a script which never runs leaves a visible "this form has not started" note | pass (the re-created-scripts and late-markup cases failed on the previous revision, which depended on a separate JSON element) |
+| Cell 1 refresh | `tests/test_notebook_setup_cell.py`: the cell's own code run against a stale shallow clone whose remote moved on (fast-forwarded, restart requested) and against an unreachable remote (existing code kept) | pass |
 | Wheel contents | `tests/test_packaging.py` builds the wheel, checks every asset is inside, installs it to an empty directory and renders the form | pass |
 | Colour contrast | `tests/ui/test_theme_contrast.py` (WCAG ratios for every text / control colour pair, light and dark) | pass |
 | Visual review | screenshots of every step and state at 360 / 820 / 1280 px, light and dark, reviewed by eye | issues found and fixed (see below) |
@@ -20,7 +22,10 @@
 Defects the browser and visual checks found in the new interface before release: chain-ID placeholder crashed form start-up;
 the Balanced preset was never recognised because the slider snapped 1.638 to 1.65; a pocket's residue box and the contact list shared a
 selector so new contacts landed inside the pocket; the save-time job-name error was hidden again by the next quiet validation; the Save
-button threw after a successful save; result tables overflowed on phones; the phone phase tracker misaligned. (Narrow-width checks were
+button threw after a successful save; result tables overflowed on phones; the phone phase tracker misaligned. A first real-Colab
+run then showed the form rendered but inert; it was reproduced by emulating a renderer that re-creates `<script>` tags without their ids
+(the form's configuration lived in a second script element looked up by id) and fixed by embedding the configuration in the one script,
+waiting for the markup and reporting start-up failures on screen. (Narrow-width checks were
 first run in a 500 px window by mistake; they now use an exact-width iframe and assert the viewport.)
 
 Not yet verified: the new interface inside a real Colab output frame (theme inheritance, Google Fonts loading, WebGL rendering of the
