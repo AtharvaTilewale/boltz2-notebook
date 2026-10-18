@@ -42,7 +42,8 @@ def test_ligand_helpers():
     assert d["formula"] == "C9H8O4" and d["heavy_atoms"] == 13 and d["message"] == ""
     assert describe_smiles("C1CC")["valid"] is False
     assert "salt" in describe_smiles("CCN.Cl")["message"]
-    assert depict_svg("c1ccccc1").startswith("<?xml")
+    svg = depict_svg("c1ccccc1")
+    assert svg.startswith("<svg") and "<?xml" not in svg      # an XML declaration is not valid inside an HTML fragment
 
 
 def test_paths(monkeypatch, tmp_path):

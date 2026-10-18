@@ -6,7 +6,7 @@
 boltz2nb/          importable package - all logic lives here and is unit-tested
 scripts/common/    the three cells' implementations (setup / Boltz_Run / analysis), run via %run
 scripts/v1, v2/    thin shims + launchers for the standard / advanced input builder
-boltz2nb/ui/       the interface: design-system CSS, form HTML/JS (assets/), renderers, Python callbacks, live panel, result card
+boltz2nb/ui/       the interface: design-system CSS, form HTML/JS (assets/), renderers, Python callbacks, live panel, result card, figures.py (the plots)
 scripts/batch_utils.py   compatibility shim over boltz2nb.batch
 colab/, batch/, notebooks/, Boltz2.ipynb   the notebooks (thin shells)
 tests/             pytest suite; engine tests skip unless a Boltz cache is present
@@ -31,6 +31,16 @@ python tools/build_notebook_headers.py --check
 The interface lives in `boltz2nb/ui/assets/` (`theme.css`, `form.css`, `results.css`, `form.html`, `form.js`, `theme.js`) and is plain
 ES2017 with no build step. All values the page needs (defaults, presets, ranges) come from `boltz2nb.run_params`; do not duplicate them in JS.
 A new asset file needs no packaging change (`assets/*` is package data), but run `pytest tests/test_packaging.py`.
+
+**Callbacks and the Colab reply.** The page calls Python through `google.colab.kernel.invokeFunction`, which resolves with the notebook's
+*display* of the callback's return value: a plain `dict` arrives as its text `repr`, and only `IPython.display.JSON` arrives as parsed JSON.
+Add a callback to `callbacks.CALLBACKS` and `register_callbacks` wraps it (`as_json_reply`); never register a bare function. The test
+harness passes each return value through IPython's real `DisplayFormatter`, so a callback that returns something the page cannot read fails
+`tests/test_colab_contract.py` instead of failing in Colab.
+
+**Figures.** Plots are drawn by `boltz2nb/ui/figures.py` on fixed-size canvases (no tight cropping), and `report.py` lays them out in rows
+that rely on those sizes. A new figure needs an entry in `tests/test_figures.py` (inside its canvas, nothing overprinted, same size as its kind)
+and, if it joins the report, a look at `tests/ui/test_report_layout_browser.py`.
 
 Browser tests drive the real form against the real Python callbacks in headless Firefox:
 

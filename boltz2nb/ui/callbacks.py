@@ -7,6 +7,8 @@ directly or through the browser harness.
 from __future__ import annotations
 
 import base64
+import functools
+import math
 import re
 from pathlib import Path
 from typing import Any
@@ -137,13 +139,43 @@ CALLBACKS = {
 }
 
 
+def json_safe(obj: Any) -> Any:
+    """Plain JSON data: tuples and sets become lists, numpy scalars become Python numbers, NaN / inf become null.
+
+    The page parses the reply with ``JSON.parse``, which rejects ``NaN`` and ``Infinity``."""
+    if isinstance(obj, dict):
+        return {str(k): json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set, frozenset)):
+        return [json_safe(v) for v in obj]
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if obj is None or isinstance(obj, (bool, int, str)):
+        return obj
+    if hasattr(obj, "item"):                       # numpy scalar
+        return json_safe(obj.item())
+    return str(obj)
+
+
+def as_json_reply(fn: Any) -> Any:
+    """Wrap a callback so Colab hands the page parsed JSON.
+
+    Colab gives the page the notebook's *display* of whatever the callback returns. A plain ``dict`` is displayed as its Python
+    ``repr`` (``data['text/plain']``, not parseable as JSON); only ``IPython.display.JSON`` arrives as ``data['application/json']``,
+    which is the form Colab's own callbacks use."""
+    @functools.wraps(fn)
+    def reply(*args: Any, **kwargs: Any) -> Any:
+        from IPython.display import JSON
+        return JSON(json_safe(fn(*args, **kwargs)))
+    return reply
+
+
 def register_callbacks(output: Any = None) -> bool:
     """Register every callback with ``google.colab.output``; returns False outside Colab."""
     if output is None:
         try:
             from google.colab import output  # type: ignore[no-redef]
-        except Exception:  # noqa: BLE001
+        except Exception:
             return False
     for name, fn in CALLBACKS.items():
-        output.register_callback(name, fn)
+        output.register_callback(name, as_json_reply(fn))
     return True

@@ -86,7 +86,7 @@ def test_plots_and_report(example_pred_dir, tmp_path):
                                                   "input_yaml": "version: 1", "input_yaml_sha1": "abc"})
     html = Path(out["report"]).read_text()
     assert "Boltz-2 report" in html and 'class="bz-aff-v">2.77 µM<' in html and "data:image/png;base64" in html
-    assert "fixed 0-32 A scale" in html and "$3Dmol.createViewer" in html and "boltz 2.2.1" in html
+    assert "fixed 0-32 Å scale" in html and "$3Dmol.createViewer" in html and "boltz 2.2.1" in html
     assert 'id="bz-' in html and 'lang="en"' in html and "<script src=\"https://3Dmol.org" in html
     assert 'name="viewport"' in html            # responsive on phones
     assert Path(out["plots"]["models"][0]["pae"]).exists() and Path(out["plots"]["affinity"]).exists()

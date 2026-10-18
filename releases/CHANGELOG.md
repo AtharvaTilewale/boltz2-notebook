@@ -33,6 +33,15 @@
 - Results folders and Drive folders are no longer deleted before a run; a timestamp suffix is used.
 - Removed the `sed`/`shell=True` YAML rewrite; the builder emits plain scalars.
 - `batch/README.md` linked to `Batch/` (wrong case) and non-existent files.
+- **Structure import and the YAML tab failed in real Colab** (`Cannot read properties of undefined (reading 'filter')` on a PDB / mmCIF upload,
+  `undefined` in the YAML tab, no ligand depiction). `google.colab.kernel.invokeFunction` resolves with the notebook's *display* of the
+  callback's return value, and a plain `dict` is displayed as its text `repr`; only `IPython.display.JSON` arrives as parsed JSON
+  (`data['application/json']`). The callbacks returned plain dicts, and the page read the wrapper's own `status: 'ok'` as the callback's
+  answer. Every callback is now registered through `callbacks.as_json_reply` (returns `IPython.display.JSON`, with NaN/inf and numpy scalars made
+  JSON-safe), and `form.js` reads the answer strictly: an answer in any other shape produces a message that says to restart the session
+  instead of the word `undefined`. The earlier browser tests had faked this reply shape; the harness now passes each callback's return value
+  through IPython's real `DisplayFormatter`, and `tests/test_colab_contract.py` checks every registered callback.
+- The 2-D ligand depiction began with an XML declaration (`<?xml ... encoding='iso-8859-1'?>`), which is not valid inside an HTML fragment; it is removed.
 
 ### Interface redesign
 One design system (`boltz2nb/ui/`) now drives every screen a user sees: the input builder, the live run panel, the result card,
@@ -47,7 +56,17 @@ so the form, the validator and the runner cannot drift apart.
   `boltz predict` command. Failures show the likely cause and a suggested fix next to the log.
 - **Result card and report.** KPI tiles, binding-probability ring, chain and sample tables, an interactive 3Dmol viewer (colour by
   pLDDT or chain; cartoon, lines or spheres) with a clear message when WebGL is unavailable, a self-contained HTML report and a print style sheet.
-- **Figures.** One brand style for pLDDT (confidence bands), PAE (chain labels) and affinity; palette PNGs about half the size.
+- **Figures.** One brand style for pLDDT, PAE, affinity and the per-sample confidence plot (`boltz2nb/ui/figures.py`), redrawn for the report:
+  every figure is a fixed-size canvas (no tight cropping, so images no longer come out in a dozen different sizes), pLDDT is one line over
+  tinted confidence bands with chain chips (no per-point dots; the axis starts below the lowest value instead of wasting 40 % of the plot),
+  PAE has a slim colour bar in Å, the affinity card pairs a ring with bars whose value labels never touch the names, and the per-sample plot is
+  a dot plot on a zoomed axis (bars from zero hid the differences) with the four metrics side by side so equal values cannot hide each other.
+- **Report layout.** Each sample is one block (PAE beside pLDDT, equal height, a `best` chip on sample 0), followed by one row with the
+  per-sample plot and the affinity card. Figures sit side by side only while their text stays readable (a container query on the width the
+  figures actually have, not on the window), stack one per row below that, are never enlarged beyond their pixel width, and on phones scroll
+  sideways inside their card instead of shrinking the text. The previous layout paired a narrow 241 px pLDDT card with a 441 px PAE card and
+  squeezed a 1105 px image into 455 px (text at about 40 % of its size). The browser tests did not notice because their report fixture contained
+  no figures; it now holds the real plots of a three-sample job.
 - **Look and feel.** Inter and JetBrains Mono (loaded from Google Fonts, with system fallbacks), light by default with a light / dark switch (see **Theme**),
   layouts checked from 360 px to desktop. Text contrast is at least 4.5:1 and control outlines at least 3:1, enforced by tests;
   every control has an accessible name, a visible focus ring, and reduced-motion is respected.
@@ -70,7 +89,7 @@ so the form, the validator and the runner cannot drift apart.
   written at the top of the form instead of leaving a rendered-but-dead page (and if the script never runs at all, the markup
   itself reveals a "this form has not started" note after four seconds). This fixes a form that looked complete but ignored every
   click when the output renderer re-created the `<script>` tags without their ids (or ran the script before the markup was inserted).
-- **Tests.** 139 browser tests drive the real form against the real Python callbacks in headless Firefox (happy path, validation, FASTA,
+- **Tests.** 152 browser-driven tests drive the real form against the real Python callbacks in headless Firefox (happy path, validation, FASTA,
   PDB import, uploads, presets, themes, no horizontal overflow at 360 / 414 / 768 / 1024 / 1280 px, accessible names) and embed it the
   ways notebook front-ends do (`tests/ui/test_embedding_browser.py`: scripts re-created without ids, `document.write`, markup arriving
   after the script, sandboxed frame with an opaque origin, no kernel bridge; standard and advanced forms), plus unit tests

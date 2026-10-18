@@ -41,4 +41,6 @@ def depict_svg(smiles: str, width: int = 320, height: int = 240) -> str | None:
     drawer = Draw.MolDraw2DSVG(width, height)
     drawer.DrawMolecule(mol)
     drawer.FinishDrawing()
-    return drawer.GetDrawingText()
+    svg = drawer.GetDrawingText()
+    # RDKit starts the file with an XML declaration (<?xml ... encoding='iso-8859-1'?>); inside an HTML page that is not markup
+    return svg[svg.index("<svg"):] if "<svg" in svg else svg

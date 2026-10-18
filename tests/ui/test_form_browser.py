@@ -42,9 +42,9 @@ def open_framed(driver, url_for_window, url_for_frame, width, height=1000):
     return driver
 
 
-def open_form(driver, server, mode="advanced", theme="light", width=1280, wrap=False):
+def open_form(driver, server, mode="advanced", theme="light", width=1280, rpc="colab"):
     server.reset_files()
-    q = dict(mode=mode, theme=theme, wrap=1 if wrap else 0)
+    q = dict(mode=mode, theme=theme, rpc=rpc)
     open_framed(driver, server.url(**q), server.frame_url(width, **q), width)
     WebDriverWait(driver, 15).until(lambda d: d.execute_script(f"return !!({ROOT} && {ROOT}._bz)"))
     return driver
@@ -219,9 +219,9 @@ def test_affinity_panel_follows_ligands(driver, server):
 
 
 # ------------------------------------------------------------------------------------------------ full flow
-@pytest.mark.parametrize("wrap", [False, True], ids=["plain-rpc", "wrapped-rpc"])
-def test_happy_path_advanced(driver, server, wrap):
-    open_form(driver, server, wrap=wrap)
+@pytest.mark.parametrize("rpc", ["colab", "bare"], ids=["colab-reply", "bare-reply"])
+def test_happy_path_advanced(driver, server, rpc):
+    open_form(driver, server, rpc=rpc)
     fill_protein(driver)
     add_ligand(driver)
     click(driver, '[data-f="affinity-on"]')

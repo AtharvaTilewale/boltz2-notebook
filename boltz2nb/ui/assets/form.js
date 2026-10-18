@@ -45,17 +45,30 @@ function cloneT(name) {
 
 // ------------------------------------------------------------------------------------ kernel RPC
 function unwrap(r) {
-  // Colab may hand back the dict directly or wrapped as {data: {'application/json': dict}}.
-  if (r && r.data && typeof r.data === 'object') {
-    if (r.data['application/json']) { return r.data['application/json']; }
-    if (r.data.status) { return r.data; }
+  // Colab answers an invokeFunction call with the notebook's display of the value the Python callback returned:
+  // {status: 'ok', data: {<mime type>: ...}}. Parsed JSON is only there when the callback returned IPython.display.JSON
+  // (boltz2nb.ui.callbacks.as_json_reply); a plain dict would arrive as its Python repr under 'text/plain'. The reply's own
+  // top-level `status` describes the execution, not our result, so it must never be mistaken for it.
+  if (r && typeof r === 'object' && r.data && typeof r.data === 'object') {
+    var j = r.data['application/json'];
+    if (j !== undefined && j !== null && typeof j === 'object') { return j; }
+    throw new Error('The notebook kernel replied in an unexpected format (' + Object.keys(r.data).join(', ') +
+      '). Restart the session (Runtime > Restart session), then run the cells again.');
   }
-  return r;
+  return r;      // a bare object: the test harness and front-ends that return the value itself
+}
+function describeError(err) {
+  // A Python exception in a callback arrives as {ename, evalue, traceback}, not as an Error.
+  if (err && err.message) { return String(err.message); }
+  if (err && (err.evalue || err.ename)) { return (err.ename ? err.ename + ': ' : '') + (err.evalue || ''); }
+  if (typeof err === 'string' && err) { return err; }
+  return 'The notebook kernel did not answer.';
 }
 function rpc(name, args) {
   var k = window.google && window.google.colab && window.google.colab.kernel;
   if (!k) { return Promise.reject(new Error('Not connected to a Colab runtime. Run this cell inside Colab.')); }
-  return Promise.resolve(k.invokeFunction(name, args, {})).then(unwrap);
+  return Promise.resolve().then(function () { return k.invokeFunction(name, args, {}); })
+    .then(unwrap, function (err) { throw new Error(describeError(err)); });
 }
 
 // ------------------------------------------------------------------------------------ constants
@@ -365,7 +378,7 @@ function describeLigand(card) {
       pv.innerHTML = '<span class="bz-muted">No preview</span>';
       card._err.value = r.message || 'This SMILES could not be parsed.'; card._lig = null;
     } else {
-      pv.innerHTML = '<span class="bz-muted">2-D preview</span>';
+      pv.innerHTML = '<span class="bz-muted">Preview unavailable</span>';
     }
     paintCard(card); refreshAll();
   }).catch(function () {
@@ -622,7 +635,8 @@ var previewNow = function () {
   rpc('preview_params', [c.payload]).then(function (r) {
     if (req !== state.previewReq) { return; }
     state.lastPreview = r;
-    F('yaml').innerHTML = r.status === 'ok' ? highlightYaml(r.yaml) : '# ' + esc(r.message);
+    if (r && r.status === 'ok' && typeof r.yaml === 'string') { F('yaml').innerHTML = highlightYaml(r.yaml); }
+    else { F('yaml').textContent = '# ' + ((r && r.message) || 'The notebook kernel did not return the YAML. Run the Generate Parameters cell again.'); }
     renderMessages(collect().issues, r);
   }).catch(function (err) {
     if (req !== state.previewReq) { return; }
@@ -761,8 +775,8 @@ function setupImport() {
 }
 function renderImport(name, r) {
   var res = F('import-result');
-  if (!r || r.status !== 'ok') {
-    res.innerHTML = '<div class="bz-alert bz-alert--err">' + ICON('x-circle') + '<div><strong>' + esc((r && r.message) || 'Import failed.') + '</strong>' + (r && r.hint ? '<br>' + esc(r.hint) : '') + '</div></div>';
+  if (!r || r.status !== 'ok' || !Array.isArray(r.entities)) {
+    res.innerHTML = '<div class="bz-alert bz-alert--err">' + ICON('x-circle') + '<div><strong>' + esc((r && r.message) || 'The notebook kernel did not return the structure. Run the Generate Parameters cell again.') + '</strong>' + (r && r.hint ? '<br>' + esc(r.hint) : '') + '</div></div>';
     return;
   }
   var ents = r.entities.filter(function (e) { return ADV || e.kind === 'protein'; });

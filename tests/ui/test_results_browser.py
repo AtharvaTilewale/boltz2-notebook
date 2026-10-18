@@ -12,7 +12,7 @@ pytest.importorskip("selenium", reason="selenium is not installed")
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
-from boltz2nb.analysis import load_job, summary_dict
+from boltz2nb.analysis import generate_plots, load_job, summary_dict
 from boltz2nb.report import build_report
 from boltz2nb.ui.live import RunState, render_live, render_styles
 from boltz2nb.ui.results import render_result_card
@@ -45,8 +45,10 @@ def _page(body: str, theme: str = "light") -> str:
 
 
 @pytest.fixture(scope="module")
-def parts(tmp_path_factory, example_pred_dir):
+def parts(tmp_path_factory, example_pred_dir, three_sample_dir):
     job = load_job(example_pred_dir)
+    job3 = load_job(three_sample_dir)
+    plots = generate_plots(job3, tmp_path_factory.mktemp("plots"))        # the report is checked with its real figures
     summary = summary_dict(job)
     pdb = job.best.structure_path.read_text()
     live = RunState(job_name="kinase_aspirin", has_affinity=True, gpu="Tesla T4", engine="boltz-community 2.10.12", samples=3, command="boltz predict x.yaml")
@@ -58,7 +60,7 @@ def parts(tmp_path_factory, example_pred_dir):
     return {
         "live": render_styles() + render_live(live, standalone_css=False) + render_live(failed, uid="f", standalone_css=False),
         "card": render_result_card(summary, pdb, CTX, runtime=118),
-        "report": build_report(job, {"models": {}}, CTX, None, runtime=118, fragment=True),
+        "report": build_report(job3, plots, CTX, None, runtime=118, fragment=True),
         "pdb": pdb, "dir": tmp_path_factory.mktemp("pages"),
     }
 
@@ -76,7 +78,7 @@ OVERFLOW_JS = """
 const root = document.querySelector('.bz'), rr = root.getBoundingClientRect(), bad = [];
 root.querySelectorAll('*').forEach(function (el) {
   const up = el.parentElement;
-  if (el.closest('svg') || el.closest('.bz-bar') || (up && (up.closest('.bz-table-wrap') || up.closest('pre')))) return;   // scroll containers may overflow internally; the bar animates in from outside
+  if (el.closest('svg') || el.closest('.bz-bar') || (up && (up.closest('.bz-table-wrap') || up.closest('.bz-fig-img') || up.closest('pre')))) return;   // scroll containers (tables, figures on phones) may overflow internally; the bar animates in from outside
   const cs = getComputedStyle(el); if (cs.display === 'none' || cs.position === 'absolute') return;
   const r = el.getBoundingClientRect();
   if (r.width && (r.right > rr.right + 1 || r.left < rr.left - 1)) bad.push(el.tagName + '.' + String(el.className).slice(0, 36) + ' ' + Math.round(r.left - rr.left) + '..' + Math.round(r.right - rr.left) + ' of ' + Math.round(rr.width));

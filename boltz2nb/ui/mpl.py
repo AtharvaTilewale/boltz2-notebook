@@ -28,14 +28,14 @@ def _font_family() -> list[str]:
 def rc() -> dict:
     return {
         "figure.facecolor": "white", "axes.facecolor": "white", "savefig.facecolor": "white",
-        "font.family": _font_family(), "font.size": 10, "text.color": INK,
+        "font.family": _font_family(), "font.size": 10.5, "text.color": INK,
         "axes.edgecolor": AXIS, "axes.labelcolor": INK2, "axes.titlecolor": INK, "axes.titleweight": "bold",
-        "axes.titlesize": 12, "axes.titlelocation": "left", "axes.titlepad": 12, "axes.labelsize": 10,
+        "axes.titlesize": 12.5, "axes.titlelocation": "left", "axes.titlepad": 12, "axes.labelsize": 10.5,
         "axes.spines.top": False, "axes.spines.right": False, "axes.linewidth": 1.0,
-        "xtick.color": MUTED, "ytick.color": MUTED, "xtick.labelsize": 9, "ytick.labelsize": 9,
+        "xtick.color": MUTED, "ytick.color": MUTED, "xtick.labelsize": 9.5, "ytick.labelsize": 9.5,
         "axes.grid": False, "grid.color": GRID, "grid.linewidth": 0.8,
         "legend.frameon": False, "legend.fontsize": 9, "legend.labelcolor": INK2,
-        "figure.dpi": 100, "savefig.dpi": 140, "lines.solid_capstyle": "round",
+        "figure.dpi": 100, "savefig.dpi": 150, "lines.solid_capstyle": "round",
     }
 
 
@@ -48,10 +48,12 @@ def style():
         yield plt
 
 
-def save_figure(fig, path) -> None:
-    """Save as an optimised 256-colour PNG (about half the size of RGB, visually identical for these charts)."""
+def save_figure(fig, path, tight: bool = False) -> None:
+    """Save as an optimised 256-colour PNG (about half the size of RGB, visually identical for these charts).
+
+    The canvas is kept as drawn (``tight=False``) so that figures of one kind have identical pixel sizes and line up on the page."""
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight")
+    fig.savefig(buf, format="png", bbox_inches="tight" if tight else None)
     data = buf.getvalue()
     try:
         from PIL import Image

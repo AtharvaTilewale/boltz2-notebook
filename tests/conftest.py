@@ -25,6 +25,36 @@ def example_pred_dir(tmp_path_factory) -> Path:
     return d
 
 
+@pytest.fixture(autouse=True)
+def _forget_session_theme():
+    """``set_theme`` keeps the last choice in a module global; no test may hand its choice on to the next."""
+    from boltz2nb.ui import theme
+    theme.reset_theme()
+    yield
+    theme.reset_theme()
+
+
+@pytest.fixture(scope="session")
+def three_sample_dir(tmp_path_factory, example_pred_dir) -> Path:
+    """The example job with three diffusion samples (the two extra ones are noisy copies), as a typical run produces."""
+    import json
+
+    import numpy as np
+    d = tmp_path_factory.mktemp("pred3") / "prot_lig" / "boltz_results_prot_lig" / "predictions" / "prot_lig"
+    shutil.copytree(example_pred_dir, d)
+    rng = np.random.default_rng(3)
+    for i in (1, 2):
+        shutil.copy(d / "prot_lig_model_0.pdb", d / f"prot_lig_model_{i}.pdb")
+        p = np.load(d / "plddt_prot_lig_model_0.npz")["plddt"]
+        np.savez(d / f"plddt_prot_lig_model_{i}.npz", plddt=np.clip(p + rng.normal(0, 0.03, p.shape), 0, 1))
+        a = np.load(d / "pae_prot_lig_model_0.npz")["pae"]
+        np.savez(d / f"pae_prot_lig_model_{i}.npz", pae=np.clip(a + rng.normal(0, 0.8, a.shape), 0, 32))
+        c = json.loads((d / "confidence_prot_lig_model_0.json").read_text())
+        c["confidence_score"] = 0.91 - 0.03 * i
+        (d / f"confidence_prot_lig_model_{i}.json").write_text(json.dumps(c))
+    return d
+
+
 @pytest.fixture
 def base_dir(tmp_path, monkeypatch) -> Path:
     monkeypatch.setenv("BOLTZ2NB_BASE_DIR", str(tmp_path / "boltz_data"))

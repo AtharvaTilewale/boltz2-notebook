@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from boltz2nb.ui.callbacks import CALLBACKS
+from boltz2nb.ui.callbacks import CALLBACKS, register_callbacks
 from boltz2nb.ui.render import render_form
 
 SHIM = """<script>
@@ -18,12 +18,13 @@ window.addEventListener('error', function (e) { window.__errs.push(String(e.mess
 window.addEventListener('unhandledrejection', function (e) { window.__errs.push('unhandled: ' + String(e.reason)); });
 window.__rpc = [];
 (function () {
-  var wrap = new URLSearchParams(location.search).get('wrap') === '1';
+  // rpc=colab (default): the reply is what Colab sends. rpc=bare: the value itself. rpc=plain: a callback that returned a plain
+  // dict (arrives only as its repr). rpc=raise: the callback raised, which Colab reports as {ename, evalue, traceback}.
+  var shape = new URLSearchParams(location.search).get('rpc') || 'colab';
   window.google = { colab: { kernel: { invokeFunction: function (name, args) {
     window.__rpc.push(name);
-    return fetch('/rpc/' + name, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args) })
-      .then(function (r) { return r.json(); })
-      .then(function (j) { return wrap ? { data: { 'application/json': j } } : j; });
+    return fetch('/rpc/' + name + '?shape=' + shape, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { throw j; } return j; }); });
   } } } };
 })();
 </script>"""
@@ -41,6 +42,38 @@ FONT_FACES = """
 PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>{fonts}html,body{margin:0;background:{bg}}body{padding:12px}</style></head><body>{shim}{form}</body></html>"""
+
+
+class _Recorder:
+    """Stands in for ``google.colab.output``: keeps what ``register_callbacks`` registers, i.e. what Colab would really call."""
+
+    def __init__(self):
+        self.registered: dict = {}
+
+    def register_callback(self, name, fn):
+        self.registered[name] = fn
+
+
+def colab_reply(name: str, args: list, shape: str = "colab"):
+    """The answer ``google.colab.kernel.invokeFunction`` resolves with for a callback.
+
+    Colab runs the callback and sends the page the notebook's *display* of the returned value, so the real IPython display
+    formatter is applied here: ``IPython.display.JSON`` gives ``application/json``; a plain dict gives only its ``repr`` as
+    ``text/plain``. The reply also carries the execution's own ``status: 'ok'``."""
+    if shape == "bare":
+        return CALLBACKS[name](*args)
+    if shape == "raise":
+        raise ValueError("boom from the kernel")
+    from IPython.core.formatters import DisplayFormatter
+
+    if shape == "plain":
+        value = CALLBACKS[name](*args)
+    else:
+        recorder = _Recorder()
+        register_callbacks(recorder)
+        value = recorder.registered[name](*args)
+    data, _meta = DisplayFormatter().format(value)
+    return {"status": "ok", "data": data, "metadata": {}}
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -86,15 +119,18 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):
-        name = self.path.rsplit("/", 1)[-1]
+        parsed = urlparse(self.path)
+        name = parsed.path.rsplit("/", 1)[-1]
+        shape = parse_qs(parsed.query).get("shape", ["colab"])[0]
         n = int(self.headers.get("Content-Length", 0))
         args = json.loads(self.rfile.read(n) or b"[]")
+        status = 200
         try:
-            out = CALLBACKS[name](*args)
+            out = colab_reply(name, args, shape)
         except Exception as exc:  # noqa: BLE001
-            out = {"status": "error", "message": f"{type(exc).__name__}: {exc}"}
+            status, out = 500, {"ename": type(exc).__name__, "evalue": str(exc), "traceback": []}
         body = json.dumps(out).encode()
-        self.send_response(200)
+        self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()

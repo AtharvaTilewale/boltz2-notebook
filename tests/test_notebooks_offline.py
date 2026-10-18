@@ -197,6 +197,14 @@ def runner(tmp_path, monkeypatch):
     r.close()
 
 
+def call(colab: ColabStub, name: str, *args):
+    """Invoke a registered callback and read the answer the way the page does: the notebook's display of the return value."""
+    from IPython.core.formatters import DisplayFormatter
+    data, _ = DisplayFormatter().format(colab.callbacks[name](*args))
+    assert "application/json" in data, f"{name} would reach the page as {sorted(data)}, not as parsed JSON"
+    return data["application/json"]
+
+
 def user_fills_the_form(colab: ColabStub, job_name: str, affinity: bool = True):
     """What the browser form sends when the user clicks Save: the same callbacks, the same payloads."""
     cb = colab.callbacks
@@ -205,13 +213,13 @@ def user_fills_the_form(colab: ColabStub, job_name: str, affinity: bool = True):
                              {"type": "ligand", "data": {"id": ["B"], "smiles": ASPIRIN}}],
                "templates": [], "constraints": {"bonds": [], "pockets": [], "contacts": []},
                "properties": {"affinity_binder": "B"} if affinity else {}}
-    preview = cb["preview_params"](payload)
+    preview = call(colab, "preview_params", payload)
     assert preview["status"] == "ok", preview
-    saved = cb["save_params"](payload)
+    saved = call(colab, "save_params", payload)
     assert saved["status"] == "ok", saved
     from boltz2nb.run_params import DEFAULTS, serialize_run_params
     content = serialize_run_params(dict(DEFAULTS, job_name=job_name, diffusion_samples=2, sampling_steps=50, recycling_steps=1, max_msa_seqs=256))
-    run = cb["save_run_params"]({"filename": "run_params.txt", "content": content})
+    run = call(colab, "save_run_params", {"filename": "run_params.txt", "content": content})
     assert run["status"] == "ok", run
     return saved, run
 
@@ -259,12 +267,11 @@ def test_main_notebook_failed_run_is_reported_not_raised(runner):
     nb = "Boltz2.ipynb"
     runner.run(nb, 1)
     runner.run(nb, 3)
-    cb = runner.colab.callbacks
     payload = {"sequences": [{"type": "protein", "data": {"id": ["A"], "sequence": "MKTAYIAKQFAILMEKQRQISFVKSHFSRQLEERLG", "msa": "empty"}}],
                "templates": [], "constraints": {"bonds": [], "pockets": [], "contacts": []}, "properties": {}}
-    assert cb["save_params"](payload)["status"] == "ok"
+    assert call(runner.colab, "save_params", payload)["status"] == "ok"
     from boltz2nb.run_params import DEFAULTS, serialize_run_params
-    assert cb["save_run_params"]({"filename": "run_params.txt", "content": serialize_run_params(dict(DEFAULTS, job_name="oom_job", diffusion_samples=1))})["status"] == "ok"
+    assert call(runner.colab, "save_run_params", {"filename": "run_params.txt", "content": serialize_run_params(dict(DEFAULTS, job_name="oom_job", diffusion_samples=1))})["status"] == "ok"
     # make the fake engine fail: it fails on any YAML that mentions FAILME
     p = runner.content / "boltz_data" / "params.yaml"
     p.write_text(p.read_text() + "\n# FAILME\n")

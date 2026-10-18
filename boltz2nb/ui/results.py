@@ -199,20 +199,60 @@ def render_result_card(summary: dict[str, Any], pdb_text: str | None = None, ctx
             f'<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{viewer}{tables}{GUIDE}{nxt}</div></div>{theme_script() if standalone_css else ""}')
 
 
+def _figure(b64: str, alt: str, caption: str, kind: str) -> str:
+    return (f'<figure class="bz-fig bz-fig--{kind}"><div class="bz-fig-img"><img alt="{esc(alt)}" src="data:image/png;base64,{b64}"></div>'
+            f'<figcaption>{caption}</figcaption></figure>')
+
+
+def render_figures(summary: dict[str, Any], figures: dict[str, Any]) -> str:
+    """The plots, laid out so they line up: per sample one row with the PAE map and the pLDDT trace (drawn at the same height, in
+    proportion to their widths), then one row with the per-sample confidence and the affinity figure (drawn at the same size)."""
+    rows = {m["model"]: m for m in summary.get("models", [])}
+    best, many = summary.get("best_model"), len(summary.get("models", [])) > 1
+    blocks = []
+    for mid, p in sorted(figures.get("models", {}).items()):
+        cells = ""
+        if p.get("pae"):
+            cells += _figure(p["pae"], f"Predicted aligned error, sample {mid}",
+                             "Rows: the token the structure is aligned on. Columns: the token being scored. Dark green means low expected error.",
+                             "pae")
+        if p.get("plddt"):
+            cells += _figure(p["plddt"], f"Per-token pLDDT, sample {mid}",
+                             "One value per token; for ligands and modified residues a token is a heavy atom.", "plddt")
+        if not cells:
+            continue
+        m = rows.get(mid, {})
+        bits = []
+        if m.get("confidence_score") is not None:
+            bits.append(f"confidence {m['confidence_score']:.3f}")
+        if m.get("mean_plddt") is not None:
+            bits.append(f"mean pLDDT {m['mean_plddt']:.1f}")
+        chip = ' <span class="bz-chip bz-chip--primary" style="height:20px">best</span>' if mid == best and many else ""
+        layout = "bz-figrow--pae" if p.get("pae") and p.get("plddt") else "bz-figrow--one"
+        meta = " \u00b7 ".join(bits)
+        blocks.append(f'<div class="bz-sample"><div class="bz-sample-h"><b>Sample {mid}</b>{chip}<span>{meta}</span></div>'
+                      f'<div class="bz-figrow {layout}">{cells}</div></div>')
+    extras = []
+    if figures.get("ensemble"):
+        extras.append(_figure(figures["ensemble"], "Confidence metrics per sample",
+                              "Boltz ranks sample 0 first. The axis starts just below the lowest score, so small differences show.", "pair"))
+    if figures.get("affinity"):
+        extras.append(_figure(figures["affinity"], "Predicted binding affinity",
+                              "Binding probability for hit discovery; IC50 only to rank close analogues.", "pair"))
+    if extras:
+        blocks.append(f'<div class="bz-figrow {"bz-figrow--even" if len(extras) == 2 else "bz-figrow--one"}">{"".join(extras)}</div>')
+    if not blocks:
+        return ""
+    return (f'<div><div class="bz-sec-h"><h3>Figures</h3><span>PAE is asymmetric and drawn on a fixed 0-32 \u00c5 scale</span></div>'
+            f'<div class="bz-figs">{"".join(blocks)}</div></div>')
+
+
 def render_report_fragment(summary: dict[str, Any], figures: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None,
                            ligand_svg: str | None = None, runtime: float | None = None, standalone_css: bool = True, uid: str | None = None,
                            files: list[tuple[str, str]] | None = None, theme: str | None = None, hint: bool = True) -> str:
     """The full report as an embeddable block (used inline in the notebook and inside the HTML document)."""
     uid = uid or uuid.uuid4().hex[:8]
-    figs = ""
-    for mid, p in sorted(figures.get("models", {}).items()):
-        for kind, label in (("plddt", "pLDDT"), ("pae", "Predicted aligned error")):
-            if p.get(kind):
-                figs += f'<figure class="bz-fig"><img alt="{label}, sample {mid}" src="data:image/png;base64,{p[kind]}"><figcaption>{label} - sample {mid}</figcaption></figure>'
-    for key, label in (("ensemble", "Per-sample confidence"), ("affinity", "Affinity")):
-        if figures.get(key):
-            figs += f'<figure class="bz-fig"><img alt="{label}" src="data:image/png;base64,{figures[key]}"><figcaption>{label}</figcaption></figure>'
-    fig_sec = (f'<div><div class="bz-sec-h"><h3>Figures</h3><span>PAE is asymmetric and shown on a fixed 0-32 A scale</span></div><div class="bz-figs">{figs}</div></div>') if figs else ""
+    fig_sec = render_figures(summary, figures)
     lig = (f'<div><div class="bz-sec-h"><h3>Ligand</h3></div><div class="bz-plate" style="max-width:340px;padding:8px">{ligand_svg}</div></div>') if ligand_svg else ""
     notes = "".join(f'<div class="bz-alert bz-alert--warn">{icon("alert")}<div><strong>Per-token analysis unavailable.</strong> {esc(n)}</div></div>' for n in summary.get("layout_notes", []))
     files_sec = ""
