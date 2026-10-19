@@ -104,8 +104,10 @@ def test_press_everything(driver, server, mode):
     # FASTA with several records pasted into a protein card: the Split button appears; press it
     first_protein = q(driver, '.bz-entity[data-type="protein"] textarea[data-f="seq"]')
     first_protein.clear()
-    first_protein.send_keys(f">rec1 first\n{SEQ}\n>rec2 second\n{SEQ[:20]}\n")
-    first_protein.send_keys(Keys.TAB)                           # typed (not pasted) FASTA is normalised when the field loses focus
+    driver.execute_script("""
+      const ta = arguments[0], dt = new DataTransfer(); dt.setData('text', arguments[1]);
+      const ev = new Event('paste', {bubbles: true, cancelable: true}); ev.clipboardData = dt; ta.dispatchEvent(ev);""",
+                          first_protein, f">rec1 first\n{SEQ}\n>rec2 second\n{SEQ[:20]}\n")        # a FASTA record is pasted; typing a '>' is refused
     wait(driver, lambda d: bool(visible(d, '[data-act="split"]')), 5)
     n_before = len(qa(driver, ".bz-entity"))
     visible(driver, '[data-act="split"]')[0].click(); seen.add("split")

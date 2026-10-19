@@ -135,10 +135,25 @@ GUIDE = ('<details class="bz-guide"><summary>' + icon("info") + 'How to read the
          '<div><h5>Affinity</h5><ul><li><b>probability</b>binder vs decoy, for hit discovery</li><li><b>log10 IC50</b>in uM; -2 is 10 nM, 0 is 1 uM, 1 is 10 uM</li></ul></div></div></details>')
 
 
-def render_viewer(pdb_text: str | None, uid: str) -> str:
-    if not pdb_text:
+# The 3Dmol library is pinned (a moving "latest" build can change behaviour between two runs of the same notebook); a second host is
+# tried by the viewer script when the first does not answer.
+LIB_URL = "https://cdn.jsdelivr.net/npm/3dmol@2.5.5/build/3Dmol-min.js"
+LIB_FALLBACK_URL = "https://3Dmol.org/build/3Dmol-min.js"
+
+
+def _js_string(value: str) -> str:
+    """A JSON string that is also safe inside an inline <script> (no premature </script>, no line-separator characters)."""
+    return json.dumps(value).replace("</", "<\\/").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+
+
+def render_viewer(structure_text: str | None, uid: str, structure_format: str = "pdb") -> str:
+    """The 3-D viewer: colour (pLDDT or chain), style (cartoon, lines, spheres) and reset buttons above a WebGL canvas (3Dmol)."""
+    if not structure_text:
         return ""
+    fmt = "pdb" if str(structure_format).lower() == "pdb" else "cif"
     legend = "".join(f'<span><i style="background:{c}"></i>{esc(t)}</span>' for _, c, t in PLDDT_BANDS)
+    script = (read_asset("viewer.js").replace("__UID__", _js_string(uid)).replace("__FORMAT__", _js_string(fmt))
+              .replace("__STRUCTURE__", _js_string(structure_text)).replace("__FALLBACK__", "window.BZ_3DMOL_FALLBACK === undefined ? " + _js_string(LIB_FALLBACK_URL) + " : window.BZ_3DMOL_FALLBACK"))
     return (
         f'<div><div class="bz-sec-h"><h3>Structure</h3><span>best sample</span></div>'
         f'<div class="bz-viewer-bar"><div class="bz-seg" role="radiogroup" aria-label="Colour"><label><input type="radio" name="vc-{uid}" value="plddt" checked><span>pLDDT</span></label>'
@@ -147,18 +162,10 @@ def render_viewer(pdb_text: str | None, uid: str) -> str:
         f'<label><input type="radio" name="vs-{uid}" value="line"><span>Lines</span></label><label><input type="radio" name="vs-{uid}" value="sphere"><span>Spheres</span></label></div>'
         f'<button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" id="vr-{uid}">{icon("refresh")}<span>Reset view</span></button></div>'
         f'<div class="bz-viewer" id="v-{uid}"><div class="bz-viewer-msg">Loading 3-D viewer...</div></div>'
+        f'<div class="bz-viewer-info" id="vi-{uid}" data-screen="1"></div>'
         f'<div class="bz-legend" data-screen="1">{legend}</div>'
-        f'<script src="https://3Dmol.org/build/3Dmol-min.js"></script>'
-        f'<script>(function(){{var uid={json.dumps(uid)},pdb={json.dumps(pdb_text)},host=document.getElementById("v-"+uid),tries=0;'
-        f'function start(){{if(!window.$3Dmol){{if(++tries>40){{host.innerHTML=\'<div class="bz-viewer-msg">The 3-D viewer needs an internet connection to load.</div>\';return;}}return setTimeout(start,150);}}'
-        f'host.innerHTML="";var v;try{{v=$3Dmol.createViewer(host,{{backgroundColor:"white"}});}}catch(err){{host.innerHTML=\'<div class="bz-viewer-msg">The 3-D viewer could not start because this browser has no WebGL. The structure file is saved with the results.</div>\';return;}}v.addModel(pdb,"pdb");'
-        f'var colors={{ch:["#3B4FD6","#0B7F70","#7A3FD1","#C0392B","#2E86C1","#B9770E"]}};'
-        f'function band(a){{return a.b>90?"#0053D6":a.b>70?"#65CBF3":a.b>50?"#FFDB13":"#FF7D45";}}'
-        f'function paint(){{var c=document.querySelector(\'input[name="vc-\'+uid+\'"]:checked\').value,s=document.querySelector(\'input[name="vs-\'+uid+\'"]:checked\').value,spec={{}};'
-        f'var col=c==="plddt"?{{colorfunc:band}}:{{colorscheme:"chain"}};spec[s]=col;v.setStyle({{hetflag:false}},spec);v.setStyle({{hetflag:true}},{{stick:{{radius:0.22,colorscheme:"greenCarbon"}}}});v.render();}}'
-        f'paint();v.zoomTo();v.render();'
-        f'Array.prototype.forEach.call(document.querySelectorAll(\'input[name="vc-\'+uid+\'"],input[name="vs-\'+uid+\'"]\'),function(i){{i.addEventListener("change",paint);}});'
-        f'document.getElementById("vr-"+uid).addEventListener("click",function(){{v.zoomTo();v.render();}});}}start();}})();</script></div>')
+        f'<script src="{LIB_URL}"></script>'
+        f'<script>{script}</script></div>')
 
 
 def render_provenance(ctx: dict[str, Any] | None) -> str:
@@ -186,14 +193,15 @@ def _head(summary: dict[str, Any], ctx: dict[str, Any] | None, uid: str, runtime
 
 
 def render_result_card(summary: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None, runtime: float | None = None,
-                       uid: str | None = None, standalone_css: bool = True, next_hint: bool = True, theme: str | None = None) -> str:
+                       uid: str | None = None, standalone_css: bool = True, next_hint: bool = True, theme: str | None = None,
+                       structure_format: str = "pdb") -> str:
     """Compact card shown right after a run: headline numbers, tables and the 3-D structure."""
     uid = uid or uuid.uuid4().hex[:8]
     notes = "".join(f'<div class="bz-alert bz-alert--warn">{icon("alert")}<div>{esc(n)}</div></div>' for n in summary.get("layout_notes", []))
     nxt = (f'<div class="bz-next">{icon("arrow-right")}<div>Run the <b>Analyse Results</b> cell for PAE and pLDDT plots, ensemble statistics and a downloadable HTML report.</div></div>'
            if next_hint else "")
     css = (FONT_LINKS + "<style>" + read_asset("theme.css") + "\n" + read_asset("results.css") + "</style>") if standalone_css else ""
-    viewer = render_viewer(pdb_text, uid)
+    viewer = render_viewer(pdb_text, uid, structure_format)
     tables = render_chain_table(summary) + render_sample_table(summary)
     return (f'{css}<div class="bz bz-res"{theme_attr(theme)} id="bz-res-{uid}">{sprite()}{_head(summary, ctx, uid, runtime, theme)}'
             f'<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{viewer}{tables}{GUIDE}{nxt}</div></div>{theme_script() if standalone_css else ""}')
@@ -249,7 +257,7 @@ def render_figures(summary: dict[str, Any], figures: dict[str, Any]) -> str:
 
 def render_report_fragment(summary: dict[str, Any], figures: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None,
                            ligand_svg: str | None = None, runtime: float | None = None, standalone_css: bool = True, uid: str | None = None,
-                           files: list[tuple[str, str]] | None = None, theme: str | None = None, hint: bool = True) -> str:
+                           files: list[tuple[str, str]] | None = None, theme: str | None = None, hint: bool = True, structure_format: str = "pdb") -> str:
     """The full report as an embeddable block (used inline in the notebook and inside the HTML document)."""
     uid = uid or uuid.uuid4().hex[:8]
     fig_sec = render_figures(summary, figures)
@@ -261,16 +269,16 @@ def render_report_fragment(summary: dict[str, Any], figures: dict[str, Any], pdb
         files_sec = f'<div><div class="bz-sec-h"><h3>Saved files</h3><span>download from the Colab file browser or the Drive cell</span></div><pre class="bz-pre">{esc(rows)}</pre></div>'
     css = (FONT_LINKS + "<style>" + read_asset("theme.css") + "\n" + read_asset("results.css") + "</style>") if standalone_css else ""
     return (f'{css}<div class="bz bz-res bz-report"{theme_attr(theme, hint)}>{sprite()}{_head(summary, ctx, uid, runtime, theme)}<div class="bz-res-b">{notes}{render_kpis(summary)}{render_affinity(summary)}{lig}'
-            f'{render_chain_table(summary)}{render_sample_table(summary)}{fig_sec}{render_viewer(pdb_text, uid)}{GUIDE}{render_provenance(ctx)}{files_sec}'
+            f'{render_chain_table(summary)}{render_sample_table(summary)}{fig_sec}{render_viewer(pdb_text, uid, structure_format)}{GUIDE}{render_provenance(ctx)}{files_sec}'
             f'<p class="bz-hint" style="text-align:center">Generated by boltz2nb {__version__}</p></div></div>{theme_script() if standalone_css else ""}')
 
 
 def render_report_document(summary: dict[str, Any], figures: dict[str, Any], pdb_text: str | None = None, ctx: dict[str, Any] | None = None,
-                           ligand_svg: str | None = None, runtime: float | None = None, theme: str | None = None) -> str:
+                           ligand_svg: str | None = None, runtime: float | None = None, theme: str | None = None, structure_format: str = "pdb") -> str:
     """Self-contained HTML report (figures embedded as base64). Light unless ``theme`` is given or the reader switched it
     (the switch is remembered by the browser, so no theme is written into the file)."""
     body = render_report_fragment(summary, figures, pdb_text, ctx, ligand_svg, runtime, standalone_css=False,
-                                  theme=theme, hint=theme is not None)
+                                  theme=theme, hint=theme is not None, structure_format=structure_format)
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>Boltz-2 report - {esc(summary["job_name"])}</title>{FONT_LINKS}<style>{read_asset("theme.css")}\n{read_asset("results.css")}</style></head>'
             f'<body class="bz-page">{body}{theme_script()}</body></html>')

@@ -28,7 +28,7 @@ python tools/build_notebook_headers.py --check
 
 ### Interface and browser tests
 
-The interface lives in `boltz2nb/ui/assets/` (`theme.css`, `form.css`, `results.css`, `form.html`, `form.js`, `theme.js`) and is plain
+The interface lives in `boltz2nb/ui/assets/` (`theme.css`, `form.css`, `results.css`, `form.html`, `form.js`, `viewer.js`, `theme.js`) and is plain
 ES2017 with no build step. All values the page needs (defaults, presets, ranges) come from `boltz2nb.run_params`; do not duplicate them in JS.
 A new asset file needs no packaging change (`assets/*` is package data), but run `pytest tests/test_packaging.py`.
 
@@ -37,6 +37,11 @@ A new asset file needs no packaging change (`assets/*` is package data), but run
 Add a callback to `callbacks.CALLBACKS` and `register_callbacks` wraps it (`as_json_reply`); never register a bare function. The test
 harness passes each return value through IPython's real `DisplayFormatter`, so a callback that returns something the page cannot read fails
 `tests/test_colab_contract.py` instead of failing in Colab.
+
+**Ligand checks and the network.** `boltz2nb/ligand.py` checks SMILES with RDKit and looks CCD codes up on the RCSB data API. No test may reach the
+network: `tests/conftest.py` replaces the lookup for every test with `ccd_service` (a few real components, 404 for the rest, `.offline = True` to
+simulate no connection). The same goes for the 3-D viewer: headless browsers have no WebGL, so `tests/ui/test_results_browser.py` runs the viewer against a
+stand-in that parses atoms and applies selections; change the viewer and the stand-in together.
 
 **Figures.** Plots are drawn by `boltz2nb/ui/figures.py` on fixed-size canvases (no tight cropping), and `report.py` lays them out in rows
 that rely on those sizes. A new figure needs an entry in `tests/test_figures.py` (inside its canvas, nothing overprinted, same size as its kind)

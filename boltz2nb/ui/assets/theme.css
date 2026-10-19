@@ -152,6 +152,13 @@ html[data-bz-theme="dark"] .bz:not([data-theme]){
 .bz-input:disabled,.bz-select:disabled{opacity:.55;cursor:not-allowed;background:var(--bz-surface-2)}
 .bz-inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .bz-meta{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--bz-text-3);min-height:18px}
+.bz-meta-warn{color:var(--bz-warn);font-weight:600}
+.bz-vstat{display:flex;gap:7px;align-items:flex-start;margin-top:7px;font-size:12.5px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.bz-vstat[hidden]{display:none}
+.bz-vstat svg.i{margin-top:2px;flex:none}
+.bz-vstat .bz-spin{margin-top:2px;color:var(--bz-text-3)}
+.bz-vstat--ok{color:var(--bz-ok)}.bz-vstat--bad{color:var(--bz-err)}.bz-vstat--warn{color:var(--bz-warn)}.bz-vstat--busy{color:var(--bz-text-3);font-weight:500}
+.bz-input[data-valid="true"]{border-color:var(--bz-ok)}.bz-input[data-valid="false"]{border-color:var(--bz-err)}
 
 /* chips input (chain ids, contact tokens) */
 .bz-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:40px;padding:5px 8px;border-radius:11px;border:1px solid var(--bz-field-border);

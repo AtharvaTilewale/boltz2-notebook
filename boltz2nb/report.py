@@ -22,9 +22,13 @@ def _figures(plots: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _pdb_text(job: JobResult) -> str | None:
+def structure_text(job: JobResult) -> tuple[str | None, str]:
+    """The best sample's structure file as text and its viewer format (``pdb`` or ``cif``); (None, 'pdb') when it cannot be read."""
     p = job.best.structure_path
-    return p.read_text() if p.suffix.lower() == ".pdb" else None
+    try:
+        return p.read_text(), ("pdb" if p.suffix.lower() == ".pdb" else "cif")
+    except OSError:
+        return None, "pdb"
 
 
 def build_report(job: JobResult, plots: dict[str, Any], run_context: dict[str, Any] | None = None, ligand_svg: str | None = None,
@@ -32,11 +36,11 @@ def build_report(job: JobResult, plots: dict[str, Any], run_context: dict[str, A
                  files: list[tuple[str, str]] | None = None) -> str:
     """HTML for the report; ``fragment=True`` returns an embeddable block instead of a full document."""
     summary = summary_dict(job)
-    pdb = _pdb_text(job) if embed_structure else None
+    pdb, fmt = structure_text(job) if embed_structure else (None, "pdb")
     figures = _figures(plots)
     if fragment:
-        return render_report_fragment(summary, figures, pdb, run_context, ligand_svg, runtime, files=files)
-    return render_report_document(summary, figures, pdb, run_context, ligand_svg, runtime)
+        return render_report_fragment(summary, figures, pdb, run_context, ligand_svg, runtime, files=files, structure_format=fmt)
+    return render_report_document(summary, figures, pdb, run_context, ligand_svg, runtime, structure_format=fmt)
 
 
 def write_report(job: JobResult, out_dir: Path | str, run_context: dict[str, Any] | None = None, ligand_svg: str | None = None,

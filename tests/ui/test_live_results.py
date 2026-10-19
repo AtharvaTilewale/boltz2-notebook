@@ -150,7 +150,8 @@ def test_only_documented_external_hosts(summary):
     s, pdb = summary
     html_ = results.render_result_card(s, pdb, None) + render_live(RunState())
     hosts = set(re.findall(r'(?:src|href)="https?://([^/"]+)', html_))
-    assert hosts <= {"3Dmol.org", "fonts.googleapis.com", "fonts.gstatic.com"}, hosts
+    assert hosts <= {"cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"}, hosts
+    assert "3dmol@2.5.5" in html_, "the viewer library must be pinned to a version"
 
 
 def test_report_fragment_and_document(summary):

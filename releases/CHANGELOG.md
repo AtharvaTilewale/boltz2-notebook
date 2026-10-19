@@ -41,6 +41,12 @@
   JSON-safe), and `form.js` reads the answer strictly: an answer in any other shape produces a message that says to restart the session
   instead of the word `undefined`. The earlier browser tests had faked this reply shape; the harness now passes each callback's return value
   through IPython's real `DisplayFormatter`, and `tests/test_colab_contract.py` checks every registered callback.
+- **3-D viewer drew a tangle of lines instead of a cartoon.** Which atoms became a cartoon and which sticks was decided from the PDB record type
+  (`ATOM` / `HETATM`); a file that flags its records differently fell back to 3Dmol's default wireframe. The viewer (`boltz2nb/ui/assets/viewer.js`,
+  now a file of its own) decides from the atoms: a chain with a protein or nucleic-acid backbone is a polymer (cartoon), everything else a
+  ligand (sticks; ions as spheres). It also pins the 3Dmol library to 2.5.5 (it loaded a moving "latest" build) with a second host as fallback,
+  refits itself when its panel is resized, shows mmCIF structures (a run with `output_format: mmcif` had no viewer at all), says what it loaded
+  (`A protein, 585 residues - B ligand, 23 atoms`) and shows the pLDDT of the atom under the pointer.
 - The 2-D ligand depiction began with an XML declaration (`<?xml ... encoding='iso-8859-1'?>`), which is not valid inside an HTML fragment; it is removed.
 
 ### Interface redesign
@@ -67,6 +73,12 @@ so the form, the validator and the runner cannot drift apart.
   sideways inside their card instead of shrinking the text. The previous layout paired a narrow 241 px pLDDT card with a 441 px PAE card and
   squeezed a 1105 px image into 455 px (text at about 40 % of its size). The browser tests did not notice because their report fixture contained
   no figures; it now holds the real plots of a three-sample job.
+- **Input checks.** The sequence box filters what is typed or pasted: capitals only, no spaces or line breaks, and only the letters that are
+  valid for the chain type (20 amino acids and X; ACGT and N; ACGU and N), with a note naming what was ignored. A ligand is checked as soon as it is
+  entered and the result is shown under the field (valid / not valid / could not be checked): SMILES get plain-language messages (unbalanced
+  brackets, a ring that is never closed, spaces, impossible valence) and work even without RDKit for the text errors; CCD codes are looked up in the
+  PDB chemical component dictionary through the RCSB data API, which confirms they exist, names the component and gives it a 2-D drawing. A code
+  that is not in the dictionary blocks saving (Boltz would stop on it); an unreachable service never does. `BOLTZ2NB_OFFLINE=1` turns the lookup off.
 - **Look and feel.** Inter and JetBrains Mono (loaded from Google Fonts, with system fallbacks), light by default with a light / dark switch (see **Theme**),
   layouts checked from 360 px to desktop. Text contrast is at least 4.5:1 and control outlines at least 3:1, enforced by tests;
   every control has an accessible name, a visible focus ring, and reduced-motion is respected.
@@ -89,7 +101,7 @@ so the form, the validator and the runner cannot drift apart.
   written at the top of the form instead of leaving a rendered-but-dead page (and if the script never runs at all, the markup
   itself reveals a "this form has not started" note after four seconds). This fixes a form that looked complete but ignored every
   click when the output renderer re-created the `<script>` tags without their ids (or ran the script before the markup was inserted).
-- **Tests.** 152 browser-driven tests drive the real form against the real Python callbacks in headless Firefox (happy path, validation, FASTA,
+- **Tests.** 191 browser-driven tests drive the real form against the real Python callbacks in headless Firefox (happy path, validation, FASTA,
   PDB import, uploads, presets, themes, no horizontal overflow at 360 / 414 / 768 / 1024 / 1280 px, accessible names) and embed it the
   ways notebook front-ends do (`tests/ui/test_embedding_browser.py`: scripts re-created without ids, `document.write`, markup arriving
   after the script, sandboxed frame with an opaque origin, no kernel bridge; standard and advanced forms), plus unit tests

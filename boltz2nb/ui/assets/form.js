@@ -239,20 +239,33 @@ function setupPolymer(card, type, opts) {
   var ta = F('seq', card);
   $$('input[name^="ty-"]', card).forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { applyType(card, r.value); refreshAll(); } }); });
   $$('input[name^="msa-"]', card).forEach(function (r) { r.addEventListener('change', function () { applyMsa(card); refreshAll(); }); });
-  ta.addEventListener('input', function () { validateSeq(card); });
+  // What is typed is filtered as it arrives: capitals only, no spaces or line breaks, and only the letters that are valid for this
+  // chain type. The `input` listener below catches every other way text can get in (drag, autofill, composition, old browsers).
+  ta.addEventListener('beforeinput', function (ev) {
+    if (ev.isComposing || card._inserting) { return; }
+    var kind = ev.inputType || '';
+    if (kind === 'insertLineBreak' || kind === 'insertParagraph') { ev.preventDefault(); return; }
+    if (kind !== 'insertText' || typeof ev.data !== 'string') { return; }
+    var r = sanitizeSeq(ev.data, card.dataset.type);
+    if (r.seq === ev.data) { return; }
+    ev.preventDefault();
+    if (r.count) { noteRejected(card, r.dropped, true); }
+    if (r.seq) { insertAtCaret(ta, r.seq, card); }
+    validateSeq(card); refreshAll();
+  });
+  ta.addEventListener('input', function () { cleanField(card); validateSeq(card); });
   ta.addEventListener('blur', function () { setTouched(card, 'seq'); normalizeSeq(card); refreshAll(); });
   ta.addEventListener('paste', function (ev) {
     var text = (ev.clipboardData || window.clipboardData).getData('text');
     if (!text) { return; }
     ev.preventDefault();
-    var recs = parseFasta(text);
-    if (!recs.length) { return; }
-    var whole = ta.selectionStart === 0 && ta.selectionEnd === ta.value.length || !ta.value.trim();
-    if (whole) { ta.value = ''; }
-    ta.setRangeText(recs[0].seq, ta.selectionStart, ta.selectionEnd, 'end');
-    card._label = recs[0].header || card._label || '';
-    setExtra(card, recs.slice(1));
-    validateSeq(card); refreshAll();
+    takeText(card, text);
+  });
+  ta.addEventListener('drop', function (ev) {
+    var text = ev.dataTransfer && ev.dataTransfer.getData('text');
+    if (!text) { return; }
+    ev.preventDefault();
+    takeText(card, text);
   });
   F('msa-file', card) && bindDrop(F('msa-upload', card).querySelector('.bz-drop'), function (file) {
     uploadInto(file, 'msa', F('msa-file-status', card), function (path) { card._msaPath = path; setTouched(card, 'msa'); refreshAll(); });
@@ -297,6 +310,68 @@ function setExtra(card, recs) {
     box.hidden = false;
   } else { box.hidden = true; }
 }
+// ---- sequence filtering
+// Returns the sequence that may be kept from `text` (upper case, only letters of this chain type) and the characters that were refused.
+// Spaces and line breaks are dropped without comment; digits are only reported when the text was typed (a pasted record is cleaned first).
+function sanitizeSeq(text, type) {
+  var ok = ALPHA[type] || '', up = String(text).toUpperCase(), out = '', dropped = {}, count = 0, i, ch;
+  for (i = 0; i < up.length; i++) {
+    ch = up.charAt(i);
+    if (/\s/.test(ch)) { continue; }
+    if (ok.indexOf(ch) < 0) { dropped[ch] = (dropped[ch] || 0) + 1; count += 1; continue; }
+    out += ch;
+  }
+  return { seq: out, dropped: dropped, count: count };
+}
+// `merge`: typing refuses one character at a time, so those are added up; a paste or a drop replaces the note.
+function noteRejected(card, dropped, merge) {
+  var el = F('seq-meta', card), all = merge ? (card._rej || {}) : {};
+  Object.keys(dropped || {}).forEach(function (k) { all[k] = (all[k] || 0) + dropped[k]; });
+  card._rej = all;
+  var keys = Object.keys(all).sort();
+  clearTimeout(card._noteT);
+  if (!keys.length) { el.textContent = ''; el.classList.remove('bz-meta-warn'); return; }
+  dropped = all;
+  var n = keys.reduce(function (a, k) { return a + dropped[k]; }, 0), T = TYPE[card.dataset.type];
+  el.textContent = 'Ignored ' + plural(n, 'character') + ' that cannot be in a ' + T.title + ' sequence: ' + keys.slice(0, 8).join(' ') + (keys.length > 8 ? ' ...' : '') + '.';
+  el.classList.add('bz-meta-warn');
+  card._noteT = setTimeout(function () { card._rej = {}; noteRejected(card, {}); }, 9000);
+}
+function insertAtCaret(ta, text, card) {
+  var done = false;
+  card._inserting = true;
+  try { done = document.execCommand('insertText', false, text); } catch (err) { done = false; }   // keeps the browser's undo history
+  card._inserting = false;
+  if (!done) { ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, 'end'); }
+}
+// Safety net for text that arrived without a keystroke: clean it and keep the caret next to the same letter.
+function cleanField(card) {
+  var ta = F('seq', card), v = ta.value, type = card.dataset.type;
+  if (/^[ \t]*>/m.test(v)) { takeText(card, v, true); return; }            // a FASTA record (header line) arrived: split it properly
+  var r = sanitizeSeq(v, type);
+  if (r.seq === v) { return; }
+  var pos = ta.selectionStart, keep = sanitizeSeq(v.slice(0, pos), type).seq.length;
+  ta.value = r.seq;
+  try { ta.setSelectionRange(keep, keep); } catch (err) { /* not focusable */ }
+  if (r.count) { noteRejected(card, r.dropped, true); }
+}
+// Pasted or dropped text, possibly one or several FASTA records: keep the valid letters of the first, offer the rest as extra molecules.
+function takeText(card, text, replaceAll) {
+  var ta = F('seq', card), type = card.dataset.type, recs = parseFasta(text), dropped = {}, any = false;
+  recs = recs.map(function (r) {
+    var s = sanitizeSeq(r.seq, type);
+    Object.keys(s.dropped).forEach(function (k) { dropped[k] = (dropped[k] || 0) + s.dropped[k]; any = true; });
+    return { header: r.header, seq: s.seq };
+  }).filter(function (r) { return r.seq.length; });
+  if (any) { noteRejected(card, dropped); } else { noteRejected(card, {}); }
+  if (!recs.length) { if (replaceAll) { ta.value = ''; } validateSeq(card); refreshAll(); return; }
+  var whole = replaceAll || (ta.selectionStart === 0 && ta.selectionEnd === ta.value.length) || !ta.value.trim();
+  if (whole) { ta.value = ''; }
+  ta.setRangeText(recs[0].seq, ta.selectionStart, ta.selectionEnd, 'end');
+  card._label = recs[0].header || card._label || '';
+  setExtra(card, recs.slice(1));
+  validateSeq(card); refreshAll();
+}
 function normalizeSeq(card) {
   var ta = F('seq', card), recs = parseFasta(ta.value);
   if (!recs.length) { ta.value = ''; return; }
@@ -313,7 +388,6 @@ function validateSeq(card) {
   for (i = 0; i < seq.length; i++) { if (ok.indexOf(seq[i]) < 0) { bad[seq[i]] = (bad[seq[i]] || 0) + 1; nbad += 1; } }
   var T = TYPE[type];
   F('seq-count', card).textContent = seq ? plural(seq.length, T.unit) : '';
-  F('seq-meta', card).textContent = '';
   var sub = card._label ? card._label : (seq ? plural(seq.length, T.unit) : 'Add a sequence');
   F('sub', card).textContent = sub.length > 70 ? sub.slice(0, 67) + '...' : sub;
   card._err = card._err || {};
@@ -323,11 +397,21 @@ function validateSeq(card) {
 }
 
 // ---- ligands
+// A ligand is described by a SMILES or a CCD code. Both are checked as soon as they are typed: SMILES by the notebook (RDKit), CCD codes
+// against the PDB's chemical component dictionary. The answer is shown as a status line (valid / not valid / could not be checked)
+// and, when there is one, as a 2-D drawing. Only "not valid" blocks saving; "could not be checked" never does.
 function setupLigand(card, opts) {
   var val = F('value', card);
   $$('input[name^="lk-"]', card).forEach(function (r) { r.addEventListener('change', function () { applyLigandKind(card); describeLigand(card); refreshAll(); }); });
-  val.addEventListener('input', function () { card._ligDirty = true; if (kindOf(card) === 'ccd') { val.value = val.value.toUpperCase(); } scheduleDescribe(card); });
-  val.addEventListener('blur', function () { setTouched(card, 'value'); refreshAll(); });
+  val.addEventListener('input', function () {
+    card._ligDirty = true;
+    if (kindOf(card) === 'ccd') { var up = val.value.toUpperCase().replace(/\s+/g, ''); if (up !== val.value) { val.value = up; } }
+    scheduleDescribe(card);
+  });
+  val.addEventListener('blur', function () {
+    var t = val.value.trim(); if (t !== val.value) { val.value = t; describeLigand(card); }
+    setTouched(card, 'value'); refreshAll();
+  });
   if (opts.kind === 'ccd') { $('input[name^="lk-"][value="ccd"]', card).checked = true; }
   applyLigandKind(card);
   if (opts.value) { val.value = opts.value; describeLigand(card); }
@@ -339,50 +423,77 @@ function applyLigandKind(card) {
   F('val-label', card).textContent = k === 'smiles' ? 'SMILES string' : 'CCD code';
   val.placeholder = k === 'smiles' ? 'CC(=O)Oc1ccccc1C(=O)O' : 'SAH';
   val.style.textTransform = k === 'ccd' ? 'uppercase' : 'none';
-  F('val-hint', card).textContent = k === 'smiles' ? 'Paste a SMILES from PubChem, ChEMBL or your drawing tool.' : 'The 1-5 character PDB component code, for example SAH, ATP or HEM.';
+  F('val-hint', card).textContent = k === 'smiles' ? 'Paste a SMILES from PubChem, ChEMBL or your drawing tool.' : 'The 1-5 character PDB component code, for example SAH, ATP or HEM. It is looked up in the PDB chemical component dictionary.';
   F('preview-col', card).hidden = false;
-  if (k === 'ccd') { val.value = val.value.toUpperCase(); }
+  if (k === 'ccd') { val.value = val.value.toUpperCase().replace(/\s+/g, ''); }
 }
 var scheduleDescribe = function (card) {
   clearTimeout(card._dt);
   card._dt = setTimeout(function () { describeLigand(card); }, 380);
 };
+// One status line under the field. state: '' (hidden) | busy | ok | bad | warn
+function setLigStatus(card, state, text) {
+  var el = F('val-status', card), val = F('value', card);
+  card._vstat = state;
+  if (!state) { el.hidden = true; el.innerHTML = ''; el.removeAttribute('data-state'); el.className = 'bz-vstat'; val.removeAttribute('data-valid'); return; }
+  el.hidden = false; el.setAttribute('data-state', state); el.className = 'bz-vstat bz-vstat--' + state;
+  el.innerHTML = (state === 'busy' ? '<span class="bz-spin"></span>' : ICON(state === 'ok' ? 'check-circle' : (state === 'bad' ? 'x-circle' : 'alert'))) + '<span>' + esc(text) + '</span>';
+  if (state === 'ok') { val.setAttribute('data-valid', 'true'); } else if (state === 'bad') { val.setAttribute('data-valid', 'false'); } else { val.removeAttribute('data-valid'); }
+}
+function ligProps(card, chips, message) {
+  F('props', card).innerHTML = chips.filter(function (c) { return c[1] !== undefined && c[1] !== null && c[1] !== ''; }).map(function (c) {
+    return '<span class="bz-prop">' + esc(c[0]) + ' ' + esc(c[1]) + '</span>'; }).join('') + (message ? '<span class="bz-chip bz-chip--warn">' + esc(message) + '</span>' : '');
+}
 function describeLigand(card) {
-  var kind = kindOf(card), value = F('value', card).value.trim(), pv = F('preview', card), props = F('props', card);
+  var kind = kindOf(card), value = F('value', card).value.trim(), pv = F('preview', card), what = kind === 'smiles' ? 'SMILES string' : 'CCD code';
   card._ligReq = (card._ligReq || 0) + 1;
   var req = card._ligReq;
-  card._err = card._err || {};
-  props.innerHTML = '';
+  card._err = card._err || {}; card._lig = null;
+  ligProps(card, []);
   if (!value) {
-    pv.innerHTML = '<span class="bz-muted">2-D preview</span>'; card._err.value = 'Enter a ' + (kind === 'smiles' ? 'SMILES string' : 'CCD code') + '.';
+    setLigStatus(card, '');
+    pv.innerHTML = '<span class="bz-muted">2-D preview</span>'; card._err.value = 'Enter a ' + what + '.';
     F('sub', card).textContent = 'Small molecule'; paintCard(card); refreshRail(); return;
   }
-  if (kind === 'ccd') {
-    var ok = CCD_RE.test(value);
-    pv.innerHTML = '<span class="bz-muted" style="text-align:center;padding:10px">Component <b class="bz-mono" style="color:var(--bz-text)">' + esc(value) + '</b><br><small>No preview for CCD codes</small></span>';
-    card._err.value = ok ? '' : 'CCD codes are 1-5 letters or digits.';
-    F('sub', card).textContent = 'CCD component ' + value; paintCard(card); refreshRail(); return;
+  if (kind === 'ccd' && !CCD_RE.test(value)) {                       // no round trip needed to see this is not a code
+    setLigStatus(card, 'bad', "'" + (value.length > 12 ? value.slice(0, 12) + '...' : value) + "' is not a CCD code: codes are 1 to 5 letters or digits (for example SAH, ATP, HEM).");
+    pv.innerHTML = '<span class="bz-muted">No preview</span>'; card._err.value = 'CCD codes are 1-5 letters or digits.';
+    F('sub', card).textContent = 'Not a valid CCD code'; paintCard(card); refreshRail(); return;
   }
   card._err.value = ''; paintCard(card);
+  setLigStatus(card, 'busy', kind === 'smiles' ? 'Checking the SMILES...' : 'Looking ' + value.toUpperCase() + ' up in the PDB component dictionary...');
   pv.innerHTML = '<span class="bz-spin" style="color:var(--bz-text-3)"></span>';
-  rpc('describe_ligand', [{ kind: 'smiles', value: value }]).then(function (r) {
+  rpc('describe_ligand', [{ kind: kind, value: value }]).then(function (r) {
     if (req !== card._ligReq) { return; }
-    if (r && r.valid === true) {
-      pv.innerHTML = r.svg || '<span class="bz-muted">No preview</span>';
-      var chips = [['formula', r.formula], ['MW', r.mol_weight], ['heavy atoms', r.heavy_atoms], ['cLogP', r.clogp]];
-      props.innerHTML = chips.map(function (c) { return '<span class="bz-prop">' + esc(c[0]) + ' ' + esc(c[1]) + '</span>'; }).join('') +
-        (r.message ? '<span class="bz-chip bz-chip--warn">' + esc(r.message) + '</span>' : '');
+    r = r || {};
+    if (r.status === 'error') { throw new Error(r.message || 'The check failed.'); }
+    if (r.valid === true) {
+      var drawn = !!r.svg;
+      pv.innerHTML = r.svg || '<span class="bz-muted" style="text-align:center;padding:8px">No drawing available<br>for this component</span>';
+      if (kind === 'smiles') {
+        setLigStatus(card, 'ok', 'Valid SMILES: ' + r.formula + ', ' + plural(r.heavy_atoms, 'heavy atom') + '.');
+        ligProps(card, [['formula', r.formula], ['MW', r.mol_weight], ['heavy atoms', r.heavy_atoms], ['cLogP', r.clogp]], r.message);
+        F('sub', card).textContent = r.formula + ' - ' + r.mol_weight + ' Da';
+      } else {
+        setLigStatus(card, 'ok', 'Valid CCD code: ' + r.code + (r.name ? ' - ' + r.name : '') + (r.formula ? ' (' + r.formula + ')' : '') + '.');
+        ligProps(card, [['formula', r.formula], ['MW', r.mol_weight]]);
+        F('sub', card).textContent = r.code + (r.name ? ' - ' + (r.name.length > 34 ? r.name.slice(0, 33) + '...' : r.name) : '');
+      }
       card._err.value = ''; card._lig = r;
-      F('sub', card).textContent = r.formula + ' - ' + r.mol_weight + ' Da';
-    } else if (r && r.valid === false) {
+    } else if (r.valid === false) {
+      setLigStatus(card, 'bad', r.message || (kind === 'smiles' ? 'This SMILES is not valid.' : 'This CCD code is not valid.'));
       pv.innerHTML = '<span class="bz-muted">No preview</span>';
-      card._err.value = r.message || 'This SMILES could not be parsed.'; card._lig = null;
+      card._err.value = r.message || ('This ' + what + ' is not valid.'); card._lig = null;
+      F('sub', card).textContent = kind === 'smiles' ? 'Not a valid SMILES' : 'Not a valid CCD code';
     } else {
+      setLigStatus(card, 'warn', r.message || 'This could not be checked.');
       pv.innerHTML = '<span class="bz-muted">Preview unavailable</span>';
+      F('sub', card).textContent = kind === 'ccd' ? 'CCD component ' + value : 'Small molecule';
     }
     paintCard(card); refreshAll();
-  }).catch(function () {
+  }).catch(function (err) {
     if (req !== card._ligReq) { return; }
+    setLigStatus(card, 'warn', 'The notebook runtime did not answer, so this ' + what + ' could not be checked' + (err && err.message ? ' (' + String(err.message).split('\n')[0].slice(0, 140) + ')' : '') + '.');
     pv.innerHTML = '<span class="bz-muted" style="text-align:center;padding:8px">Preview needs a<br>connected runtime</span>';
   });
 }
@@ -394,6 +505,7 @@ function paintCard(card) {
     var errEl = E(k, card); if (!errEl) { return; }
     var msg = card._err && card._err[k];
     var show = !!msg && (state.strict || (card._touched && card._touched[k]));
+    if (k === 'value' && card._vstat === 'bad') { show = false; }       // the live status line above already says why
     errEl.hidden = !show;
     errEl.innerHTML = show ? ICON('x-circle') + '<span>' + esc(msg) + '</span>' : '';
     if (map[k]) { if (show) { map[k].setAttribute('aria-invalid', 'true'); } else { map[k].removeAttribute('aria-invalid'); } }

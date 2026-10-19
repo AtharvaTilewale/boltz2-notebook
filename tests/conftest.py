@@ -25,6 +25,44 @@ def example_pred_dir(tmp_path_factory) -> Path:
     return d
 
 
+def _ccd_record(name, formula, weight, smiles):
+    return {"chem_comp": {"name": name, "formula": formula, "formula_weight": weight, "type": "non-polymer"},
+            "rcsb_chem_comp_descriptor": {"SMILES_stereo": smiles}}
+
+
+class CcdService:
+    """Stands in for the RCSB chemical-component service: a few real components, 404 for anything else, and an offline switch."""
+
+    records = {
+        "SAH": _ccd_record("S-ADENOSYL-L-HOMOCYSTEINE", "C14 H20 N6 O5 S", 384.411,
+                           "c1nc(c2c(n1)n(cn2)[C@H]3[C@@H]([C@@H]([C@H](O3)CSCC[C@@H](C(=O)O)N)O)O)N"),
+        "ATP": _ccd_record("ADENOSINE-5'-TRIPHOSPHATE", "C10 H16 N5 O13 P3", 507.181,
+                           "c1nc(c2c(n1)n(cn2)[C@H]3[C@@H]([C@@H]([C@H](O3)COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O)O)N"),
+        "ZN": _ccd_record("ZINC ION", "Zn", 65.409, "[Zn+2]"),
+    }
+
+    def __init__(self):
+        self.offline = False
+        self.calls: list[str] = []
+
+    def fetch(self, code, timeout):
+        self.calls.append(code)
+        if self.offline:
+            raise OSError("no connection")
+        return self.records.get(code)
+
+
+@pytest.fixture(autouse=True)
+def ccd_service(monkeypatch):
+    """No test reaches the real service; `ccd_service.offline = True` simulates a runtime without a connection."""
+    from boltz2nb import ligand
+    svc = CcdService()
+    monkeypatch.setattr(ligand, "_fetch_ccd_json", svc.fetch)
+    ligand.clear_ccd_cache()
+    yield svc
+    ligand.clear_ccd_cache()
+
+
 @pytest.fixture(autouse=True)
 def _forget_session_theme():
     """``set_theme`` keeps the last choice in a module global; no test may hand its choice on to the next."""

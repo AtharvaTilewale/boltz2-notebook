@@ -20,6 +20,7 @@ from boltz2nb.analysis import load_job, summary_dict
 from boltz2nb.diagnostics import diagnose_failure
 from boltz2nb.install import engine_version
 from boltz2nb.paths import base_dir, find_predictions_dir
+from boltz2nb.report import structure_text
 from boltz2nb.run_params import load_run_params, validate_run_params
 from boltz2nb.runner import build_boltz_cmd, capture_run_context, run_boltz, unique_output_dir, write_json
 from boltz2nb.ui.live import LivePanel, RunState
@@ -122,6 +123,6 @@ else:
     (BASE / "last_job.json").write_text(json.dumps(status, indent=2))
     panel.finish(True)
     best = job.best
-    pdb_text = best.structure_path.read_text() if best.structure_path.suffix.lower() == ".pdb" else None
-    display(HTML(render_result_card(summary, pdb_text, run_context, runtime=elapsed)))
+    pdb_text, structure_format = structure_text(job)
+    display(HTML(render_result_card(summary, pdb_text, run_context, runtime=elapsed, structure_format=structure_format)))
     print(f"[ok] {len(job.models)} model(s) in {pred_dir}")

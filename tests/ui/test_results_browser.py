@@ -21,17 +21,50 @@ from .test_form_browser import open_framed
 
 CTX = {"engine": "boltz-community 2.10.12", "gpu_name": "Tesla T4", "python": "3.12.12", "timestamp_utc": "2026-10-17T10:00:00+00:00",
        "command": ["boltz", "predict", "x.yaml"], "input_yaml": "version: 1\n"}
-STUB_3DMOL = """<script>
-window.__calls = [];
+STUB_JS = """
+window.__calls = []; window.__atoms = [];
+function parsePdb(text) {
+  var lines = text.split('\\n'), nb = {};
+  lines.forEach(function (l) {                                       // bonded neighbours per atom serial, from the CONECT records
+    if (l.slice(0, 6) !== 'CONECT') { return; }
+    var ids = (l.slice(6).match(/\\d+/g) || []).map(Number);
+    ids.slice(1).forEach(function (o) { (nb[ids[0]] = nb[ids[0]] || {})[o] = 1; (nb[o] = nb[o] || {})[ids[0]] = 1; });
+  });
+  return lines.filter(function (l) { return /^(ATOM|HETATM)/.test(l); }).map(function (l) {
+    var serial = parseInt(l.slice(6, 11), 10);
+    return {hetflag: l.charAt(0) === 'H', atom: l.slice(12, 16).trim(), resn: l.slice(17, 20).trim(), chain: l.charAt(21), resi: parseInt(l.slice(22, 26), 10),
+            elem: (l.slice(76, 78).trim() || l.slice(12, 14).trim()), b: parseFloat(l.slice(60, 66)), serial: serial, bonds: Object.keys(nb[serial] || {}).length,
+            style: {}};
+  });
+}
+function matches(a, sel) {
+  return Object.keys(sel).every(function (k) {
+    if (k === 'chain') { return [].concat(sel.chain).indexOf(a.chain) >= 0; }
+    if (k === 'hetflag') { return a.hetflag === sel.hetflag; }
+    if (k === 'bonds') { return a.bonds === sel.bonds; }
+    return a[k] === sel[k];
+  });
+}
+// what each chain ended up drawn as, e.g. {"A:ATOM": "cartoon", "B:HETATM": "stick"}
+window.__drawn = function () { var o = {}; window.__atoms.forEach(function (a) { var k = a.chain + ':' + (a.hetflag ? 'HETATM' : 'ATOM'), st = Object.keys(a.style).sort().join('+') || 'none'; o[k] = o[k] === undefined || o[k] === st ? st : o[k] + '|' + st; }); return o; };
 window.$3Dmol = {createViewer: function (el, opts) {
   window.__calls.push(['createViewer', opts.backgroundColor]);
-  var v = {addModel: function (t, f) { window.__calls.push(['addModel', t.slice(0, 4), f]); },
-           setStyle: function (sel, spec) { window.__calls.push(['setStyle', JSON.stringify(sel), Object.keys(spec).join(','), spec.cartoon && spec.cartoon.colorfunc ? spec.cartoon.colorfunc({b: 95}) + '|' + spec.cartoon.colorfunc({b: 40}) : (spec.cartoon && spec.cartoon.colorscheme) || '']); },
-           zoomTo: function () { window.__calls.push(['zoomTo']); }, render: function () { window.__calls.push(['render']); }};
+  var v = {addModel: function (t, f) { window.__calls.push(['addModel', t.slice(0, 4), f]); window.__atoms = parsePdb(t); },
+           setStyle: function (sel, spec) {
+             window.__calls.push(['setStyle', JSON.stringify(sel), Object.keys(spec).join(','), spec.cartoon && spec.cartoon.colorfunc ? spec.cartoon.colorfunc({b: 95}) + '|' + spec.cartoon.colorfunc({b: 40}) : (spec.cartoon && spec.cartoon.colorscheme) || '']);
+             window.__atoms.forEach(function (a) { if (matches(a, sel)) { a.style = spec; } }); },
+           addStyle: function (sel, spec) { window.__calls.push(['addStyle', JSON.stringify(sel), Object.keys(spec).join(',')]); window.__atoms.forEach(function (a) { if (matches(a, sel)) { a.style = Object.assign({}, a.style, spec); } }); },
+           zoomTo: function () { window.__calls.push(['zoomTo']); }, render: function () { window.__calls.push(['render']); },
+           resize: function () { window.__calls.push(['resize']); },
+           setHoverable: function (sel, on, show, hide) { window.__calls.push(['setHoverable', JSON.stringify(sel), on]); window.__hover = [show, hide]; },
+           addLabel: function (text) { window.__calls.push(['addLabel', text]); return {text: text}; }, removeLabel: function () { window.__calls.push(['removeLabel']); }};
+  if (!window.__noAtomList) { v.selectedAtoms = function () { return window.__atoms; }; }
   return v; }};
-</script>"""
+"""
+STUB_3DMOL = f"<script>{STUB_JS}</script>"
+STUB_WITHOUT_ATOM_LIST = f"<script>window.__noAtomList = true;{STUB_JS}</script>"
 THROWING_3DMOL = '<script>window.$3Dmol = {createViewer: function () { throw new TypeError("this._gl is null"); }};</script>'
-CDN = '<script src="https://3Dmol.org/build/3Dmol-min.js"></script>'
+CDN = '<script src="https://cdn.jsdelivr.net/npm/3dmol@2.5.5/build/3Dmol-min.js"></script>'
 
 
 def _strip_links(html: str) -> str:
@@ -116,9 +149,10 @@ def test_viewer_drives_the_library(driver, parts):
     calls = driver.execute_script("return window.__calls")
     assert ["createViewer", "white"] in calls and ["addModel", "ATOM", "pdb"] in calls
     cartoon = [c for c in calls if c[0] == "setStyle" and "cartoon" in c[2]][-1]
-    assert cartoon[1] == '{"hetflag":false}' and cartoon[3] == "#0053D6|#FF7D45"       # pLDDT 95 -> dark blue, 40 -> orange
-    hets = [c for c in calls if c[0] == "setStyle" and c[1] == '{"hetflag":true}']
+    assert cartoon[1] == '{"chain":["A"]}' and cartoon[3] == "#0053D6|#FF7D45"        # pLDDT 95 -> dark blue, 40 -> orange; the protein chain only
+    hets = [c for c in calls if c[0] == "setStyle" and c[1] == '{"chain":["B"]}']
     assert hets and "stick" in hets[-1][2]
+    assert driver.execute_script("return window.__drawn()") == {"A:ATOM": "cartoon", "B:HETATM": "stick"}
     n = len(calls)
     driver.find_element(By.CSS_SELECTOR, '.bz-viewer-bar input[value="chain"]').find_element(By.XPATH, "..").click()
     driver.find_element(By.CSS_SELECTOR, '.bz-viewer-bar input[value="line"]').find_element(By.XPATH, "..").click()
@@ -137,7 +171,7 @@ def test_viewer_explains_missing_webgl(driver, parts):
 
 
 def test_viewer_explains_offline(driver, parts):
-    open_page(driver, parts, parts["card"].replace(CDN, ""), "offline", 1100)
+    open_page(driver, parts, parts["card"].replace(CDN, "<script>window.BZ_3DMOL_FALLBACK = '';</script>"), "offline", 1100)
     WebDriverWait(driver, 15).until(lambda d: "internet connection" in d.find_element(By.CSS_SELECTOR, ".bz-viewer").text)
 
 
@@ -146,3 +180,71 @@ def test_failed_run_shows_cause_and_fix(driver, parts):
     box = driver.find_elements(By.CSS_SELECTOR, ".bz-alert--err")
     assert box and "GPU ran out of memory." in box[0].text and "smaller MSA" in box[0].text
     assert any(c.text == "Failed" for c in driver.find_elements(By.CSS_SELECTOR, ".bz-chip--err"))
+
+
+# ------------------------------------------------------------------------------------------------ what the viewer draws
+def viewer_page(driver, parts, pdb_text, name, stub=STUB_3DMOL, fmt="pdb"):
+    from boltz2nb.ui.results import render_viewer
+    html = render_viewer(pdb_text, "u" + name, fmt)
+    open_page(driver, parts, html.replace(CDN, stub), name, 1100)
+    WebDriverWait(driver, 10).until(lambda d: d.execute_script("return window.__calls.some(c => c[0] === 'zoomTo')"))
+
+
+def variant(pdb, how):
+    lines = pdb.splitlines()
+    if how == "all-hetatm":                                    # every record flagged as hetero
+        return "\n".join("HETATM" + ln[6:] if ln.startswith("ATOM  ") else ln for ln in lines)
+    if how == "ligand-as-atom":                                # the ligand flagged as a polymer atom
+        return "\n".join("ATOM  " + ln[6:] if ln.startswith("HETATM") else ln for ln in lines)
+    if how == "same-chain":                                    # the ligand written into the protein's chain
+        return "\n".join(ln[:21] + "A" + ln[22:] if ln.startswith("HETATM") else ln for ln in lines)
+    return pdb
+
+
+@pytest.mark.parametrize(("how", "expected"), [
+    ("as-written", {"A:ATOM": "cartoon", "B:HETATM": "stick"}),
+    ("all-hetatm", {"A:HETATM": "cartoon", "B:HETATM": "stick"}),          # a file that flags every record as hetero is still a cartoon
+    ("ligand-as-atom", {"A:ATOM": "cartoon", "B:ATOM": "stick"}),           # and a ligand flagged as polymer is still sticks
+])
+def test_cartoon_and_sticks_follow_the_atoms_not_the_record_type(driver, parts, how, expected):
+    pdb = parts["pdb"]
+    viewer_page(driver, parts, variant(pdb, how), "rec-" + how)
+    assert driver.execute_script("return window.__drawn()") == expected
+
+
+def test_a_ligand_written_into_the_protein_chain_does_not_break_the_protein_cartoon(driver, parts):
+    viewer_page(driver, parts, variant(parts["pdb"], "same-chain"), "samechain")
+    drawn = driver.execute_script("return window.__drawn()")
+    assert set(drawn.values()) == {"cartoon"}, drawn                      # one chain, one polymer: all of it is a cartoon
+
+
+def test_the_viewer_says_what_it_loaded(driver, parts):
+    viewer_page(driver, parts, parts["pdb"], "info")
+    text = driver.find_element(By.CSS_SELECTOR, ".bz-viewer-info").text
+    assert "A protein, 585 residues" in text and "B ligand, 23 atoms" in text and "hover" in text
+
+
+def test_the_pdb_file_name_extension_decides_the_format_passed_to_the_library(driver, parts):
+    viewer_page(driver, parts, parts["pdb"], "fmt", fmt="cif")
+    assert ["addModel", "ATOM", "cif"] in driver.execute_script("return window.__calls")
+
+
+def test_hovering_reports_the_plddt_of_the_atom(driver, parts):
+    viewer_page(driver, parts, parts["pdb"], "hover")
+    label = driver.execute_script("""
+      const show = window.__hover[0], atom = window.__atoms[10]; show(atom, window.__viewerStub || {addLabel: function (t) { window.__calls.push(['addLabel', t]); return {}; }});
+      return window.__calls.filter(c => c[0] === 'addLabel').pop()[1];""")
+    assert "pLDDT" in label and "(A)" in label
+
+
+def test_the_viewer_refits_when_its_panel_changes_size(driver, parts):
+    viewer_page(driver, parts, parts["pdb"], "resize")
+    driver.execute_script("document.querySelector('.bz-viewer').style.height = '300px'")
+    WebDriverWait(driver, 5).until(lambda d: d.execute_script("return window.__calls.some(c => c[0] === 'resize')"))
+
+
+def test_a_viewer_library_that_cannot_list_atoms_still_gets_a_cartoon(driver, parts):
+    viewer_page(driver, parts, parts["pdb"], "noatoms", stub=STUB_WITHOUT_ATOM_LIST)
+    calls = driver.execute_script("return window.__calls")
+    assert any(c[0] == "setStyle" and c[1] == '{"hetflag":false}' and "cartoon" in c[2] for c in calls)
+    assert any(c[0] == "setStyle" and c[1] == '{"hetflag":true}' and "stick" in c[2] for c in calls)

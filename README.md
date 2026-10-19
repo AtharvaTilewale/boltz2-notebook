@@ -416,7 +416,7 @@ V2.0.0/
 - **[Version Table](releases/version_table.md)** — Feature comparison across releases
 - **[Changelog](releases/CHANGELOG.md)** — Complete release history
 - **[Batch README](batch/README.md)** — High-throughput batch processing guide
-- **[Privacy](docs/PRIVACY.md)** — What leaves the runtime (nothing but the MSA request) and the opt-in usage ping
+- **[Privacy](docs/PRIVACY.md)** — What leaves the runtime (only the MSA request and, for CCD ligands, the code lookup) and the opt-in usage ping
 - **[Contributing](CONTRIBUTING.md)** — Package layout, tests, release process
 - **[Verification log](docs/VERIFICATION.md)** — What has been tested, how, and what has not
 

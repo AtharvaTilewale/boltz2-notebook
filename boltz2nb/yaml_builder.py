@@ -18,6 +18,8 @@ from typing import Any
 
 import yaml
 
+from .ligand import CCD_RE
+
 PROTEIN_ALPHABET = set("ACDEFGHIKLMNPQRSTVWYX")
 DNA_ALPHABET = set("ACGTN")
 RNA_ALPHABET = set("ACGUN")
@@ -78,17 +80,11 @@ def _ref(value):
 
 
 def smiles_is_valid(smiles: str) -> tuple[bool, str]:
-    """Validate SMILES with RDKit if available; (True, '') when RDKit is missing."""
-    try:
-        from rdkit import Chem, RDLogger
-    except Exception:
-        return True, ""
-    RDLogger.DisableLog("rdApp.*")
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
-        return False, f"RDKit could not parse SMILES '{smiles}'."
-    if mol.GetNumHeavyAtoms() == 0:
-        return False, "SMILES has no heavy atoms."
+    """Validate SMILES (text checks always, chemistry with RDKit when available); (True, '') when RDKit is missing and the text is fine."""
+    from .ligand import describe_smiles
+    d = describe_smiles(smiles)
+    if d["valid"] is False:
+        return False, f"Ligand SMILES '{smiles}': {d['message']}"
     return True, ""
 
 
@@ -133,6 +129,8 @@ def build_sequences(raw_sequences: list[dict[str, Any]]) -> list[dict[str, Any]]
             if bool(ccd) == bool(smiles):
                 raise SpecError(f"Ligand {list(ids)} must have exactly one of CCD code or SMILES.")
             if ccd:
+                if not CCD_RE.fullmatch(ccd):
+                    raise SpecError(f"Ligand {list(ids)}: '{ccd}' is not a CCD code (1 to 5 letters or digits, for example SAH, ATP, HEM).")
                 lig["ccd"] = ccd
             else:
                 ok, msg = smiles_is_valid(smiles)

@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from ..ligand import depict_svg, describe_smiles
+from ..ligand import depict_svg, describe_ccd, describe_smiles
 from ..paths import base_dir, ensure_dirs, upload_dir
 from ..pdb_import import parse_structure_text
 from ..run_params import parse_run_params_text, validate_run_params
@@ -31,6 +31,15 @@ def _build(payload: dict[str, Any]) -> dict[str, Any]:
     if info["single_sequence_chains"]:
         notes.append(f"{info['single_sequence_chains']} protein chain(s) run in single-sequence mode (lower accuracy).")
     for s in doc["sequences"]:
+        if "ligand" in s and s["ligand"].get("ccd"):
+            code = s["ligand"]["ccd"]
+            found = describe_ccd(code)
+            if found["valid"] is False:
+                raise SpecError(f"Ligand {s['ligand']['id'][0]}: {found['message']}")
+            if found["valid"] is None:
+                warnings.append(f"Ligand {s['ligand']['id'][0]}: could not confirm that CCD code {code} exists (no connection to the PDB component service).")
+            else:
+                notes.append(f"Ligand {s['ligand']['id'][0]}: {code} - {found['name']}, {found['formula']}.")
         if "ligand" in s and s["ligand"].get("smiles"):
             d = describe_smiles(s["ligand"]["smiles"])
             if d.get("valid"):
@@ -100,15 +109,13 @@ def save_uploaded_file(file_kind: str, filename: str, content_b64: str) -> dict[
 
 
 def describe_ligand(data: dict[str, Any]) -> dict[str, Any]:
-    """Live ligand feedback: validity, properties and a 2-D depiction for SMILES."""
+    """Live ligand feedback for the form: is it valid, what is it, and a 2-D drawing (SMILES and CCD codes alike)."""
     kind = str(data.get("kind", "smiles")).lower()
     value = str(data.get("value", "")).strip()
     if not value:
-        return {"status": "ok", "valid": None}
+        return {"status": "ok", "valid": None, "kind": kind, "empty": True}
     if kind == "ccd":
-        ok = bool(re.fullmatch(r"[A-Za-z0-9]{1,5}", value))
-        return {"status": "ok", "valid": ok, "kind": "ccd",
-                "message": "" if ok else "CCD codes are 1-5 letters or digits (for example SAH, ATP, HEM)."}
+        return {"status": "ok", **describe_ccd(value)}
     d = describe_smiles(value)
     out = {"status": "ok", "kind": "smiles", **d}
     if d.get("valid"):

@@ -236,7 +236,7 @@
           <div class="bz-hint" data-f="msa-hint">Generated for you with the ColabFold MSA server.</div></div>
         <div class="bz-field bz-col-12"><label class="bz-label" for="seq-__ID__"><span data-f="seq-label">Sequence</span> <span class="bz-req" aria-hidden="true">*</span></label>
           <textarea class="bz-textarea bz-textarea--mono" id="seq-__ID__" data-f="seq" rows="4" spellcheck="false" autocomplete="off" autocapitalize="characters" placeholder="Paste a sequence or a FASTA record"></textarea>
-          <div class="bz-meta"><span data-f="seq-meta"></span><span data-f="seq-count" class="bz-num"></span></div>
+          <div class="bz-meta"><span data-f="seq-meta" role="status" aria-live="polite"></span><span data-f="seq-count" class="bz-num"></span></div>
           <div class="bz-error" data-e="seq" role="alert" hidden></div>
           <div class="bz-alert bz-alert--warn" data-f="split" hidden>@@ICON:info@@<div><span data-f="split-msg"></span> <button type="button" class="bz-btn bz-btn--secondary bz-btn--sm" data-act="split" style="margin-left:6px">Split into chains</button></div></div></div>
         <div class="bz-field bz-col-12" data-only="protein" data-f="msa-upload" hidden>
@@ -276,7 +276,8 @@
             <label><input type="radio" name="lk-__ID__" value="ccd"><span>CCD code</span></label>
           </div></div>
         <div class="bz-field bz-col-8"><label class="bz-label" for="lv-__ID__"><span data-f="val-label">SMILES string</span> <span class="bz-req" aria-hidden="true">*</span></label>
-          <input class="bz-input bz-input--mono" id="lv-__ID__" data-f="value" type="text" spellcheck="false" autocomplete="off" placeholder="CC(=O)Oc1ccccc1C(=O)O">
+          <input class="bz-input bz-input--mono" id="lv-__ID__" data-f="value" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="CC(=O)Oc1ccccc1C(=O)O">
+          <div class="bz-vstat" data-f="val-status" role="status" aria-live="polite" hidden></div>
           <div class="bz-hint" data-f="val-hint">Paste a SMILES from PubChem, ChEMBL or your drawing tool.</div>
           <div class="bz-error" data-e="value" role="alert" hidden></div>
           <div class="bz-inline" data-f="props" style="margin-top:2px"></div></div>

@@ -150,15 +150,17 @@ def test_chain_ids_auto_assign_and_chips(driver, server):
 
 
 def test_sequence_validation_and_counter(driver, server):
+    """Typing is filtered (see test_sequence_ligand_browser); a sequence that is wrong for its type is still reported and blocks saving."""
     open_form(driver, server)
-    ta = fill_protein(driver, "mktayi akqr\nBJZ")
+    ta = fill_protein(driver, "mktayi akqr")
     card = last_card(driver)
     err = card.find_element(By.CSS_SELECTOR, '[data-e="seq"]')
-    assert not err.is_displayed()                    # untouched until blur
+    assert ta.get_attribute("value") == "MKTAYIAKQR" and not err.is_displayed()
+    assert "10 residues" in card.find_element(By.CSS_SELECTOR, '[data-f="seq-count"]').text
+    driver.execute_script("arguments[0].click()", card.find_element(By.CSS_SELECTOR, 'input[name^="ty-"][value="dna"]'))   # the same letters are not DNA
     ta.send_keys(Keys.TAB)
     wait(driver, lambda d: err.is_displayed())
-    assert "B, J, Z" in err.text and ta.get_attribute("aria-invalid") == "true"
-    assert "13 residues" in card.find_element(By.CSS_SELECTOR, '[data-f="seq-count"]').text
+    assert "Not valid in DNA" in err.text and ta.get_attribute("aria-invalid") == "true"
     assert errors(driver) == []
 
 
@@ -192,13 +194,14 @@ def test_ligand_preview_and_errors(driver, server):
     assert "C9H8O4" in card.find_element(By.CSS_SELECTOR, '[data-f="sub"]').text
     val = card.find_element(By.CSS_SELECTOR, '[data-f="value"]')
     val.clear(); val.send_keys("C1CC"); val.send_keys(Keys.TAB)
-    err = card.find_element(By.CSS_SELECTOR, '[data-e="value"]')
-    wait(driver, lambda d: err.is_displayed())
-    assert "parse" in err.text.lower() or "smiles" in err.text.lower()
+    stat = card.find_element(By.CSS_SELECTOR, '[data-f="val-status"]')
+    wait(driver, lambda d: stat.get_attribute("data-state") == "bad")        # the live status says why; it is not repeated below the field
+    assert "Ring label 1" in stat.text and not card.find_element(By.CSS_SELECTOR, '[data-e="value"]').is_displayed()
     card.find_element(By.CSS_SELECTOR, 'input[value="ccd"]').find_element(By.XPATH, "..").click()
     val.clear(); val.send_keys("sah")
     assert val.get_attribute("value") == "SAH"
-    wait(driver, lambda d: "SAH" in card.find_element(By.CSS_SELECTOR, '[data-f="preview"]').text)
+    wait(driver, lambda d: stat.get_attribute("data-state") == "ok" and "SAH" in stat.text)
+    wait(driver, lambda d: card.find_elements(By.CSS_SELECTOR, '[data-f="preview"] svg'))
     assert errors(driver) == []
 
 
