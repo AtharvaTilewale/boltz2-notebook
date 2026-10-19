@@ -24,7 +24,7 @@ def refresh_block(notebook):
 
 
 @pytest.mark.parametrize("notebook", NOTEBOOKS)
-def test_an_old_clone_is_fast_forwarded_and_a_restart_is_requested(tmp_path, notebook, capsys, monkeypatch):
+def test_an_old_clone_is_fast_forwarded_and_no_restart_is_asked_for(tmp_path, notebook, capsys, monkeypatch):
     src = tmp_path / "src"
     sh("git", "init", "-q", "-b", "work", str(src))
     sh("git", "config", "user.name", "t", cwd=src)
@@ -47,7 +47,7 @@ def test_an_old_clone_is_fast_forwarded_and_a_restart_is_requested(tmp_path, not
 
     out = capsys.readouterr().out
     assert (clone / "a.txt").read_text() == "2"
-    assert "already present" in out and "Restart session" in out
+    assert "already present" in out and "replaced when the next cells run" in out and "Restart" not in out
 
 
 @pytest.mark.parametrize("notebook", NOTEBOOKS)

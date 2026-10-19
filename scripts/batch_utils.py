@@ -7,6 +7,29 @@ import os
 import subprocess
 import sys
 
+
+# --- refresh stale boltz2nb (the same block is in every notebook script; the check itself is boltz2nb/_build.py) ---
+# Cell 1 can update the clone under a running kernel; modules imported from the older copy would then be mixed with this newer script.
+def _refresh_stale_boltz2nb():
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    loaded = sys.modules.get("boltz2nb")
+    if loaded is None or not getattr(loaded, "__file__", None):
+        return
+    build_file = Path(loaded.__file__).parent / "_build.py"
+    if build_file.exists():
+        spec = importlib.util.spec_from_file_location("_boltz2nb_build", build_file)
+        build = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(build)
+        build.drop_stale_modules(loaded)
+
+
+_refresh_stale_boltz2nb()
+del _refresh_stale_boltz2nb
+# --- end refresh ---
+
 try:
     from boltz2nb.batch import *  # noqa: F401,F403
     from boltz2nb.batch import (  # noqa: F401

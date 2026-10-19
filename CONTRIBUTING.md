@@ -38,6 +38,11 @@ Add a callback to `callbacks.CALLBACKS` and `register_callbacks` wraps it (`as_j
 harness passes each return value through IPython's real `DisplayFormatter`, so a callback that returns something the page cannot read fails
 `tests/test_colab_contract.py` instead of failing in Colab.
 
+**Notebook scripts and a running kernel.** A Colab kernel keeps imported modules when Cell 1 updates the clone. Every script that is run by a notebook
+(and imports `boltz2nb`) starts with the identical `# --- refresh stale boltz2nb ---` block; `tests/test_stale_modules.py` checks that all of them match and
+that the block works. Copy it into any new notebook script, above its first `boltz2nb` import. The package's own `BUILD_ID` (see `boltz2nb/_build.py`) is a hash
+of its source and interface files, so editing any of them is what marks a loaded copy as stale.
+
 **Ligand checks and the network.** `boltz2nb/ligand.py` checks SMILES with RDKit and looks CCD codes up on the RCSB data API. No test may reach the
 network: `tests/conftest.py` replaces the lookup for every test with `ccd_service` (a few real components, 404 for the rest, `.offline = True` to
 simulate no connection). The same goes for the 3-D viewer: headless browsers have no WebGL, so `tests/ui/test_results_browser.py` runs the viewer against a

@@ -10,6 +10,12 @@
 - `python -m boltz2nb.doctor`: `--help` works, a missing path exits with 2 and a message, a folder without predictions exits with 1.
 - Website: the landing page no longer throws when the 3Dmol library fails to load from its CDN.
 - `tools/build_notebook_headers.py`: an `and`/`or` precedence slip in the citation-cell check (no change to the generated headers).
+- **A notebook update no longer needs a restart.** Cell 1 fast-forwards the clone, but a kernel that had already imported the package kept
+  the old modules, so a new script could call an old function (`render_result_card() got an unexpected keyword argument 'structure_format'`).
+  The package now records a fingerprint of its files when it is imported (`boltz2nb.BUILD_ID`), and every notebook script (setup, run, analysis,
+  both input builders, the batch shim) starts with the same short block that compares the loaded copy with the files on disk and, when they
+  differ, drops the loaded `boltz2nb` modules so the next import reads the new code. A copy loaded before this mechanism counts as stale. The
+  colour theme chosen with the switch is kept. Nothing is dropped when the loaded copy is current. Cell 1 no longer asks for a restart.
 - **Cell 1 no longer runs stale notebook code.** Re-running it in a runtime that already held a clone reused that clone as it was, so a fix
   pushed to the branch never arrived unless `FORCE_REINSTALL` was ticked (which also reinstalls the engine). A clone that follows a branch is now
   fast-forwarded (tags stay as fetched), the cell prints the commit it runs, and it says so when a restart is needed because an older

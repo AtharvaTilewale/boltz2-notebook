@@ -8,6 +8,15 @@ confidence and affinity analysis, report generation and batch orchestration.
 
 __version__ = "2.1.0"
 
+# Fingerprint of the files this copy was imported from; notebook scripts compare it with the files on disk (see _build.py).
+try:
+    from pathlib import Path as _Path
+
+    from ._build import fingerprint as _fingerprint
+    BUILD_ID = _fingerprint(_Path(__file__).parent)
+except Exception:  # noqa: BLE001  (read-only or zipped install: no check is possible, nothing is dropped)
+    BUILD_ID = "unknown"
+
 # Single source of truth for the Boltz engine version installed by the notebooks.
 # Official `boltz` 2.2.1 declares `Requires-Python: <3.13,>=3.10`; the community
 # fork supports 3.13+.  `install.pick_boltz_requirement()` chooses between them.
