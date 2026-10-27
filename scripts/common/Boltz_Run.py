@@ -113,18 +113,17 @@ if not panel.rich:  # plain Python / terminal: keep the old, explicit console he
 print(f"[i] Live log: {output_dir / 'boltz.log'}")
 
 # ---- 6. run with live output ---------------------------------------------------------------
-# Opt-in usage report (docs/PRIVACY.md): job name, number of chains and residues, run settings. Never sequences, ligands or modifications.
+# Usage report (docs/PRIVACY.md): job name, number of chains and residues, run settings. Never sequences, ligands or modifications.
+# Silent: a copy of what was sent is kept in usage_reports.jsonl in the job folder.
 _usage_copy = output_dir / "usage_reports.jsonl"
-if telemetry.job_started(job_yaml.read_text(), params, engine=engine_version() or "", copy_to=_usage_copy):
-    print("[i] Usage statistics: job report sent (a copy of what was sent is in usage_reports.jsonl in the job folder).")
+telemetry.job_started(job_yaml.read_text(), params, engine=engine_version() or "", copy_to=_usage_copy)
 panel.start()
 result = run_boltz(cmd, output_dir / "boltz.log", on_line=panel.feed)
 elapsed = result["runtime_sec"]
 
 
 def _report_end(ok, **details):
-    if telemetry.job_ended(ok, job_name, elapsed, engine_version() or "", _usage_copy, **details):
-        print("[i] Usage statistics: job result sent" + ("" if ok else " with the redacted end of the log") + " (copy in usage_reports.jsonl).")
+    telemetry.job_ended(ok, job_name, elapsed, engine_version() or "", _usage_copy, **details)
 
 # ---- 7. outcome ------------------------------------------------------------------------------
 status = {"job_name": job_name, "output_dir": str(output_dir), "return_code": result["return_code"],

@@ -264,7 +264,8 @@ def test_run_script_reports_start_and_success(workspace, tmp_path, monkeypatch, 
     assert started["params"]["diffusion_samples"] == 1
     copy = [json.loads(ln) for ln in (workspace / "demo" / "usage_reports.jsonl").read_text().splitlines()]
     assert copy == [started, ended]                                           # the user can read exactly what was sent
-    assert "Usage statistics: job report sent" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Usage statistics" not in out and "usage_reports.jsonl" not in out and "report sent" not in out   # reporting is silent
     assert SEQ not in json.dumps([started, ended]) and SMILES not in json.dumps([started, ended])
 
 
@@ -303,25 +304,32 @@ def runner(tmp_path, monkeypatch):
     r.close()
 
 
+def _says_anything_about_usage_reports(out):
+    low = out.lower()
+    return any(s in low for s in ("usage stat", "usage report", "report sent", "usage_reports.jsonl", "encryption library", "maintainer can read"))
+
+
 @pytest.mark.parametrize("notebook", ["Boltz2.ipynb", "colab/v1/Boltz2_v1.0.0.ipynb"])
-def test_setup_cell_discloses_and_reports_the_setup(runner, monkeypatch, collector, keys, notebook):
+def test_setup_cell_reports_the_setup_silently(runner, monkeypatch, collector, keys, notebook):
     monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", collector.url)
     monkeypatch.setenv("BOLTZ2NB_TELEMETRY_KEY", keys["public"])
     off = runner.run(notebook, 1, {"SEND_USAGE_STATS": False})                       # unticked: nothing at all
-    assert "Usage statistics: off." in off and collector.posts == []
-    on = runner.run(notebook, 1)                                                     # the default: ticked
-    assert "Usage statistics: on" in on and "no personal data" in on and "Untick SEND_USAGE_STATS to turn them off" in on and "docs/PRIVACY.md" in on
-    assert "could not be sent" not in on
+    assert collector.posts == [] and not _says_anything_about_usage_reports(off)
+    on = runner.run(notebook, 1)                                                     # the default: ticked, and the cell says nothing about it
+    assert not _says_anything_about_usage_reports(on), on
     (report,) = collector.reports(keys["private"])
     assert report["event"] == "boltz setup" and set(report) >= {"ts", "session_id", "notebook_version"}      # engine is whatever the environment reports
     assert (runner.content / "boltz_data" / "usage_reports.jsonl").exists()
 
 
-def test_setup_cell_says_so_when_the_build_cannot_send(runner, monkeypatch):
+def test_setup_cell_stays_quiet_when_reporting_cannot_send(runner, monkeypatch, tmp_path):
     _clean_env(monkeypatch)
-    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", "")                               # what the tests use: switched off
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", "")                               # switched off: nothing to send, nothing to say
+    assert not _says_anything_about_usage_reports(runner.run("Boltz2.ipynb", 1))
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", "http://127.0.0.1:9/unreachable")  # configured but the post fails: still silent, setup goes on
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_KEY", "/oYKKLFUqgUAV5pBhKM8+Vte+fudNBqh+pNh+H3QBWo=")
     out = runner.run("Boltz2.ipynb", 1)
-    assert "not set up to collect reports" in out and "so nothing is sent" in out
+    assert not _says_anything_about_usage_reports(out) and "Traceback" not in out
 
 
 # ----------------------------------------------------------------------------------------------------- maintainer tools

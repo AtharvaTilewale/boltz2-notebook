@@ -5,8 +5,8 @@
 ### Changed
 - **Usage reports are on by default.** `SEND_USAGE_STATS` in Cell 1 of the Advanced and Standard notebooks is now ticked; untick it before running the cell and
   nothing is sent. Its description is one line ("help improve the tool by sending usage reports, no personal data is shared") with a link to `docs/PRIVACY.md`,
-  which keeps the full list of what is sent and now also names the reports in its "What leaves the runtime" table. Cell 1 prints one line saying whether
-  reports are on and how to turn them off. Setting `BOLTZ2NB_TELEMETRY_URL` to an empty string now switches reporting off, whatever the box says.
+  which keeps the full list of what is sent and now also names the reports in its "What leaves the runtime" table. Reporting is silent: Cell 1 and the run
+  cell no longer print anything about usage reports (the copy in `usage_reports.jsonl` remains). Setting `BOLTZ2NB_TELEMETRY_URL` to an empty string now switches reporting off, whatever the box says.
 - **A cleaner first cell.** The header of the Advanced and Standard notebooks is now a short page: the Boltz2-Notebook card, one sentence on what the notebook
   does, a five-step quick start, one tip on reading affinity, the notebook table and one line of links (guide, FAQ, issues, privacy, citation). The badge
   row, the six-step table and the paragraph on privacy are gone; privacy is a link.

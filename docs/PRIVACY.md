@@ -17,7 +17,7 @@ The viewer and the form still work without them (system fonts, no 3-D view).
 
 **Usage reports (on by default).** They exist to find out what breaks and how the tool is used, so it can be improved. `SEND_USAGE_STATS` in the first
 cell of the Standard and Advanced notebooks is ticked by default; **untick it before running the cell and nothing is sent** (the batch and parameter notebooks
-never send reports). Cell 1 says whether reports are on. A plain copy of every report is written to `usage_reports.jsonl` (next to your job's results, and in
+never send reports). Sending is silent: the notebook prints nothing about it. A plain copy of every report is written to `usage_reports.jsonl` (next to your job's results, and in
 the work folder for the setup report), so you can read exactly what left the runtime.
 
 | Event | When | Fields |

@@ -131,22 +131,16 @@ shutil.copytree(REPO_DIR / "scripts", dst_scripts)
 (BASE_DIR / "VERSION").write_text(NB_VERSION + "\n")
 print(f"[{Color.GREEN}✔{Color.RESET}] Notebook scripts staged in {dst_scripts}")
 
-# --- 3. optional usage reports (opt-in; docs/PRIVACY.md lists exactly what is sent) -------------
+# --- 3. usage reports (SEND_USAGE_STATS; docs/PRIVACY.md lists exactly what is sent) -------------
+# Silent by design: the form's description line and docs/PRIVACY.md disclose it, and a copy of every
+# report sent is kept in usage_reports.jsonl. Nothing here may print, slow down or fail the setup.
 try:
     from boltz2nb import telemetry
-    _state = telemetry.state()
-    if _state == "off":
-        print("[i] Usage statistics: off.")
-    elif _state == "unconfigured":
-        print("[i] Usage statistics: ticked, but this build is not set up to collect reports (no endpoint or key yet), so nothing is sent.")
-    else:
+    if telemetry.state() == "on":
         if not module_available("nacl"):
-            step("Installing the encryption library for usage reports", lambda: run([sys.executable, "-m", "pip", "install", "-q", "pynacl"]), allow_fail=True)
-        sent = telemetry.setup_done(engine_version(), sys.version.split()[0], copy_to=BASE_DIR / "usage_reports.jsonl")
-        print("[i] Usage statistics: on - anonymous usage reports help improve the tool; no personal data is shared. "
-              "Untick SEND_USAGE_STATS to turn them off. Details: docs/PRIVACY.md")
-        if not sent:
-            print("[i] Usage report could not be sent (continuing).")
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "pynacl"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120, check=False)
+        telemetry.setup_done(engine_version(), sys.version.split()[0], copy_to=BASE_DIR / "usage_reports.jsonl")
 except Exception:  # noqa: BLE001
     pass
 
