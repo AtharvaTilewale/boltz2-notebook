@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.1.0 (unreleased)
+## v2.1.0
 
 ### Fixed
 - **Batch job names from long FASTA headers** crashed the manifest builder (`OSError: File name too long`); names are now cut
