@@ -55,7 +55,7 @@ try:
     from boltz2nb.batch import capture_batch_context as capture_run_context
 except ImportError:  # pragma: no cover
     subprocess.run([sys.executable, "-m", "pip", "install", "-q",
-                    "git+https://github.com/AtharvaTilewale/boltz2-notebook.git@v2.1.0"], check=True)
+                    "git+https://github.com/AtharvaTilewale/boltz2-notebook.git@v2.1.1"], check=True)
     from boltz2nb.batch import *  # noqa: F401,F403
     from boltz2nb.batch import capture_batch_context as capture_run_context  # noqa: F401
     from boltz2nb.batch import set_work_root

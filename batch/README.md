@@ -379,6 +379,7 @@ For issues or feature requests, check the notebook's built-in help cells marked 
 
 ## Version History
 
+- **v2.1.1** - Failure diagnosis: a job whose chains use `msa: empty` is no longer reported as an MSA-server failure, and an input the engine skips is named with the engine's own message.
 - **v2.1.0** - Engine moved to `boltz2nb.batch` (tested); multi-chain, DNA/RNA and `affinity` CSV columns; ensemble metrics; `auto` ranking; validation errors reported per job
 - **v1.0.0-beta** - Initial batch processing with 7-step workflow
 - Supports: CSV, FASTA, YAML inputs
@@ -386,4 +387,4 @@ For issues or feature requests, check the notebook's built-in help cells marked 
 
 ---
 
-**Notebook Version:** v2.1.0 (batch v1 beta)
+**Notebook Version:** v2.1.1 (batch v1 beta)

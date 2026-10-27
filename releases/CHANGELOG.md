@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## v2.1.1
+
+The Advanced notebook is now the stable default, and a first run of the notebooks against the real engine fixed what it showed (below).
+The notebooks' Cell 1 clones tag `v2.1.1` by default; `v2.1.0` stays available through the `NOTEBOOK_VERSION` field.
 
 ### Changed
 - **The Advanced notebook (V2.0.0) is stable and the default.** It no longer carries a beta label anywhere (notebook header, README, version

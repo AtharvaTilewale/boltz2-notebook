@@ -1,4 +1,4 @@
-# Verification log (v2.1.0, plus the V2-default change)
+# Verification log (v2.1.1)
 
 | What | How | Result |
 |---|---|---|
@@ -37,7 +37,7 @@
 | Real Colab, structure import and YAML tab (reported by the maintainer on the build before the reply-contract fix) | PDB upload in the input builder; YAML tab | both failed (`reading 'filter'`, `undefined`); cause found and fixed (see **Colab reply contract**); not yet re-checked in Colab |
 | Real Colab, Python 3.13 runtime, T4 | V2 notebook, protein + ligand with affinity and MSA server | Cell 1 selected `boltz-community 2.10.12` (official wheels need < 3.13); MSA server, structure (35 s) and affinity (12 s) succeeded; analysis initially stopped on a token-layout mismatch (29 structure tokens vs 20 array entries), which is why layout resolution and the metrics-only fallback were added |
 
-Defects found by running the real engine through the notebook cells (after v2.1.0 was tagged): a failed run in a job with `msa: empty` was diagnosed as
+Defects found by running the real engine through the notebook cells (after v2.1.0 was tagged; fixed in v2.1.1): a failed run in a job with `msa: empty` was diagnosed as
 "the ColabFold server failed" (the rule matched the bare word "msa" in Boltz's own warning; the YAML rule matched the file name `yaml.py`); Boltz skips an
 input it cannot read and exits with code 0, which the run cell reported as "re-run with a different seed" without writing `status.json`; a `.pdb`
 template without `SEQRES`, a template holding a Boltz-written ligand, or a template chain `A` for a `.pdb` file (Boltz names it `A1`) stopped the engine
