@@ -164,7 +164,7 @@ def render_viewer(structure_text: str | None, uid: str, structure_format: str = 
         f'<div class="bz-viewer" id="v-{uid}"><div class="bz-viewer-msg">Loading 3-D viewer...</div></div>'
         f'<div class="bz-viewer-info" id="vi-{uid}" data-screen="1"></div>'
         f'<div class="bz-legend" data-screen="1">{legend}</div>'
-        f'<script src="{LIB_URL}"></script>'
+        f'<script src="{LIB_URL}" onerror="window.BZ_3DMOL_CDN_FAILED=true"></script>'
         f'<script>{script}</script></div>')
 
 

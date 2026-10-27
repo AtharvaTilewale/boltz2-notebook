@@ -22,6 +22,10 @@ def _figures(plots: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# The structure is embedded in the notebook output (saved with the .ipynb); past this size only the HTML report carries it.
+INLINE_STRUCTURE_MAX_BYTES = 8_000_000
+
+
 def structure_text(job: JobResult) -> tuple[str | None, str]:
     """The best sample's structure file as text and its viewer format (``pdb`` or ``cif``); (None, 'pdb') when it cannot be read."""
     p = job.best.structure_path
@@ -52,6 +56,11 @@ def write_report(job: JobResult, out_dir: Path | str, run_context: dict[str, Any
     report_path = out_dir / f"{job.job_name}_report.html"
     report_path.write_text(build_report(job, plots, run_context, ligand_svg, runtime=runtime))
     files = [("report", str(report_path)), ("summary", str(out_dir / "summary.json")), ("plots", str(out_dir / "plots"))]
-    # the notebook view skips the embedded structure (the run cell already shows the 3-D viewer) to keep the .ipynb small
-    fragment = build_report(job, plots, run_context, ligand_svg, embed_structure=False, runtime=runtime, fragment=True, files=files)
+    # the notebook view shows the 3-D viewer as well; only a structure too big to keep in the .ipynb is left to the HTML report
+    size = job.best.structure_path.stat().st_size if job.best.structure_path.exists() else 0
+    fragment = build_report(job, plots, run_context, ligand_svg, embed_structure=size <= INLINE_STRUCTURE_MAX_BYTES, runtime=runtime,
+                            fragment=True, files=files)
+    if size > INLINE_STRUCTURE_MAX_BYTES:
+        fragment += (f'<p class="bz-hint">The structure ({size / 1e6:.0f} MB) is too large to show inside the notebook; '
+                     f'open {report_path.name} for the 3-D viewer.</p>')
     return {"report": str(report_path), "summary": str(out_dir / "summary.json"), "plots": plots, "fragment": fragment}

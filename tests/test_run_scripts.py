@@ -83,7 +83,9 @@ def test_successful_run_then_analysis_in_plain_python(workspace, tmp_path, monke
     report = Path(g["out"]["report"])
     html = report.read_text()
     assert report.name == "demo_report.html" and 'class="bz-aff-v">2.77 µM<' in html and "$3Dmol.createViewer" in html
-    assert "Saved files" in g["out"]["fragment"] and "$3Dmol" not in g["out"]["fragment"]       # inline view skips the heavy structure
+    frag = g["out"]["fragment"]
+    assert "Saved files" in frag and "$3Dmol.createViewer" in frag and 'class="bz-viewer"' in frag   # Analyse Results shows the 3-D viewer too
+    assert "ATOM  " in frag and "too large to show" not in frag
     assert json.loads((workspace / "demo" / "analysis" / "summary.json").read_text())["best_model"] == 0
 
 
@@ -143,3 +145,13 @@ def test_rich_display_path(workspace, tmp_path, monkeypatch):
     assert updates and "Completed" in updates[-1] and "Running" in "".join(updates)
     assert "Results" in shown[-1] and 'class="bz-aff-v"' in shown[-1] and "3Dmol.org" in shown[-1]
     assert max(len(u) for u in updates) < 20000                                         # refreshes carry the panel only, not the CSS
+
+
+def test_a_structure_too_large_for_the_notebook_is_left_to_the_html_report(example_pred_dir, tmp_path, monkeypatch):
+    from boltz2nb import report
+    from boltz2nb.analysis import load_job
+    job = load_job(example_pred_dir)
+    monkeypatch.setattr(report, "INLINE_STRUCTURE_MAX_BYTES", 10)
+    out = report.write_report(job, tmp_path / "analysis")
+    assert 'class="bz-viewer"' not in out["fragment"] and "too large to show inside the notebook" in out["fragment"]
+    assert 'class="bz-viewer"' in Path(out["report"]).read_text()                   # the HTML report keeps it

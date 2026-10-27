@@ -64,7 +64,9 @@ window.$3Dmol = {createViewer: function (el, opts) {
 STUB_3DMOL = f"<script>{STUB_JS}</script>"
 STUB_WITHOUT_ATOM_LIST = f"<script>window.__noAtomList = true;{STUB_JS}</script>"
 THROWING_3DMOL = '<script>window.$3Dmol = {createViewer: function () { throw new TypeError("this._gl is null"); }};</script>'
-CDN = '<script src="https://cdn.jsdelivr.net/npm/3dmol@2.5.5/build/3Dmol-min.js"></script>'
+CDN = '<script src="https://cdn.jsdelivr.net/npm/3dmol@2.5.5/build/3Dmol-min.js" onerror="window.BZ_3DMOL_CDN_FAILED=true"></script>'
+# what a page without internet sees: the library tag fails (here: a file that does not exist)
+DEAD_CDN = '<script src="file:///nonexistent/3Dmol-min.js" onerror="window.BZ_3DMOL_CDN_FAILED=true"></script>'
 
 
 def _strip_links(html: str) -> str:
@@ -171,8 +173,48 @@ def test_viewer_explains_missing_webgl(driver, parts):
 
 
 def test_viewer_explains_offline(driver, parts):
-    open_page(driver, parts, parts["card"].replace(CDN, "<script>window.BZ_3DMOL_FALLBACK = '';</script>"), "offline", 1100)
+    """Both hosts fail: the viewer says so at once instead of waiting out the slow-connection allowance."""
+    dead_fallback = "<script>window.BZ_3DMOL_FALLBACK = 'file:///nonexistent/fallback.js';</script>"
+    t0 = time.time()
+    open_page(driver, parts, parts["card"].replace(CDN, dead_fallback + DEAD_CDN), "offline", 1100)
     WebDriverWait(driver, 15).until(lambda d: "internet connection" in d.find_element(By.CSS_SELECTOR, ".bz-viewer").text)
+    assert time.time() - t0 < 12
+
+
+def _stub_file(parts, delay_ms=0):
+    f = parts["dir"] / f"stub3dmol_{delay_ms}.js"
+    f.write_text(STUB_JS if not delay_ms else "setTimeout(function () {" + STUB_JS + f"}}, {delay_ms});")
+    return f"file://{f}"
+
+
+def test_a_failing_cdn_switches_to_the_second_host_straight_away(driver, parts):
+    fallback = f"<script>window.BZ_3DMOL_FALLBACK = '{_stub_file(parts)}';</script>"
+    t0 = time.time()
+    open_page(driver, parts, parts["card"].replace(CDN, fallback + DEAD_CDN), "fallback", 1100)
+    WebDriverWait(driver, 10).until(lambda d: d.execute_script("return !!window.__calls && window.__calls.some(c => c[0] === 'zoomTo')"))
+    assert time.time() - t0 < 4                                              # not after the 4 s wait meant for a slow first host
+    assert driver.execute_script("return window.__drawn()") == {"A:ATOM": "cartoon", "B:HETATM": "stick"}
+
+
+def test_a_slow_library_download_is_waited_for_with_a_note(driver, parts):
+    """The library arrives after 6 s (the old viewer gave up after about 10 s; a slow Colab link can take longer)."""
+    slow = f"<script src=\"{_stub_file(parts, 6000)}\"></script><script>window.BZ_3DMOL_FALLBACK = '';</script>"
+    open_page(driver, parts, parts["card"].replace(CDN, slow), "slow", 1100)
+    WebDriverWait(driver, 6).until(lambda d: "slow connection" in d.find_element(By.CSS_SELECTOR, ".bz-viewer").text)
+    WebDriverWait(driver, 15).until(lambda d: d.execute_script("return !!window.__calls && window.__calls.some(c => c[0] === 'zoomTo')"))
+    assert "internet connection" not in driver.find_element(By.CSS_SELECTOR, ".bz-viewer").text
+
+
+def test_the_viewer_waits_until_its_box_is_laid_out(driver, parts):
+    """An output frame can be sized after the script runs; a viewer created in a 0 x 0 box would draw nothing."""
+    late = ('<div id="wrap" style="display:none">' + parts["card"].replace(CDN, STUB_3DMOL) + '</div>'
+            '<script>setTimeout(function () { window.__shownAt = Date.now(); document.getElementById("wrap").style.display = ""; }, 1200);</script>')
+    late = late.replace("window.__calls.push(['createViewer', opts.backgroundColor]);",
+                        "window.__calls.push(['createViewer', opts.backgroundColor]); window.__createdAt = Date.now(); window.__boxAtCreate = [el.clientWidth, el.clientHeight];")
+    open_page(driver, parts, late, "late", 1100)
+    WebDriverWait(driver, 15).until(lambda d: d.execute_script("return window.__calls.some(c => c[0] === 'zoomTo')"))
+    created, shown, box = driver.execute_script("return [window.__createdAt, window.__shownAt, window.__boxAtCreate]")
+    assert created >= shown and box[0] > 0 and box[1] > 0, (created, shown, box)
 
 
 def test_failed_run_shows_cause_and_fix(driver, parts):

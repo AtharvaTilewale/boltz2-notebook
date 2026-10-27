@@ -93,18 +93,36 @@
     }
   }
 
-  // The library comes from the pinned <script> tag before this one; if it has not arrived after a moment a second host is tried once.
+  // The library (about 1 MB) comes from the pinned <script> tag before this one. A second host is tried as soon as that tag fails, or
+  // after 4 s without it; a slow connection gets a progress note and up to 45 s (BZ_3DMOL_WAIT_MS) before the viewer gives up.
+  var started = Date.now(), waitMs = typeof window.BZ_3DMOL_WAIT_MS === 'number' ? window.BZ_3DMOL_WAIT_MS : 45000, noted = false, fallbackFailed = false;
+  function inject() {
+    injected = true;
+    var sc = document.createElement('script'); sc.src = fallback; sc.async = true;
+    sc.onerror = function () { fallbackFailed = true; };
+    (document.head || document.body).appendChild(sc);
+  }
+  // 3Dmol sizes its canvas from the box when the viewer is created; a notebook output frame can be laid out later than the script runs.
+  function whenSized(then) {
+    var waited = 0;
+    (function check() {
+      if ((host.clientWidth > 0 && host.clientHeight > 0) || waited > 10000) { then(); return; }
+      waited += 100; setTimeout(check, 100);
+    })();
+  }
   function start() {
     if (!window.$3Dmol) {
       tries += 1;
-      if (tries === 16 && !injected && fallback) {
-        injected = true;
-        var sc = document.createElement('script'); sc.src = fallback; sc.async = true; document.head.appendChild(sc);
+      var elapsed = Date.now() - started;
+      if (!injected && fallback && (window.BZ_3DMOL_CDN_FAILED || elapsed > 4000)) { inject(); }
+      if (elapsed > waitMs || (window.BZ_3DMOL_CDN_FAILED && (!fallback || fallbackFailed))) {   // both hosts failed: say so now
+        say('The 3-D viewer needs an internet connection to load (the 3Dmol library could not be downloaded). The structure file is saved with the results.');
+        return;
       }
-      if (tries > 70) { say('The 3-D viewer needs an internet connection to load.'); return; }
+      if (!noted && elapsed > 3000) { noted = true; say('Loading 3-D viewer... (downloading the 3Dmol library; this can take a few seconds on a slow connection)'); }
       setTimeout(start, 150); return;
     }
-    build();
+    whenSized(build);
   }
   start();
 })();

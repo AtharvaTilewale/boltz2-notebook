@@ -19,6 +19,10 @@
   both the other way round), and the Batch notebook takes templates and MSA files through its CSV columns.
 
 ### Fixed
+- **3-D viewer after a run.** The Analyse Results cell now shows the 3-D viewer too (it had left the structure out to keep the notebook small, although the
+  notebook and README say the analysis shows it); only a structure over 8 MB is left to the HTML report, with a note. The viewer no longer gives up on a slow
+  connection after about 10 s: it shows a progress note and waits up to 45 s for the 3Dmol library, switches to the second host as soon as the first fails,
+  and creates its canvas only once its box has a size (an output frame laid out late could otherwise get an empty 0 x 0 viewer).
 - `tools/telemetry_read.py` failed with `ModuleNotFoundError: No module named 'boltz2nb'` when run as `python tools/telemetry_read.py` from a normal terminal: it imported the
   package, which is only importable from inside the repository's environment. It now needs `pynacl` only. The tests had loaded the tool with the repository already on the
   path, which hid this; a new test runs both maintainer tools as a user does (plain interpreter, another directory, no `PYTHONPATH`) and fails on the old reader.
