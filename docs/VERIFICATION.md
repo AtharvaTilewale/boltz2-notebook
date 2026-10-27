@@ -1,4 +1,4 @@
-# Verification log (v2.1.2)
+# Verification log (v2.1.3)
 
 | What | How | Result |
 |---|---|---|

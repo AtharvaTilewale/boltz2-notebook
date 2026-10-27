@@ -1,22 +1,8 @@
 # Changelog
 
-## Unreleased
+## v2.1.3
 
-### Changed
-- **Usage reports are on by default.** `SEND_USAGE_STATS` in Cell 1 of the Advanced and Standard notebooks is now ticked; untick it before running the cell and
-  nothing is sent. Its description is one line ("help improve the tool by sending usage reports, no personal data is shared") with a link to `docs/PRIVACY.md`,
-  which keeps the full list of what is sent and now also names the reports in its "What leaves the runtime" table. Reporting is silent: Cell 1 and the run
-  cell no longer print anything about usage reports (the copy in `usage_reports.jsonl` remains). Setting `BOLTZ2NB_TELEMETRY_URL` to an empty string now switches reporting off, whatever the box says.
-- **A cleaner first cell.** The header of the Advanced and Standard notebooks is now a short page: the Boltz2-Notebook card, one sentence on what the notebook
-  does, a five-step quick start, one tip on reading affinity, the notebook table and one line of links (guide, FAQ, issues, privacy, citation). The badge
-  row, the six-step table and the paragraph on privacy are gone; privacy is a link.
-- **Citations point to the bioRxiv preprint.** The closing cell of the Advanced, Standard and Batch notebooks is the same generated "Credits" and "How to
-  cite" cell, citing the preprint (doi:10.64898/2026.09.18.752645, title as registered) instead of a Zenodo record, then Boltz-2, Boltz-1 and ColabFold. The
-  Standard notebook had cited a different Zenodo record from the others. `CITATION.cff` uses the registered title (without the trailing full stop).
-- **A redesigned README:** what the project does, a four-step quick start, a notebook chooser, what you get (with the interface screenshots), how to read the
-  results, requirements, troubleshooting, privacy, citation and credits; local installation, run settings and the architecture are folded into sections.
-  The feature comparison was checked against the forms: the Standard notebook has uploaded MSAs and PDB/mmCIF import but no templates (the old table had
-  both the other way round), and the Batch notebook takes templates and MSA files through its CSV columns.
+Fixes. The Cell 1 default tag is `v2.1.3`; `v2.1.2` stays available through the `NOTEBOOK_VERSION` field.
 
 ### Fixed
 - **3-D viewer after a run.** The Analyse Results cell now shows the 3-D viewer too (it had left the structure out to keep the notebook small, although the

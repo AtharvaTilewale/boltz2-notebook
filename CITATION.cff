@@ -11,7 +11,7 @@ doi: 10.64898/2026.09.18.752645
 repository-code: "https://github.com/AtharvaTilewale/boltz2-notebook"
 url: "https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645"
 license: MIT
-version: "2.1.2"
+version: "2.1.3"
 date-released: "2026-09-24"
 keywords: 
   - "Boltz2"

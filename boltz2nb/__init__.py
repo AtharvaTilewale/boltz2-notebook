@@ -6,7 +6,7 @@ run-parameter handling, command construction, structure/token mapping,
 confidence and affinity analysis, report generation and batch orchestration.
 """
 
-__version__ = "2.1.2"
+__version__ = "2.1.3"
 
 # Fingerprint of the files this copy was imported from; notebook scripts compare it with the files on disk (see _build.py).
 try:

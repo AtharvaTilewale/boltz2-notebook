@@ -214,4 +214,4 @@ Released under the [MIT License](LICENSE).
 
 ---
 
-**Version:** 2.1.2 · [Changelog](releases/CHANGELOG.md)
+**Version:** 2.1.3 · [Changelog](releases/CHANGELOG.md)
