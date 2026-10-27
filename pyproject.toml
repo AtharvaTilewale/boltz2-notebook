@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boltz2nb"
-version = "2.1.1"
+version = "2.1.2"
 description = "Testable core for the Boltz2-Notebook Colab front-ends (YAML builder, runner, analysis, batch)."
 readme = "README.md"
 license = {text = "MIT"}

@@ -473,4 +473,4 @@ If you use Boltz2-Notebook, please cite:
 
 ---
 
-**Version:** 2.1.1 | **Changelog:** [releases/CHANGELOG.md](releases/CHANGELOG.md)
+**Version:** 2.1.2 | **Changelog:** [releases/CHANGELOG.md](releases/CHANGELOG.md)

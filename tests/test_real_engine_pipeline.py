@@ -44,9 +44,11 @@ def real(tmp_path, monkeypatch):
     ("Boltz2.ipynb", "v2", "mmcif"),                     # the structure format that once hit a stale-module error
     ("colab/v1/Boltz2_v1.0.0.ipynb", "v1", "pdb"),       # the Standard notebook
 ])
-def test_real_protein_ligand_affinity(real, notebook, scripts, fmt):
+def test_real_protein_ligand_affinity(real, notebook, scripts, fmt, monkeypatch, collector, keys):  # noqa: F811
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", collector.url)                                 # usage reports ticked, aimed at a local collector
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_KEY", keys["public"])
     c = real.content
-    out = real.run(notebook, 1)                                                              # Cell 1
+    out = real.run(notebook, 1, {"SEND_USAGE_STATS": True})                                  # Cell 1
     assert "Boltz engine already installed" in out and "All setup steps completed" in out, out[-1500:]
     out = real.run(notebook, 2, replace=CPU_WARMUP)                                          # Cell 2: warm-up on the real engine
     assert "Boltz2 ready" in out, out[-1500:]
@@ -87,6 +89,15 @@ def test_real_protein_ligand_affinity(real, notebook, scripts, fmt):
     assert len(summary.get("chains", [])) == 2 or "chains" in summary
     pngs = [p for p in job.rglob("*.png")]
     assert pngs, "no figures written"
+
+    reports = collector.reports(keys["private"])                                              # what the maintainer would receive
+    assert [r["event"] for r in reports] == ["boltz setup", "job started", "job succeeded"], [r["event"] for r in reports]
+    started, ended = reports[1], reports[2]
+    assert started["job_name"] == ended["job_name"] == job_name and (started["n_chains"], started["n_ligand_chains"], started["polymer_residues"]) == (2, 1, len(SEQ))
+    assert started["params"]["output_format"] == fmt and started["params"]["sampling_steps"] == 20 and started["params"]["accelerator"] == "cpu"
+    assert ended["runtime_sec"] > 60 and "log_tail" not in ended
+    assert SEQ not in json.dumps(reports) and ASPIRIN not in json.dumps(reports)
+    assert [json.loads(ln)["event"] for ln in (job / "usage_reports.jsonl").read_text().splitlines()] == ["job started", "job succeeded"]
 
 
 def test_real_template_boltz_cannot_read_is_warned_about_and_explained(real):

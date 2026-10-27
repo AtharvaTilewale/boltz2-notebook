@@ -5,4 +5,4 @@ Fill these in once (see docs/TELEMETRY.md): ``ENDPOINT`` is the URL of the colle
 Forks and tests can override both with the environment variables BOLTZ2NB_TELEMETRY_URL and BOLTZ2NB_TELEMETRY_KEY.
 """
 ENDPOINT = "https://script.google.com/macros/s/AKfycbw5rLHOqA1frA_7BKQWI8W3FSZvHFZ23XTLRh1EqJW6tzFH5fWFjGVkLBSGJgcLtNwFow/exec"
-PUBLIC_KEY = ""
+PUBLIC_KEY = "/oYKKLFUqgUAV5pBhKM8+Vte+fudNBqh+pNh+H3QBWo="

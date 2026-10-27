@@ -387,4 +387,4 @@ For issues or feature requests, check the notebook's built-in help cells marked 
 
 ---
 
-**Notebook Version:** v2.1.1 (batch v1 beta)
+**Notebook Version:** v2.1.2 (batch v1 beta)
