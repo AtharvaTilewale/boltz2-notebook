@@ -386,6 +386,21 @@ def test_msa_and_template_uploads(driver, server, tmp_path):
     assert errors(driver) == []
 
 
+def test_template_boltz_cannot_read_is_warned_about_in_the_form(driver, server, tmp_path):
+    tpl = tmp_path / "prediction.pdb"; tpl.write_text((ASSETS / "pdb" / "prot_lig.pdb").read_text()[:2000])       # no SEQRES, like a file Boltz wrote
+    open_form(driver, server)
+    fill_protein(driver)
+    goto_step(driver, 2)
+    q(driver, 'details[data-kind="templates"] summary').click()
+    click(driver, '[data-act="add-template"]')
+    upload(driver, q(driver, '[data-f="tpl-file"]'), tpl)
+    wait(driver, lambda d: "prediction.pdb" in q(d, '[data-f="tpl-status"]').text)
+    warns = lambda d: [a.get_attribute("textContent") for a in d.find_elements(By.CSS_SELECTOR, '[data-f="rail-messages"] .bz-alert--warn')]   # noqa: E731
+    wait(driver, lambda d: any("no SEQRES" in w for w in warns(d)))
+    assert q(driver, '[data-f="status-chip"]').get_attribute("textContent") == "Check warnings"
+    assert errors(driver) == []
+
+
 def test_incomplete_rows_block_save(driver, server):
     open_form(driver, server)
     fill_protein(driver)

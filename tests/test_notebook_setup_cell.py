@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-NOTEBOOKS = ["Boltz2.ipynb", "colab/v1/Boltz2_v1.0.0.ipynb", "colab/v2/Boltz2_V2.0.0_beta.ipynb"]
+NOTEBOOKS = ["Boltz2.ipynb", "colab/v1/Boltz2_v1.0.0.ipynb", "colab/v2/Boltz2_V2.0.0.ipynb"]
 
 pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
 

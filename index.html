@@ -187,7 +187,7 @@
           <div class="stat-card">
             <strong>3</strong>
             <span>Launch paths</span>
-            <p>V1 stable, V2 beta, and Batch.</p>
+            <p>V2 (default) and V1 stable, and Batch.</p>
           </div>
           <div class="stat-card">
             <strong>4</strong>
@@ -357,14 +357,15 @@
               <div class="card-head">
                 <div>
                   <span class="label">Main entry (Stable)</span>
-                  <h3>Main Notebook (V1.0.0)</h3>
+                  <h3>Main Notebook (V2.0.0)</h3>
                 </div>
                 <span class="tag">Recommended</span>
               </div>
-              <p>General-use interface for structure prediction, ligand binding, affinity analysis, confidence inspection, and export.</p>
+              <p>The full interface: structure prediction, ligand binding, affinity analysis, confidence inspection and export, plus DNA/RNA, templates, constraints and PTMs for more complex jobs.</p>
               <ul>
-                <li>Multi-chain proteins</li>
-                <li>Protein–ligand support</li>
+                <li>Multi-chain proteins, DNA/RNA and ligands</li>
+                <li>Custom MSA &amp; templates, PDB/mmCIF import</li>
+                <li>Covalent and contact constraints</li>
                 <li>Affinity analysis and visualization</li>
               </ul>
               <a class="text-link" href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb" target="_blank" rel="noreferrer">Open notebook →</a>
@@ -373,18 +374,18 @@
             <article class="version-card reveal delay-2">
               <div class="card-head">
                 <div>
-                  <span class="label">Beta</span>
-                  <h3>V2.0.0</h3>
+                  <span class="label">Stable</span>
+                  <h3>V1.0.0</h3>
                 </div>
-                <span class="tag">Advanced</span>
+                <span class="tag">Standard</span>
               </div>
-              <p>Extended modeling stack for more complex jobs, including constraints, templates, DNA/RNA, and PTMs.</p>
+              <p>A shorter form for the common case: proteins and small-molecule ligands with binding affinity.</p>
               <ul>
-                <li>DNA/RNA support</li>
-                <li>Custom MSA & templates</li>
-                <li>Covalent and contact constraints</li>
+                <li>Multi-chain proteins</li>
+                <li>Protein–ligand support</li>
+                <li>Affinity analysis and visualization</li>
               </ul>
-              <a class="text-link" href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb" target="_blank" rel="noreferrer">Open V2 beta →</a>
+              <a class="text-link" href="https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb" target="_blank" rel="noreferrer">Open V1 notebook →</a>
             </article>
 
             <article class="version-card reveal delay-1">
@@ -407,7 +408,7 @@
 
           <div class="comparison-table reveal">
             <div class="table-row table-head">
-              <span>Capability</span><span>V1</span><span>V2</span><span>Batch</span>
+              <span>Capability</span><span>V1</span><span>V2 (default)</span><span>Batch</span>
             </div>
             <div class="table-row"><span>Single protein prediction</span><span>✓</span><span>✓</span><span>✓</span></div>
             <div class="table-row"><span>Protein–ligand binding</span><span>✓</span><span>✓</span><span>✓</span></div>
@@ -530,7 +531,7 @@
           <div class="release-grid">
             <article class="release-card reveal">
               <span class="release-version">v2.0.0</span>
-              <h3>Advanced modeling stack</h3>
+              <h3>Advanced modeling stack (stable, default)</h3>
               <p>Template upload, explicit chain mapping, covalent bonds, pocket conditioning, contact conditioning, modified residues, custom MSA, DNA/RNA support, and cyclic polymer options.</p>
             </article>
             <article class="release-card reveal delay-1">
@@ -565,7 +566,7 @@
             </details>
             <details>
               <summary>Which notebook should I start with?</summary>
-              <p>Use the main notebook for general predictions, V2 for advanced modeling, and Batch when you need to screen many jobs at once.</p>
+              <p>Use the main notebook (V2, stable) for most work, V1 for a shorter form with proteins and ligands only, and Batch when you need to screen many jobs at once.</p>
             </details>
             <details>
               <summary>What kinds of inputs are supported?</summary>

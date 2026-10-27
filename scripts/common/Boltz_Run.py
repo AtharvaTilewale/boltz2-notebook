@@ -133,8 +133,18 @@ if result["return_code"] != 0:
 else:
     pred_dir = find_predictions_dir(output_dir)
     if pred_dir is None:
-        panel.finish(False, "Boltz exited normally but wrote no predictions directory.", "Open the log above; re-run with a different seed or fewer tokens.")
-        raise RuntimeError("Boltz exited normally but no predictions directory was found.")
+        # Boltz skips an input it cannot process and still exits with code 0; its log says why.
+        diag = diagnose_failure(Path(result["log_path"]).read_text())
+        if diag["likely_cause"] == "Unrecognised error.":
+            diag = {"likely_cause": "Boltz exited normally but wrote no predictions directory.",
+                    "suggested_fix": "Open the log above; re-run with a different seed or fewer tokens."}
+        status.update({"status": "FAILED", **diag})
+        write_json(output_dir / "status.json", status)
+        (BASE / "last_job.json").write_text(json.dumps(status, indent=2))
+        for line in str(result.get("tail", "")).splitlines()[-14:]:
+            state.lines.append(line)
+        panel.finish(False, diag["likely_cause"], diag["suggested_fix"])
+        raise RuntimeError("Boltz exited normally but no predictions directory was found: " + diag["likely_cause"])
     if msa_cache_dir and use_server:
         stored = msa_cache.store(job_yaml, output_dir, msa_cache_dir)
         if stored:

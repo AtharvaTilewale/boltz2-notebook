@@ -203,7 +203,39 @@ def build_constraints(raw: dict[str, Any], chains: dict[str, str]) -> list[dict[
     return constraints
 
 
-def build_templates(raw: list[dict[str, Any]], chains: dict[str, str]) -> list[dict[str, Any]]:
+_BOLTZ_LIGAND = re.compile(r"LIG\d?")        # how Boltz labels a ligand it writes (LIG in a .pdb, LIG1 in a .cif): not in the Chemical Component Dictionary
+
+
+def template_file_warnings(path: str, template_ids: list[str]) -> list[str]:
+    """What a quick look at a template file shows will make Boltz stop (found with boltz 2.2.1; nothing is rejected, the engine decides).
+
+    Boltz skips an input it cannot read and exits normally, so without this the first sign would be a finished run without a structure.
+    """
+    file = Path(path)
+    if not file.is_file():
+        return []
+    try:
+        text = file.read_bytes()[:20_000_000].decode("utf-8", errors="ignore")
+    except OSError:
+        return []
+    name, found = file.name, []
+    if file.suffix.lower() == ".pdb":
+        if not any(line.startswith("SEQRES") for line in text.splitlines()):
+            found.append(f"Template {name} has no SEQRES records. Boltz reads a .pdb template's sequence from them and stops without them "
+                         "(structures written by Boltz have none): use the .cif file instead.")
+        if any(re.fullmatch(r"[A-Za-z]", t) for t in template_ids):
+            found.append(f"Template {name}: Boltz names the chains of a .pdb template A1, B1, ... so a template chain such as 'A' is not found. "
+                         "Leave the template chain empty to use every protein chain, or use the .cif file (its chains keep the names A, B, ...).")
+        ligand = any(_BOLTZ_LIGAND.fullmatch(line[17:20].strip()) for line in text.splitlines() if line.startswith("HETATM"))
+    else:
+        ligand = any(_BOLTZ_LIGAND.fullmatch(word) for line in text.splitlines() for word in line.split())
+    if ligand:
+        found.append(f"Template {name} contains a ligand named LIG or LIG1, which is how Boltz labels a ligand it writes. Boltz cannot read such a ligand "
+                     "back (it is not in the Chemical Component Dictionary): remove its HETATM records, or use a protein-only structure.")
+    return found
+
+
+def build_templates(raw: list[dict[str, Any]], chains: dict[str, str], warnings: list[str] | None = None) -> list[dict[str, Any]]:
     templates = []
     for t in raw or []:
         path = str(t.get("path", "")).strip()
@@ -227,6 +259,8 @@ def build_templates(raw: list[dict[str, Any]], chains: dict[str, str]) -> list[d
             tmpl["chain_id"] = [c.upper() for c in chain_ids] if len(chain_ids) > 1 else chain_ids[0].upper()
         if template_ids:
             tmpl["template_id"] = template_ids if len(template_ids) > 1 else template_ids[0]
+        if warnings is not None:
+            warnings.extend(template_file_warnings(path, template_ids))
         if t.get("force"):
             tmpl["force"] = True
             if t.get("threshold") not in (None, ""):
@@ -281,9 +315,12 @@ def build_yaml(payload: dict[str, Any]) -> dict[str, Any]:
     constraints = build_constraints(payload.get("constraints", {}) or {}, chains)
     if constraints:
         data["constraints"] = constraints
-    templates = build_templates(payload.get("templates", []) or [], chains)
+    template_warnings: list[str] = []
+    templates = build_templates(payload.get("templates", []) or [], chains, template_warnings)
     if templates:
         data["templates"] = templates
+    if template_warnings:
+        data.setdefault("_warnings", []).extend(template_warnings)
 
     binder = (payload.get("properties", {}) or {}).get("affinity_binder")
     if binder:

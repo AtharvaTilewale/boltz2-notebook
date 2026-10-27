@@ -136,3 +136,40 @@ def test_v1_payload_dialect():
     doc = build_yaml(v1)
     assert doc["sequences"][1]["ligand"] == {"id": ["B"], "ccd": "HEM"}
     assert doc["properties"] == [{"affinity": {"binder": "B"}}]
+
+
+# -- template files that Boltz is known to stop on (boltz 2.2.1): a warning before the run, not a rejection --------------------
+
+PDB_WITH_SEQRES = "SEQRES   1 A    3  MET LYS THR\nATOM      1  N   MET A   1       0.000   0.000   0.000  1.00 50.00           N\nEND\n"
+PDB_BOLTZ_STYLE = ("ATOM      1  N   MET A   1       0.000   0.000   0.000  1.00 50.00           N\n"
+                   "HETATM  346  C21 LIG B   1       8.105   0.765  13.684  1.00 50.00           C\nEND\n")
+CIF_BOLTZ_STYLE = "data_x\nloop_\n_atom_site.group_PDB\n_atom_site.label_comp_id\nATOM MET\nHETATM LIG1\n"
+
+
+def _template_payload(path, template_id=None):
+    payload = {"sequences": [{"type": "protein", "data": {"id": ["A"], "sequence": "MKTAYIAKQ"}}], "constraints": {}, "properties": {},
+               "templates": [{"path": str(path), "chain_id": ["A"]}]}
+    if template_id:
+        payload["templates"][0]["template_id"] = template_id
+    return payload
+
+
+def test_template_warnings_for_the_inputs_the_engine_rejects(tmp_path):
+    from boltz2nb.yaml_builder import pop_warnings
+    boltz_pdb = tmp_path / "pred.pdb"; boltz_pdb.write_text(PDB_BOLTZ_STYLE)
+    warnings = pop_warnings(build_yaml(_template_payload(boltz_pdb)))
+    assert len(warnings) == 2 and "no SEQRES" in warnings[0] and ".cif" in warnings[0] and "LIG" in warnings[1]
+    boltz_cif = tmp_path / "pred.cif"; boltz_cif.write_text(CIF_BOLTZ_STYLE)
+    warnings = pop_warnings(build_yaml(_template_payload(boltz_cif)))
+    assert len(warnings) == 1 and "LIG1" in warnings[0] and "protein-only" in warnings[0]
+    good = tmp_path / "rcsb.pdb"; good.write_text(PDB_WITH_SEQRES)
+    warnings = pop_warnings(build_yaml(_template_payload(good, ["A"])))                    # Boltz calls this chain A1
+    assert len(warnings) == 1 and "A1" in warnings[0] and "Leave the template chain empty" in warnings[0]
+
+
+def test_no_template_warning_when_the_engine_accepts_the_file(tmp_path):
+    good = tmp_path / "rcsb.pdb"; good.write_text(PDB_WITH_SEQRES)
+    for doc in (build_yaml(_template_payload(good)), build_yaml(_template_payload(good, ["A1"])), build_yaml(_template_payload(tmp_path / "missing.pdb", ["A"]))):
+        assert "_warnings" not in doc                                                       # the key is not even created
+    cif = tmp_path / "ok.cif"; cif.write_text("data_x\nloop_\n_atom_site.label_comp_id\nMET\nLYS\n")
+    assert "_warnings" not in build_yaml(_template_payload(cif, ["A"]))                    # a .cif keeps its chain names

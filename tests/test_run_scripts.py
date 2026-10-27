@@ -30,6 +30,10 @@ print("Predicting \\x1b[35m1/1\\x1b[0m \\u2501\\u2501\\u2501\\u2501 0:00:01", fl
 if {fail!r}:
     print("torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 2.50 GiB", flush=True)
     sys.exit(1)
+if {skip!r}:      # what boltz really does with an input it cannot parse: log it, skip it, exit 0, write nothing
+    print("Found explicit empty MSA for some proteins, will run these in single sequence mode.", flush=True)
+    print("Failed to process " + name + ".yaml. Skipping. Error: unsupported residue letter Z at position 12.", flush=True)
+    sys.exit(0)
 d = out / ("boltz_results_" + name) / "predictions" / name
 d.mkdir(parents=True)
 a = pathlib.Path({assets!r})
@@ -56,11 +60,11 @@ def workspace(tmp_path, monkeypatch):
     return base
 
 
-def install_fake_boltz(tmp_path, monkeypatch, fail=False):
+def install_fake_boltz(tmp_path, monkeypatch, fail=False, skip=False):
     bindir = tmp_path / "bin"
     bindir.mkdir(exist_ok=True)
     exe = bindir / "boltz"
-    exe.write_text(FAKE.format(python=sys.executable, fail=fail, assets=str(ASSETS)))
+    exe.write_text(FAKE.format(python=sys.executable, fail=fail, skip=skip, assets=str(ASSETS)))
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
 
@@ -91,6 +95,17 @@ def test_failed_run_reports_cause_and_fix(workspace, tmp_path, monkeypatch, caps
     status = json.loads((workspace / "demo" / "status.json").read_text())
     assert status["status"] == "FAILED" and "memory" in status["likely_cause"].lower() and status["suggested_fix"]
     assert json.loads((workspace / "last_job.json").read_text())["status"] == "FAILED"
+
+
+def test_input_skipped_by_boltz_is_reported_as_failed_with_the_reason(workspace, tmp_path, monkeypatch, capsys):
+    install_fake_boltz(tmp_path, monkeypatch, skip=True)
+    with pytest.raises(RuntimeError, match="no predictions directory"):
+        runpy.run_path(str(ROOT / "scripts" / "common" / "Boltz_Run.py"))
+    out = capsys.readouterr().out
+    assert "[failed] demo" in out and "skipped it" in out and "unsupported residue letter Z" in out and "different seed" not in out
+    status = json.loads((workspace / "demo" / "status.json").read_text())
+    assert status["status"] == "FAILED" and status["return_code"] == 0 and "skipped" in status["likely_cause"]
+    assert json.loads((workspace / "last_job.json").read_text())["status"] == "FAILED"          # the analysis cell must not pick up an older job
 
 
 def test_existing_job_folder_is_never_overwritten(workspace, tmp_path, monkeypatch, capsys):

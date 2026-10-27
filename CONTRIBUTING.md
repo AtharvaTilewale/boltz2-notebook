@@ -8,10 +8,11 @@ scripts/common/    the three cells' implementations (setup / Boltz_Run / analysi
 scripts/v1, v2/    thin shims + launchers for the standard / advanced input builder
 boltz2nb/ui/       the interface: design-system CSS, form HTML/JS (assets/), renderers, Python callbacks, live panel, result card, figures.py (the plots)
 scripts/batch_utils.py   compatibility shim over boltz2nb.batch
-colab/, batch/, notebooks/, Boltz2.ipynb   the notebooks (thin shells)
+Boltz2.ipynb      the default notebook: Advanced V2.0.0, a byte-for-byte copy of colab/v2/Boltz2_V2.0.0.ipynb (never edit it by hand)
+colab/, batch/, notebooks/   the other notebooks (thin shells); colab/v2/Boltz2_V2.0.0_beta.ipynb is only a pointer to the renamed V2 notebook
 tests/             pytest suite; engine tests skip unless a Boltz cache is present
 tools/check_notebooks.py   compiles notebook cells and checks %run targets
-tools/build_notebook_headers.py   regenerates the first cell of the three main notebooks (`--check` in CI)
+tools/build_notebook_headers.py   regenerates the first cell of the main notebooks and copies the V2 notebook over Boltz2.ipynb (`--check` in CI)
 tools/fetch_test_fonts.py  downloads Inter / JetBrains Mono for the browser tests
 ```
 
@@ -25,6 +26,14 @@ ruff check boltz2nb tests scripts/common tools
 python tools/check_notebooks.py
 python tools/build_notebook_headers.py --check
 ```
+
+### The default notebook
+
+`Boltz2.ipynb` in the repository root is what the README, the website and the "Open in Colab" badge open. It is the Advanced V2.0.0 notebook and
+must stay identical to `colab/v2/Boltz2_V2.0.0.ipynb`. Edit the versioned file, then run `python tools/build_notebook_headers.py`: it regenerates the
+header cell of each main notebook and copies the V2 notebook over the root one. `--check` (CI) and `tests/test_default_notebook.py` fail when they differ.
+The Standard notebook (`colab/v1/Boltz2_v1.0.0.ipynb`) and V2 are stable; only the Batch notebook is still labelled beta / experimental.
+`tests/test_links.py` checks that every link into this repository or the site points at a file that exists; a renamed notebook keeps a pointer at its old path.
 
 ### Interface and browser tests
 

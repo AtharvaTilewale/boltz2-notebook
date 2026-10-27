@@ -1,4 +1,5 @@
-"""Rewrite the first (markdown) cell of the three main notebooks so they share one concise, accurate header.
+"""Rewrite the first (markdown) cell of the main notebooks so they share one concise, accurate header, and keep the default
+notebook (Boltz2.ipynb) identical to the Advanced V2.0.0 notebook.
 
     python tools/build_notebook_headers.py          # rewrite in place (idempotent)
     python tools/build_notebook_headers.py --check  # exit 1 if a header is out of date (used by CI)
@@ -10,14 +11,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COLAB = "https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/"
 BADGE = "https://colab.research.google.com/assets/colab-badge.svg"
+# The default notebook (Boltz2.ipynb) is the Advanced notebook; the versioned copy under colab/v2 is kept byte-identical to it.
+DEFAULT = "Boltz2.ipynb"
+VERSIONED = "colab/v2/Boltz2_V2.0.0.ipynb"
 NOTEBOOKS = {
-    "Boltz2.ipynb": "standard",
+    VERSIONED: "advanced",
     "colab/v1/Boltz2_v1.0.0.ipynb": "standard",
-    "colab/v2/Boltz2_V2.0.0_beta.ipynb": "advanced",
 }
 ROWS = [
-    ("standard", "Standard", "Proteins and small-molecule ligands, binding affinity, 3-D viewer", "colab/v1/Boltz2_v1.0.0.ipynb"),
-    ("advanced", "Advanced (beta)", "Adds DNA/RNA, templates, covalent bonds, pocket and contact constraints, custom MSA, cyclic peptides", "colab/v2/Boltz2_V2.0.0_beta.ipynb"),
+    ("advanced", "Advanced (default)", "Proteins, DNA/RNA and ligands, binding affinity, templates, covalent bonds, pocket and contact constraints, custom MSA, cyclic peptides, 3-D viewer", DEFAULT),
+    ("standard", "Standard", "A shorter form for proteins and small-molecule ligands, with binding affinity and a 3-D viewer", "colab/v1/Boltz2_v1.0.0.ipynb"),
     ("batch", "Batch (experimental)", "CSV / FASTA screens with automatic ranking", "batch/Boltz2_Batch_v1_beta.ipynb"),
 ]
 BADGES = (
@@ -30,12 +33,14 @@ BADGES = (
 
 
 def header(mode: str) -> str:
-    here = {"standard": "Standard", "advanced": "Advanced (beta)"}[mode]
+    here = {"standard": "Standard", "advanced": "Advanced"}[mode]
     table = ["| Notebook | Best for | |", "|:--|:--|:--|"]
     for key, name, text, path in ROWS:
         mark = " **← you are here**" if key == mode else ""
         table.append(f"| **{name}**{mark} | {text} | [![Open in Colab]({BADGE})]({COLAB}{path}) |")
     extra = ""
+    if mode == "standard":
+        extra = "\nNeed DNA/RNA, templates, covalent bonds or pocket and contact constraints? Use the **Advanced** notebook, which is the default.\n"
     if mode == "advanced":
         extra = (
             "\n**What the Advanced form adds:** DNA and RNA chains, structural templates, covalent bonds, pocket and contact conditioning, "
@@ -98,6 +103,11 @@ def main(check: bool) -> int:
             cells[0]["source"] = want
             if not check:
                 path.write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
+    source, target = ROOT / VERSIONED, ROOT / DEFAULT
+    if not target.exists() or target.read_bytes() != source.read_bytes():
+        stale.append(DEFAULT)
+        if not check:
+            target.write_bytes(source.read_bytes())
     print(("out of date: " if check else "rewritten: ") + (", ".join(stale) or "none"))
     return 1 if (check and stale) else 0
 

@@ -20,13 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
       category: 'General',
       source: 'Root README',
       question: 'Which notebook should I start with?',
-      answer: 'Use the main notebook for general predictions, V1 for the stable workflow, V2 for advanced modeling, and Batch when you want to process many jobs.'
+      answer: 'Use the main notebook, which is the V2 notebook (stable), for most work. V1 is a shorter form for proteins and small-molecule ligands, and Batch is for processing many jobs.'
     },
     {
       category: 'General',
       source: 'Version table',
       question: 'What is the difference between the latest notebook and the release-specific notebooks?',
-      answer: 'The latest notebook is the current default entry point, while the release-specific notebooks document the stable V1 workflow, the V2 beta feature set, and the batch automation flow.'
+      answer: 'The latest notebook is the default entry point and is the same notebook as V2.0.0 (stable). The release-specific notebooks keep the V1 workflow and the V2 feature set under their version names, and the batch notebook covers automation.'
     },
     {
       category: 'Inputs',

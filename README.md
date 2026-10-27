@@ -30,8 +30,8 @@
 
 | Version | Features | Status | Launch |
 |---------|----------|--------|------|
-| **V2.0.0** | Multi-entity support, DNA/RNA, Advanced constraints, Cyclic peptides, PTMs | ![Beta](https://img.shields.io/badge/Beta-Latest-blue) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb) |
-| **V1.0.0** | Multi-chain proteins, Protein-ligand binding, Affinity analysis | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
+| **V2.0.0 (default)** | Multi-entity support, DNA/RNA, Advanced constraints, Cyclic peptides, PTMs | ![Stable](https://img.shields.io/badge/Stable-Default-green) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb) |
+| **V1.0.0 (Standard)** | Multi-chain proteins, Protein-ligand binding, Affinity analysis | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
 | **Batch v1.0** | Batch processing, CSV/FASTA inputs, High-throughput screening | ![Pre-release](https://img.shields.io/badge/Pre--release-Experimental-orange) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb) |
 
 ---
@@ -55,8 +55,8 @@
 
 | Notebook | Status | Features | Best For | Link |
 |----------|--------|----------|----------|------|
-| **V2.0.0** | ![Beta](https://img.shields.io/badge/Beta-Latest-blue) | Multi-entity support, Advanced constraints, Template guidance, Affinity prediction, Cyclic peptides, PTMs | Production & Research | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v2/Boltz2_V2.0.0_beta.ipynb) |
-| **V1.0.0** | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | Multi-chain protein prediction, Protein-ligand binding, Affinity analysis, 3D visualization | Standard predictions | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
+| **V2.0.0 (default)** | ![Stable](https://img.shields.io/badge/Stable-Default-green) | Multi-entity support, Advanced constraints, Template guidance, Affinity prediction, Cyclic peptides, PTMs | Production & Research | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb) |
+| **V1.0.0 (Standard)** | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | Multi-chain protein prediction, Protein-ligand binding, Affinity analysis, 3D visualization | Standard predictions | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
 | **Batch v1.0.0** | ![Pre-release](https://img.shields.io/badge/Pre--release-Experimental-orange) | Batch processing, CSV/FASTA inputs, High-throughput screening, Result ranking, Manifest validation | Large-scale screening | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb)  -->
 
 
@@ -83,8 +83,8 @@
 
 ### Notebook Selection Guide
 
-- **New users or standard predictions?** → Use **V1.0.0** (simplest form)
-- **Advanced modeling needs?** → Use **V2.0.0** (latest features, DNA/RNA, constraints)
+- **Most users, and anything with DNA/RNA, templates or constraints?** → Use **V2.0.0**, the default notebook (stable; it also covers everything V1 does)
+- **Only proteins and small-molecule ligands, and you want the shortest form?** → Use **V1.0.0** (Standard)
 - **Large-scale screening?** → Use **Batch v1.0** (automated high-throughput)
 
 ---
@@ -93,8 +93,8 @@
 
 | Notebook | Status | Best For |
 |----------|--------|----------|
-| [V2.0.0](colab/v2/Boltz2_V2.0.0_beta.ipynb) | ![Beta](https://img.shields.io/badge/Beta-Latest-blue) | Advanced modeling, multi-entity complexes, structure-guided design |
-| [V1.0.0](colab/v1/Boltz2_v1.0.0.ipynb) | ![Stable](https://img.shields.io/badge/Stable-Proven-green) | Production predictions, protein-ligand binding, standard analysis |
+| [V2.0.0 (default)](colab/v2/Boltz2_V2.0.0.ipynb) | ![Stable](https://img.shields.io/badge/Stable-Default-green) | Advanced modeling, multi-entity complexes, structure-guided design |
+| [V1.0.0 (Standard)](colab/v1/Boltz2_v1.0.0.ipynb) | ![Stable](https://img.shields.io/badge/Stable-Proven-green) | Production predictions, protein-ligand binding, standard analysis |
 | [Batch v1.0](batch/Boltz2_Batch_v1_beta.ipynb) | ![Pre-release](https://img.shields.io/badge/Pre--release-Early-orange) | High-throughput screening, batch processing, automation |
 | [Parameter Generator](notebooks/Boltz2_paramgen.ipynb) | Utility | Custom configuration and input building |
 

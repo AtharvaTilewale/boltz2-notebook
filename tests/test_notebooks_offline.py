@@ -101,21 +101,23 @@ class cuda:
 
 
 class Runner:
-    def __init__(self, tmp_path: Path, monkeypatch):
+    def __init__(self, tmp_path: Path, monkeypatch, real_engine: bool = False):
         self.sandbox = tmp_path
         self.content = tmp_path / "content"
         self.content.mkdir()
         # The engine is never installed here: a stub ``torch`` and ``boltz`` (importable in this process and in the
         # subprocess the setup cell spawns to verify the installation) make the cells take their "already installed" path.
-        stubs = tmp_path / "stubs"
-        (stubs / "boltz").mkdir(parents=True)
-        (stubs / "boltz" / "__init__.py").write_text('__version__ = "0.0-stub"\n')
-        (stubs / "torch.py").write_text(STUB_TORCH)
-        monkeypatch.setenv("PYTHONPATH", f"{stubs}{os.pathsep}{os.environ.get('PYTHONPATH', '')}".rstrip(os.pathsep))
-        for name in ("torch", "boltz"):
-            monkeypatch.delitem(sys.modules, name, raising=False)
-        sys.path.insert(0, str(stubs))
-        monkeypatch.setattr(sys, "path", list(sys.path))
+        # With ``real_engine`` the installed ``torch`` / ``boltz`` and the ``boltz`` executable on PATH are used as they are.
+        if not real_engine:
+            stubs = tmp_path / "stubs"
+            (stubs / "boltz").mkdir(parents=True)
+            (stubs / "boltz" / "__init__.py").write_text('__version__ = "0.0-stub"\n')
+            (stubs / "torch.py").write_text(STUB_TORCH)
+            monkeypatch.setenv("PYTHONPATH", f"{stubs}{os.pathsep}{os.environ.get('PYTHONPATH', '')}".rstrip(os.pathsep))
+            for name in ("torch", "boltz"):
+                monkeypatch.delitem(sys.modules, name, raising=False)
+            sys.path.insert(0, str(stubs))
+            monkeypatch.setattr(sys, "path", list(sys.path))
         self.colab = ColabStub(self.content)
         for name, mod in self.colab.modules.items():
             monkeypatch.setitem(sys.modules, name, mod)
@@ -130,12 +132,13 @@ class Runner:
                 shutil.copy(ROOT / rel, dst)
         self.repo = repo
         # fake engine
-        bindir = tmp_path / "bin"
-        bindir.mkdir()
-        exe = bindir / "boltz"
-        exe.write_text(FAKE_BOLTZ.format(python=sys.executable, assets=str(ASSETS)))
-        exe.chmod(0o755)
-        monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
+        if not real_engine:
+            bindir = tmp_path / "bin"
+            bindir.mkdir()
+            exe = bindir / "boltz"
+            exe.write_text(FAKE_BOLTZ.format(python=sys.executable, assets=str(ASSETS)))
+            exe.chmod(0o755)
+            monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
         monkeypatch.setenv("MPLBACKEND", "Agg")
         monkeypatch.setenv("HOME", str(tmp_path / "home"))
         (tmp_path / "home").mkdir()
@@ -166,11 +169,15 @@ class Runner:
             assert n == 1, f"form field {key} not found exactly once"
         return src
 
-    def run(self, notebook: str, index: int, params: dict | None = None, expect_error: str | None = None, allow_failure_report: bool = False) -> str:
+    def run(self, notebook: str, index: int, params: dict | None = None, expect_error: str | None = None, allow_failure_report: bool = False,
+            replace: dict[str, str] | None = None) -> str:
         cells = json.loads((ROOT / notebook).read_text(encoding="utf-8"))["cells"]
         cell = cells[index]
         assert cell["cell_type"] == "code", (notebook, index)
         src = self.rewrite("".join(cell["source"]), params)
+        for before, after in (replace or {}).items():
+            assert src.count(before) == 1, f"{before!r} not found exactly once in cell {index} of {notebook}"
+            src = src.replace(before, after)
         buf = io.StringIO()
         self.shell.display_pub.outputs.clear()
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
@@ -224,7 +231,7 @@ def user_fills_the_form(colab: ColabStub, job_name: str, affinity: bool = True):
     return saved, run
 
 
-@pytest.mark.parametrize("notebook,scripts", [("Boltz2.ipynb", "v1"), ("colab/v1/Boltz2_v1.0.0.ipynb", "v1"), ("colab/v2/Boltz2_V2.0.0_beta.ipynb", "v2")])
+@pytest.mark.parametrize("notebook,scripts", [("Boltz2.ipynb", "v2"), ("colab/v1/Boltz2_v1.0.0.ipynb", "v1"), ("colab/v2/Boltz2_V2.0.0.ipynb", "v2")])
 def test_main_notebook_end_to_end(runner, notebook, scripts):
     c = runner.content
     out = runner.run(notebook, 1, {"USE_DRIVE_MSA_CACHE": True})                 # Cell 1: setup (+ Drive MSA cache)
@@ -263,8 +270,8 @@ def test_main_notebook_end_to_end(runner, notebook, scripts):
     assert runner.colab.downloads and runner.colab.downloads[-1].endswith("demo_job.zip") and Path(runner.colab.downloads[-1]).is_file()
 
 
-def test_main_notebook_failed_run_is_reported_not_raised(runner):
-    nb = "Boltz2.ipynb"
+@pytest.mark.parametrize("nb", ["Boltz2.ipynb", "colab/v1/Boltz2_v1.0.0.ipynb"])
+def test_main_notebook_failed_run_is_reported_not_raised(runner, nb):
     runner.run(nb, 1)
     runner.run(nb, 3)
     payload = {"sequences": [{"type": "protein", "data": {"id": ["A"], "sequence": "MKTAYIAKQFAILMEKQRQISFVKSHFSRQLEERLG", "msa": "empty"}}],

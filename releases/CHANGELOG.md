@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- **The Advanced notebook (V2.0.0) is stable and the default.** It no longer carries a beta label anywhere (notebook header, README, version
+  table, website, FAQ). `Boltz2.ipynb` in the repository root, which the README, the website and the "Open in Colab" badge open, is now this
+  notebook (it ran the Standard notebook's scripts before). The Standard notebook (V1.0.0) stays available and stable, and its header points to
+  Advanced. Only the Batch notebook is still beta / experimental.
+- **`colab/v2/Boltz2_V2.0.0_beta.ipynb` is now `colab/v2/Boltz2_V2.0.0.ipynb`.** The old path remains as a short pointer page with links to the
+  new location, so existing links (the preprint, bookmarks, forks) do not end in a 404.
+- `Boltz2.ipynb` and `colab/v2/Boltz2_V2.0.0.ipynb` are one notebook in two places. `tools/build_notebook_headers.py` regenerates the header
+  cells and copies the versioned file over the root one; `--check` (CI) and `tests/test_default_notebook.py` fail if they differ.
+
+### Fixed (found by running the real engine, boltz 2.2.1, through the notebook cells)
+- **A failed run was blamed on the MSA server.** The diagnosis rule matched the bare word "msa", which Boltz itself prints ("Found explicit empty MSA ...")
+  for every chain set to `msa: empty`, so any failure in such a job that no earlier rule caught was reported as "MSA generation via the ColabFold
+  server failed" with the advice to set `msa: empty`. The rule now looks for real server errors only. The YAML rule had the same flaw (it matched the file
+  name `yaml.py`, which every Boltz traceback names).
+- **Boltz skips an input it cannot read and still exits with code 0.** The run cell then said "wrote no predictions directory ... re-run with a different
+  seed" and wrote no `status.json`. It now reads the engine's own "Failed to process ... Skipping. Error: ..." line, marks the job FAILED in `status.json`
+  and `last_job.json`, and shows the cause and a fix in the panel and in the error text.
+- **Templates.** Boltz stops on a `.pdb` template without `SEQRES` records (every structure Boltz itself writes as `.pdb`), on a template that contains the
+  ligand Boltz labels `LIG` / `LIG1`, and on a template chain such as `A` for a `.pdb` file (Boltz names the chains of a `.pdb` template `A1`, `B1`, ...; a
+  `.cif` keeps `A`, `B`). The input builder now warns about each of these when the file is uploaded (the warning appears next to the YAML; nothing is
+  rejected, the engine stays the judge), and a failed run names the template as the cause with the fix.
+
+### Added
+- `tests/test_default_notebook.py` (root notebook is the V2 notebook and runs the V2 scripts, no beta wording on the stable notebooks, headers,
+  pointer page, README / version table / website / FAQ wording) and `tests/test_links.py` (every link into this repository or the site, and every
+  relative link in the Markdown and HTML files, points at a file that exists).
+- `tests/test_real_engine_pipeline.py`: the notebook cells run against the real Boltz-2 engine on CPU (opt-in with `BOLTZ2NB_REAL_ENGINE=1`; skipped
+  otherwise), for the default notebook with PDB and mmCIF output, for the Standard notebook, and for a template Boltz cannot read.
+- `tests/test_engine_schema.py` (needs the Boltz cache): a covalent bond constraint, a custom MSA file and a template through Boltz's own parser, and two
+  tests that pin the engine behaviour the template warnings rely on (they fail if a future Boltz changes it).
+- Diagnosis tests built from verbatim engine logs (`tests/test_misc.py`), a fake engine that skips its input and exits 0 (`tests/test_run_scripts.py`), the
+  template warnings (`tests/test_yaml_builder.py`) and their display in the form (`tests/ui/test_form_browser.py`).
+
 ## v2.1.0
 
 ### Fixed
