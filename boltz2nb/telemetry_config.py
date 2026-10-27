@@ -4,5 +4,5 @@ Fill these in once (see docs/TELEMETRY.md): ``ENDPOINT`` is the URL of the colle
 ``python tools/telemetry_keygen.py``. While either is empty nothing is ever sent, whatever the user ticked.
 Forks and tests can override both with the environment variables BOLTZ2NB_TELEMETRY_URL and BOLTZ2NB_TELEMETRY_KEY.
 """
-ENDPOINT = ""
+ENDPOINT = "https://script.google.com/macros/s/AKfycbw5rLHOqA1frA_7BKQWI8W3FSZvHFZ23XTLRh1EqJW6tzFH5fWFjGVkLBSGJgcLtNwFow/exec"
 PUBLIC_KEY = ""

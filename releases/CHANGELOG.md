@@ -10,7 +10,8 @@
   ligand strings, paths, e-mail addresses, URL queries).
 - **Only the maintainer can read the reports.** Each one is sealed in the user's runtime with the maintainer's public key (libsodium sealed box; `pynacl`),
   so the collecting web app and its sheet hold ciphertext only. Nothing is sent unless both an endpoint and the public key are set in
-  `boltz2nb/telemetry_config.py` (both empty in this release, so nothing is sent yet), and a report is never sent in the clear.
+  `boltz2nb/telemetry_config.py` (the endpoint is set; the public key stays empty until the maintainer generates the key pair, so nothing is sent yet), and a report is never sent in the clear.
+  No test can reach the real endpoint: the suite blanks the shipped values for every test.
 - A plain copy of every report that was sent is written to `usage_reports.jsonl` (in the job folder; the setup report in the work folder), and Cell 1 prints a
   summary of what is collected when the box is ticked. `docs/PRIVACY.md` lists every event and field (a test keeps it in step with the code).
 - For the maintainer: `telemetry/receiver.gs` (a Google Apps Script web app that appends sealed reports to a private sheet), `tools/telemetry_keygen.py` (makes the

@@ -105,13 +105,25 @@ def test_nothing_is_sent_unless_ticked_and_configured(monkeypatch, collector, ke
     assert (sent is not None) == (state == "on") and len(collector.posts) == (1 if state == "on" else 0)
 
 
-def test_the_shipped_build_has_no_endpoint_so_ticking_the_box_sends_nothing(monkeypatch):
+def test_the_shipped_config_is_well_formed():
+    """The values committed in telemetry_config.py (read from the file: the tests blank the live module so none can reach the real endpoint)."""
+    import base64
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("shipped_telemetry_config", ROOT / "boltz2nb" / "telemetry_config.py")
+    shipped = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(shipped)
+    if shipped.ENDPOINT:
+        assert re.fullmatch(r"https://script\.google\.com/macros/s/[\w-]+/exec", shipped.ENDPOINT), "reports must go to the deployed web app over https"
+    if shipped.PUBLIC_KEY:                                    # catches a mistyped or truncated key before it silently makes every report unreadable
+        assert len(base64.b64decode(shipped.PUBLIC_KEY, validate=True)) == 32
+
+
+def test_tests_cannot_reach_the_real_endpoint(monkeypatch):
+    from boltz2nb import telemetry_config
     _clean_env(monkeypatch)
     monkeypatch.setenv("BOLTZ2NB_SEND_USAGE_STATS", "1")
-    from boltz2nb import telemetry_config
-    assert telemetry_config.ENDPOINT == "" == telemetry_config.PUBLIC_KEY or telemetry.configured()      # fill both in (docs/TELEMETRY.md) to switch collection on
-    if not telemetry.configured():
-        assert telemetry.state() == "unconfigured" and telemetry.send("boltz setup") is None
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_KEY", "AAAA")      # a key and nothing else: with the shipped endpoint this used to be enough to post for real
+    assert telemetry_config.ENDPOINT == "" and telemetry.endpoint() == "" and telemetry.state() == "unconfigured"
 
 
 # ----------------------------------------------------------------------------------------------------- sealing
@@ -305,7 +317,7 @@ def test_setup_cell_discloses_and_reports_the_setup(runner, monkeypatch, collect
 def test_setup_cell_says_so_when_the_build_cannot_send(runner, monkeypatch):
     _clean_env(monkeypatch)
     out = runner.run("Boltz2.ipynb", 1, {"SEND_USAGE_STATS": True})
-    assert "no collection endpoint, so nothing is sent" in out
+    assert "not set up to collect reports" in out and "so nothing is sent" in out
 
 
 # ----------------------------------------------------------------------------------------------------- maintainer tools

@@ -138,7 +138,7 @@ try:
     if _state == "off":
         print("[i] Usage statistics: off (tick SEND_USAGE_STATS in this cell to help improve the tool; docs/PRIVACY.md lists exactly what is sent).")
     elif _state == "unconfigured":
-        print("[i] Usage statistics: ticked, but this build has no collection endpoint, so nothing is sent.")
+        print("[i] Usage statistics: ticked, but this build is not set up to collect reports (no endpoint or key yet), so nothing is sent.")
     else:
         if not module_available("nacl"):
             step("Installing the encryption library for usage reports", lambda: run([sys.executable, "-m", "pip", "install", "-q", "pynacl"]), allow_fail=True)

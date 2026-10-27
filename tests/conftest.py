@@ -136,3 +136,12 @@ print('Boltz fake run complete'); sys.exit(0)
     script.chmod(0o755)
     monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
     return script
+
+
+@pytest.fixture(autouse=True)
+def _never_reach_the_real_usage_endpoint(monkeypatch):
+    """boltz2nb/telemetry_config.py holds the maintainer's real endpoint. A test that ticks SEND_USAGE_STATS must only ever talk to the local collector it
+    starts itself (via BOLTZ2NB_TELEMETRY_URL), so the shipped values are blanked for every test, whatever the environment variables say."""
+    from boltz2nb import telemetry_config
+    monkeypatch.setattr(telemetry_config, "ENDPOINT", "")
+    monkeypatch.setattr(telemetry_config, "PUBLIC_KEY", "")
