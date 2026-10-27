@@ -142,7 +142,8 @@ class Runner:
         monkeypatch.setenv("MPLBACKEND", "Agg")
         monkeypatch.setenv("HOME", str(tmp_path / "home"))
         (tmp_path / "home").mkdir()
-        for var in ("BOLTZ2NB_BASE_DIR", "BOLTZ2NB_REPO_DIR", "BOLTZ2NB_JOB_OUTPUT_DIR", "BOLTZ2NB_MSA_CACHE", "BOLTZ2NB_BATCH_ROOT", "FORCE_REINSTALL"):
+        for var in ("BOLTZ2NB_BASE_DIR", "BOLTZ2NB_REPO_DIR", "BOLTZ2NB_JOB_OUTPUT_DIR", "BOLTZ2NB_MSA_CACHE", "BOLTZ2NB_BATCH_ROOT", "FORCE_REINSTALL",
+                    "BOLTZ2NB_SEND_USAGE_STATS"):
             monkeypatch.delenv(var, raising=False)
         monkeypatch.chdir(tmp_path)
         # a fresh IPython shell with a display publisher that records outputs

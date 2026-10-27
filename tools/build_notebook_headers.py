@@ -1,5 +1,5 @@
-"""Rewrite the first (markdown) cell of the main notebooks so they share one concise, accurate header, and keep the default
-notebook (Boltz2.ipynb) identical to the Advanced V2.0.0 notebook.
+"""Rewrite the first (markdown) cell of the main notebooks and the closing credits / citation cell of every Colab notebook, and keep the
+default notebook (Boltz2.ipynb) identical to the Advanced V2.0.0 notebook.
 
     python tools/build_notebook_headers.py          # rewrite in place (idempotent)
     python tools/build_notebook_headers.py --check  # exit 1 if a header is out of date (used by CI)
@@ -19,63 +19,94 @@ NOTEBOOKS = {
     "colab/v1/Boltz2_v1.0.0.ipynb": "standard",
 }
 ROWS = [
-    ("advanced", "Advanced (default)", "Proteins, DNA/RNA and ligands, binding affinity, templates, covalent bonds, pocket and contact constraints, custom MSA, cyclic peptides, 3-D viewer", DEFAULT),
-    ("standard", "Standard", "A shorter form for proteins and small-molecule ligands, with binding affinity and a 3-D viewer", "colab/v1/Boltz2_v1.0.0.ipynb"),
-    ("batch", "Batch (experimental)", "CSV / FASTA screens with automatic ranking", "batch/Boltz2_Batch_v1_beta.ipynb"),
+    ("advanced", "Advanced", "default", "Proteins, DNA/RNA and ligands, templates, constraints, covalent bonds, modified residues, custom MSA", DEFAULT),
+    ("standard", "Standard", "", "Proteins and small-molecule ligands, with a shorter form", "colab/v1/Boltz2_v1.0.0.ipynb"),
+    ("batch", "Batch", "experimental", "Screening many inputs from CSV or FASTA, with ranking", "batch/Boltz2_Batch_v1_beta.ipynb"),
 ]
-BADGES = (
-    "![Python](https://img.shields.io/badge/Python-3.10%20--%203.13-3B4FD6?logo=python&logoColor=white) "
-    "![CUDA](https://img.shields.io/badge/CUDA-GPU-0B7F70?logo=nvidia&logoColor=white) "
-    "![Boltz-2](https://img.shields.io/badge/Model-Boltz--2-7C8CFF) "
-    "![Colab](https://img.shields.io/badge/Platform-Colab%20%7C%20Linux-F9AB00?logo=googlecolab&logoColor=white) "
-    "![License](https://img.shields.io/badge/License-MIT-5A6985)"
-)
+REPO = "https://github.com/AtharvaTilewale/boltz2-notebook"
+SITE = "https://atharvatilewale.github.io/boltz2-notebook"
+BANNER = "https://raw.githubusercontent.com/AtharvaTilewale/boltz2-notebook/main/assets/boltz2-wordmark-horizontal-dark.svg"   # own dark card: reads on light and dark themes
+PAPER_DOI = "https://doi.org/10.64898/2026.09.18.752645"
+PAPER_TITLE = ("Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction "
+               "using the Boltz2 model")                         # as registered with Crossref for the DOI above
+LINKS = (f"[Guide]({SITE}/docs/use-cases.html) · [FAQ]({SITE}/docs/faq.html) · [Report an issue]({REPO}/issues) · "
+         f"[Privacy]({REPO}/blob/main/docs/PRIVACY.md) · [Cite]({PAPER_DOI})")
+INTRO = {
+    "advanced": "Predict the 3-D structure of proteins, DNA, RNA and small molecules, and how strongly a ligand binds, with **Boltz-2** on a free Colab GPU. "
+                "No installation or coding needed.",
+    "standard": "Predict the 3-D structure of proteins and protein-ligand complexes, and how strongly a ligand binds, with **Boltz-2** on a free Colab GPU. "
+                "No installation or coding needed.",
+}
 
 
 def header(mode: str) -> str:
     here = {"standard": "Standard", "advanced": "Advanced"}[mode]
     table = ["| Notebook | Best for | |", "|:--|:--|:--|"]
-    for key, name, text, path in ROWS:
-        mark = " **← you are here**" if key == mode else ""
-        table.append(f"| **{name}**{mark} | {text} | [![Open in Colab]({BADGE})]({COLAB}{path}) |")
-    extra = ""
+    for key, name, tag, text, path in ROWS:
+        label = f"**{name}**" + (f" · {tag}" if tag else "") + (" · *you are here*" if key == mode else "")
+        table.append(f"| {label} | {text} | [![Open in Colab]({BADGE})]({COLAB}{path}) |")
+    note = ""
     if mode == "standard":
-        extra = "\nNeed DNA/RNA, templates, covalent bonds or pocket and contact constraints? Use the **Advanced** notebook, which is the default.\n"
-    if mode == "advanced":
-        extra = (
-            "\n**What the Advanced form adds:** DNA and RNA chains, structural templates, covalent bonds, pocket and contact conditioning, "
-            "uploaded alignments (A3M), cyclic polymers and modified residues. You can also import chains and ligands straight from a PDB or mmCIF file.\n"
-        )
-    return f"""# Boltz2-Notebook · {here}
+        note = "\n> Need DNA/RNA, templates, covalent bonds or pocket and contact constraints? Use the **Advanced** notebook (the default).\n"
+    return f"""<img src="{BANNER}" alt="Boltz2-Notebook" width="400">
 
-**Predict biomolecular structures and binding affinity with Boltz-2, from a guided form, on a free Colab GPU.**
+# {here} notebook
 
-{BADGES}
+{INTRO[mode]}
+
+### Quick start
+
+1. **Choose a GPU:** *Runtime ▸ Change runtime type ▸ T4 GPU* (or better).
+2. **Install** and **Download model weights:** run the first two cells, once per session.
+3. **Generate Parameters:** describe your molecules in the form, then press **Save configuration**.
+4. **Run Boltz2 Engine**, then **Analyse Results:** the prediction takes 2 to 10 minutes on a T4; the analysis adds plots, a 3-D viewer and an HTML report.
+5. *Optional:* save the results to Google Drive or download them as a zip with the last two cells.
+{note}
+> **Reading affinity:** use the binding *probability* to tell binders from non-binders, and the predicted IC50 only to rank close analogues.
+
+### Notebooks
 
 {chr(10).join(table)}
-{extra}
-## Run it in six steps
 
-| Step | Cell | What happens |
-|:--:|:--|:--|
-| 1 | **Install dependencies** | Installs Boltz-2 and the notebook package, once per runtime. |
-| 2 | **Download model weights** | About 6 GB of checkpoints and a 3-residue warm-up run, once per runtime. |
-| 3 | **Generate parameters** | Fill in the form, check the live summary and YAML, press **Save configuration**. |
-| 4 | **Run Boltz-2 engine** | Live progress with phases and a timer, then a result card with confidence scores, affinity and a 3-D viewer. |
-| 5 | **Analyse results** | pLDDT and PAE plots, ensemble statistics and a downloadable HTML report. |
-| 6 | **Export** | Copy the results to Google Drive or download them as a zip. |
-
-Typical runtime: 2 to 10 minutes on a T4 GPU. Step-by-step examples are in the [Use Cases guide](https://atharvatilewale.github.io/boltz2-notebook/docs/use-cases.html).
-
-## Before you start
-
-- **GPU:** Runtime ▸ Change runtime type ▸ Hardware accelerator **GPU** (T4 or better).
-- **Python:** 3.12 runtimes install the official `boltz` package; 3.13 runtimes automatically get the `boltz-community` fork.
-- **Privacy:** nothing leaves your runtime except the ColabFold MSA request Boltz makes for your sequences. Usage reports are off unless you tick `SEND_USAGE_STATS` in the first cell: then your job names, chain and residue counts, run settings and outcomes (and the redacted end of the log of a failed job) are sent encrypted to the maintainer, never your sequences or ligands ([exactly what](https://github.com/AtharvaTilewale/boltz2-notebook/blob/main/docs/PRIVACY.md)).
-- **Affinity values** are the predicted log10 IC50 in µM, reported together with a binding probability. Use the probability to separate binders from decoys, and the IC50 only to rank close analogues.
-
-Questions or problems? Open an [issue](https://github.com/AtharvaTilewale/boltz2-notebook/issues). Credits and citation are at the end of this notebook.
+{LINKS}
 """
+
+
+def closing() -> str:
+    return f"""## Credits
+
+Developed by **Atharva Tilewale** and **Dr. Dhaval Patel**, Gujarat Biotechnology University.
+
+Code: [github.com/AtharvaTilewale/boltz2-notebook]({REPO}) · [MIT License]({REPO}/blob/main/LICENSE)
+
+## How to cite
+
+If this notebook helps your work, please cite:
+
+**Boltz2-Notebook** [![bioRxiv](https://img.shields.io/badge/bioRxiv-10.64898%2F2026.09.18.752645-b31b1b)]({PAPER_DOI})
+
+> Tilewale, A., Patel, D. (2026). {PAPER_TITLE}. bioRxiv. https://doi.org/10.64898/2026.09.18.752645
+
+**Boltz-2**, the model
+
+> Passaro, S., Corso, G., Wohlwend, J., et al. (2025). Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction. bioRxiv. https://doi.org/10.1101/2025.06.14.659707
+
+**Boltz-1**
+
+> Wohlwend, J., Corso, G., Passaro, S., et al. (2024). Boltz-1: Democratizing Biomolecular Interaction Modeling. bioRxiv. https://doi.org/10.1101/2024.11.19.624167
+
+**ColabFold**, if you used the MSA server
+
+> Mirdita, M., Schütze, K., Moriwaki, Y., Heo, L., Ovchinnikov, S., Steinegger, M. (2022). ColabFold: making protein folding accessible to all. Nature Methods 19, 679-682. https://doi.org/10.1038/s41592-022-01488-1
+"""
+
+
+CLOSING = list(NOTEBOOKS) + ["batch/Boltz2_Batch_v1_beta.ipynb"]      # the batch notebook keeps its own header; only the credits cell is shared
+
+
+def is_credits(cell) -> bool:
+    text = "".join(cell["source"])
+    return cell["cell_type"] == "markdown" and any(h in text for h in ("## Citation", "## Cite", "## How to cite"))
 
 
 def lines(text: str) -> list[str]:
@@ -85,22 +116,25 @@ def lines(text: str) -> list[str]:
 
 def main(check: bool) -> int:
     stale = []
-    for rel, mode in NOTEBOOKS.items():
+    for rel in sorted(set(NOTEBOOKS) | set(CLOSING)):
         path = ROOT / rel
         nb = json.loads(path.read_text())
         cells = nb["cells"]
-        want = lines(header(mode))
-        # v1 has no closing credits cell: keep its existing credits and citation text verbatim and move it to the end
-        if not any(c["cell_type"] == "markdown" and ("Citation" in "".join(c["source"]) or "Cite" in "".join(c["source"])) for c in cells[1:]):
-            old = "".join(cells[0]["source"])
-            start = old.find("##  Credits & Authorship")
-            end = old.find("> **Before you start:**")
-            if start >= 0 and end > start:
-                tail = old[start:end].rstrip() + "\n"
-                cells.append({"cell_type": "markdown", "metadata": {}, "source": lines(tail)})
-        if cells[0]["source"] != want:
+        changed = False
+        if rel in NOTEBOOKS and cells[0]["source"] != lines(header(NOTEBOOKS[rel])):
+            cells[0]["source"] = lines(header(NOTEBOOKS[rel]))
+            changed = True
+        if rel in CLOSING:
+            want = lines(closing())
+            at = [i for i, c in enumerate(cells) if i > 0 and is_credits(c)]
+            if not at:
+                cells.append({"cell_type": "markdown", "metadata": {}, "source": want})
+                changed = True
+            elif cells[at[-1]]["source"] != want:
+                cells[at[-1]]["source"] = want
+                changed = True
+        if changed:
             stale.append(rel)
-            cells[0]["source"] = want
             if not check:
                 path.write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
     source, target = ROOT / VERSIONED, ROOT / DEFAULT

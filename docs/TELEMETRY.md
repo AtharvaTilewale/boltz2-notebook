@@ -1,9 +1,9 @@
 # Collecting usage reports (maintainer guide)
 
-What users are told is in [PRIVACY.md](PRIVACY.md); this page is how to receive the data. The design in one paragraph: a user who ticks
-`SEND_USAGE_STATS` makes their runtime seal each report with **your public key** and POST it to **a web app that only appends rows to a Google Sheet you own**.
+What users are told is in [PRIVACY.md](PRIVACY.md); this page is how to receive the data. The design in one paragraph: `SEND_USAGE_STATS` is ticked by default (a user can untick it), and while it is ticked the user's
+runtime seals each report with **your public key** and POSTs it to **a web app that only appends rows to a Google Sheet you own**.
 The web app and the sheet only ever hold ciphertext; **the private key never leaves your machine**. Without both the endpoint and the public key in
-`boltz2nb/telemetry_config.py` the notebooks send nothing, whatever a user ticked.
+`boltz2nb/telemetry_config.py` the notebooks send nothing, whatever the box says.
 
 ## One-time setup
 
@@ -21,7 +21,7 @@ The web app and the sheet only ever hold ciphertext; **the private key never lea
 3. **Put the two public values into [`boltz2nb/telemetry_config.py`](../boltz2nb/telemetry_config.py):** `ENDPOINT` (the web app URL) and `PUBLIC_KEY` (printed in step 1).
    Check with `python -c "from boltz2nb import telemetry; print(telemetry.configured())"`, run the tests, and release a new version: the notebooks fetch the
    code from the tag named in Cell 1, so collection starts for users of that tag.
-4. **Try it:** in a notebook tick `SEND_USAGE_STATS`, run Cell 1, and a row appears in the sheet (about a second later). The row is unreadable by design.
+4. **Try it:** run Cell 1 of a notebook with `SEND_USAGE_STATS` left ticked, and a row appears in the sheet (about a second later). The row is unreadable by design.
 
 ## Reading the data
 

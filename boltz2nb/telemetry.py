@@ -1,6 +1,7 @@
-"""Opt-in usage reports, sealed so that only the maintainer can read them.
+"""Usage reports, sealed so that only the maintainer can read them.
 
-Nothing is sent unless the user ticks ``SEND_USAGE_STATS`` in the setup cell *and* this build has both a collection endpoint and the maintainer's
+``SEND_USAGE_STATS`` in the setup cell is ticked by default; unticking it sends nothing. A report is sent only when it is ticked *and* this build
+has both a collection endpoint and the maintainer's
 public key (``telemetry_config.py``). Every report is encrypted with that public key before it leaves the runtime (libsodium sealed box): the
 endpoint and anyone who can browse its storage hold only ciphertext, and only the holder of the private key - which is not in this repository -
 can open it. If the key or the encryption library is missing nothing is sent: a report is never sent in the clear.
@@ -46,11 +47,14 @@ def enabled() -> bool:
 
 
 def endpoint() -> str:
-    return os.environ.get("BOLTZ2NB_TELEMETRY_URL") or telemetry_config.ENDPOINT
+    """BOLTZ2NB_TELEMETRY_URL overrides the shipped endpoint; set to an empty string it switches reporting off."""
+    url = os.environ.get("BOLTZ2NB_TELEMETRY_URL")
+    return url if url is not None else telemetry_config.ENDPOINT
 
 
 def public_key() -> str:
-    return os.environ.get("BOLTZ2NB_TELEMETRY_KEY") or telemetry_config.PUBLIC_KEY
+    key = os.environ.get("BOLTZ2NB_TELEMETRY_KEY")
+    return key if key is not None else telemetry_config.PUBLIC_KEY
 
 
 def configured() -> bool:

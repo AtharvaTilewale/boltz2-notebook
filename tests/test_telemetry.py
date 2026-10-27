@@ -305,10 +305,11 @@ def runner(tmp_path, monkeypatch):
 def test_setup_cell_discloses_and_reports_the_setup(runner, monkeypatch, collector, keys, notebook):
     monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", collector.url)
     monkeypatch.setenv("BOLTZ2NB_TELEMETRY_KEY", keys["public"])
-    off = runner.run(notebook, 1)
-    assert "Usage statistics: off" in off and collector.posts == []
-    on = runner.run(notebook, 1, {"SEND_USAGE_STATS": True})
-    assert "Usage statistics: ON" in on and "only the maintainer can read" in on and "Never sent: sequences, ligands" in on and "Setup report sent" in on
+    off = runner.run(notebook, 1, {"SEND_USAGE_STATS": False})                       # unticked: nothing at all
+    assert "Usage statistics: off." in off and collector.posts == []
+    on = runner.run(notebook, 1)                                                     # the default: ticked
+    assert "Usage statistics: on" in on and "no personal data" in on and "Untick SEND_USAGE_STATS to turn them off" in on and "docs/PRIVACY.md" in on
+    assert "could not be sent" not in on
     (report,) = collector.reports(keys["private"])
     assert report["event"] == "boltz setup" and set(report) >= {"ts", "session_id", "notebook_version"}      # engine is whatever the environment reports
     assert (runner.content / "boltz_data" / "usage_reports.jsonl").exists()
@@ -316,7 +317,8 @@ def test_setup_cell_discloses_and_reports_the_setup(runner, monkeypatch, collect
 
 def test_setup_cell_says_so_when_the_build_cannot_send(runner, monkeypatch):
     _clean_env(monkeypatch)
-    out = runner.run("Boltz2.ipynb", 1, {"SEND_USAGE_STATS": True})
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", "")                               # what the tests use: switched off
+    out = runner.run("Boltz2.ipynb", 1)
     assert "not set up to collect reports" in out and "so nothing is sent" in out
 
 
@@ -391,12 +393,16 @@ def test_privacy_doc_names_every_event_and_field_the_code_can_send():
     for field in sorted(telemetry.ALLOWED_FIELDS - {"v"}):
         assert f"`{field}`" in text, f"docs/PRIVACY.md does not mention the field {field!r}"
     assert "usage_reports.jsonl" in text and "public key" in text
+    assert "on by default" in text and "untick it before running the cell and nothing is sent" in text    # the default and the way out
+    leaves = text[text.index("**What leaves the runtime**"):text.index("| Nothing else |")]
+    assert "Usage reports" in leaves and "SEND_USAGE_STATS" in leaves, "the summary table must list the usage reports"
 
 
 @pytest.mark.parametrize("notebook", ["Boltz2.ipynb", "colab/v1/Boltz2_v1.0.0.ipynb", "colab/v2/Boltz2_V2.0.0.ipynb"])
-def test_notebooks_describe_what_ticking_the_box_sends(notebook):
+def test_notebooks_turn_usage_reports_on_by_default_and_link_the_details(notebook):
     cell = "".join(json.loads((ROOT / notebook).read_text(encoding="utf-8"))["cells"][1]["source"])
     line = next(ln for ln in cell.splitlines() if "SEND_USAGE_STATS**" in ln)
-    for needed in ("encrypted", "only the maintainer can read", "job name", "never sequences", "log", "Off by default"):
-        assert needed in line, f"{notebook}: the SEND_USAGE_STATS description lacks {needed!r}"
-    assert "no job names" not in cell and "one anonymous ping" not in cell
+    assert line == ("# @markdown - **SEND_USAGE_STATS**: help improve the tool by sending usage reports, no personal data is shared. "
+                    "See [PRIVACY.md](https://github.com/AtharvaTilewale/boltz2-notebook/blob/main/docs/PRIVACY.md) for more info."), line
+    assert 'SEND_USAGE_STATS = True  # @param {type:"boolean"}' in cell
+    assert '"BOLTZ2NB_SEND_USAGE_STATS": "1" if SEND_USAGE_STATS else "0"' in cell                 # unticking it really switches reports off

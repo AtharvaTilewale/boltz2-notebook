@@ -1,476 +1,217 @@
-# Boltz2 Notebook - Advanced Biomolecular Structure Prediction & Affinity Analysis
-
-![Boltz2 Notebook Banner](https://raw.githubusercontent.com/AtharvaTilewale/boltz2-notebook/main/assets/boltz2_notebook_banner.jpeg)
-
-**Interactive Google Colab front-ends for [Boltz-2](https://github.com/jwohlwend/boltz)** — protein, nucleic-acid and protein-ligand structure prediction with binding-affinity estimation, confidence analysis and reports. No local GPU installation required; the same code also runs on a workstation.
-
-
 <div align="center">
 
+<img src="assets/boltz2-wordmark-horizontal-dark.svg" alt="Boltz2-Notebook" width="520">
+
+### Biomolecular structure and binding-affinity prediction with Boltz-2, in your browser
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb)
 [![bioRxiv](https://img.shields.io/badge/bioRxiv-10.64898%2F2026.09.18.752645-b31b1b)](https://doi.org/10.64898/2026.09.18.752645)
-![Python](https://img.shields.io/badge/Python-3.10%20--%203.13-blue?logo=python)
 [![CI](https://github.com/AtharvaTilewale/boltz2-notebook/actions/workflows/ci.yml/badge.svg)](https://github.com/AtharvaTilewale/boltz2-notebook/actions/workflows/ci.yml)
-![CUDA](https://img.shields.io/badge/CUDA-Enabled-green?logo=nvidia)
-![Boltz2](https://img.shields.io/badge/Model-Boltz2-purple)
-![Platform](https://img.shields.io/badge/Platform-Colab%20|%20Linux-lightgrey?logo=googlecolab)
-![License](https://img.shields.io/badge/License-MIT-orange)
-![Status](https://img.shields.io/badge/Status-Production-success)
+[![License: MIT](https://img.shields.io/badge/License-MIT-5A6985)](LICENSE)
+![Python 3.10 to 3.13](https://img.shields.io/badge/Python-3.10%E2%80%933.13-3B4FD6?logo=python&logoColor=white)
+
+[Website](https://atharvatilewale.github.io/boltz2-notebook/) · [Guide](https://atharvatilewale.github.io/boltz2-notebook/docs/use-cases.html) · [FAQ](https://atharvatilewale.github.io/boltz2-notebook/docs/faq.html) · [Paper](https://doi.org/10.64898/2026.09.18.752645) · [Report an issue](https://github.com/AtharvaTilewale/boltz2-notebook/issues)
 
 </div>
 
 ---
 
-## Quick Start
+**Boltz2-Notebook** puts [Boltz-2](https://github.com/jwohlwend/boltz) behind a guided form in Google Colab. Describe your molecules (proteins, DNA, RNA
+and small-molecule ligands), press run, and get a predicted 3-D structure with confidence scores, a binding-affinity estimate and a self-contained
+report. No installation, no command line, no YAML to write. The same code also runs on your own Linux machine.
 
-**Launch in Google Colab (Free GPU):**
+## Quick start
 
+1. **Open the [default notebook in Colab](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb)** and choose *Runtime ▸ Change runtime type ▸ T4 GPU*.
+2. Run **Install** and **Download model weights**, once per session (about 6 GB of model files).
+3. Run **Generate Parameters**, describe your system in the form and press **Save configuration**.
+4. Run **Run Boltz2 Engine** (2 to 10 minutes on a T4), then **Analyse Results** for the plots, the 3-D viewer and the HTML report.
 
-> **Note:** Google Colab provides free GPU access (T4 GPU). For best performance, select GPU runtime: `Runtime → Change runtime type → GPU`
+## Choose a notebook
 
+| Notebook | Use it for | Status | |
+|:--|:--|:--|:--|
+| **Advanced** (default) | Everything: proteins, DNA/RNA, ligands, templates, constraints, covalent bonds, modified residues, custom MSA | ![Stable](https://img.shields.io/badge/Stable-Default-green) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb) |
+| **Standard** | Proteins and small-molecule ligands, with a shorter form | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
+| **Batch** | Screening many inputs from a CSV or FASTA file, with ranking | ![Experimental](https://img.shields.io/badge/Pre--release-Experimental-orange) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb) |
 
-| Version | Features | Status | Launch |
-|---------|----------|--------|------|
-| **V2.0.0 (default)** | Multi-entity support, DNA/RNA, Advanced constraints, Cyclic peptides, PTMs | ![Stable](https://img.shields.io/badge/Stable-Default-green) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb) |
-| **V1.0.0 (Standard)** | Multi-chain proteins, Protein-ligand binding, Affinity analysis | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
-| **Batch v1.0** | Batch processing, CSV/FASTA inputs, High-throughput screening | ![Pre-release](https://img.shields.io/badge/Pre--release-Experimental-orange) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb) |
+Not sure? Start with **Advanced**: it does everything the Standard notebook does. The Batch notebook has its own [guide](batch/README.md).
 
----
+<details>
+<summary><b>Feature comparison</b></summary>
 
-## Key Features
+| Feature | Advanced | Standard | Batch |
+|:--|:--:|:--:|:--:|
+| Proteins and multi-chain complexes | ✅ | ✅ | ✅ |
+| Small-molecule ligands (SMILES or CCD code) | ✅ | ✅ | ✅ |
+| Binding affinity | ✅ | ✅ | ✅ |
+| DNA and RNA | ✅ | – | ✅ |
+| Uploaded MSA (`.a3m`) | ✅ | ✅ | ✅ |
+| Structural templates | ✅ | – | ✅ |
+| Covalent bonds, pocket and contact constraints | ✅ | – | – |
+| Modified residues, cyclic peptides | ✅ | – | – |
+| Import chains and ligands from a PDB or mmCIF file | ✅ | ✅ | – |
+| Many jobs from a CSV or FASTA file, with ranking | – | – | ✅ |
+| 3-D viewer and HTML report per job | ✅ | ✅ | summary table |
 
-- **Structure prediction** for single proteins, multi-chain complexes, DNA/RNA and small-molecule ligands (SMILES or CCD code)
-- **Binding affinity** (Boltz-2 affinity module): binding probability plus predicted IC50 with correct units (log10 µM → nM/µM, pIC50)
-- **Advanced inputs** — covalent bonds, pocket and contact conditioning, template guidance, PTMs, cyclic peptides, custom MSAs
-- **Confidence analysis done right** — per-token pLDDT, the *asymmetric* PAE matrix on a fixed 0–32 Å scale with inter-chain blocks, per-chain and interface summaries
-- **Ensemble statistics** across diffusion samples (mean ± SD of confidence, ipTM, pLDDT, affinity spread)
-- **Standalone HTML report** per job with embedded figures, 3-D viewer, metrics tables and full provenance (`run_context.json`)
-- **Live logs and diagnostics** — Boltz output streams into the cell; failures come with a likely cause and a fix
-- **Batch mode** — CSV/FASTA/YAML manifests, resume, ranking, export
-- **Reproducible** — pinned engine version, pinned notebook version (git tag), no silent overwrites
-- **Private** — no account lookups, no hidden logging; usage reports are opt-in, encrypted for the maintainer and never contain sequences or ligands ([exactly what is sent](docs/PRIVACY.md))
-- **Tested** — the logic lives in the `boltz2nb` package with a pytest suite and CI; generated inputs are validated with Boltz's own parser
+</details>
 
----
-<!-- ## Available Notebooks
+## What you get
 
-| Notebook | Status | Features | Best For | Link |
-|----------|--------|----------|----------|------|
-| **V2.0.0 (default)** | ![Stable](https://img.shields.io/badge/Stable-Default-green) | Multi-entity support, Advanced constraints, Template guidance, Affinity prediction, Cyclic peptides, PTMs | Production & Research | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/Boltz2.ipynb) |
-| **V1.0.0 (Standard)** | ![Stable](https://img.shields.io/badge/Stable-Mature-green) | Multi-chain protein prediction, Protein-ligand binding, Affinity analysis, 3D visualization | Standard predictions | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/colab/v1/Boltz2_v1.0.0.ipynb) |
-| **Batch v1.0.0** | ![Pre-release](https://img.shields.io/badge/Pre--release-Experimental-orange) | Batch processing, CSV/FASTA inputs, High-throughput screening, Result ranking, Manifest validation | Large-scale screening | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AtharvaTilewale/boltz2-notebook/blob/main/batch/Boltz2_Batch_v1_beta.ipynb)  -->
-
-
-## Feature Comparison
-
-| Feature | V1.0.0 | V2.0.0 | Batch |
-|---------|:------:|:------:|:-----:|
-| Single protein prediction | ✅ | ✅ | ✅ |
-| Protein-ligand binding | ✅ | ✅ | ✅ |
-| Multi-chain complexes | ✅ | ✅ | ✅ |
-| DNA/RNA support | ❌ | ✅ | ✅ (CSV columns) |
-| Template guidance | ✅ | ✅ | ✅ |
-| Custom MSA upload | ❌ | ✅ | ❌ |
-| Post-translational modifications | ❌ | ✅ | ❌ |
-| Custom constraints | ❌ | ✅ | ❌ |
-| Covalent bonds | ❌ | ✅ | ❌ |
-| Cyclic peptides | ❌ | ✅ | ❌ |
-| Affinity prediction | ✅ | ✅ | ✅ |
-| Batch processing | ❌ | ❌ | ✅ |
-| CSV/FASTA input | ❌ | ❌ | ✅ |
-| 3D visualization | ✅ | ✅ | ✅ |
-| Ensemble statistics / HTML report | ✅ | ✅ | ✅ (summary CSV) |
-
-
-### Notebook Selection Guide
-
-- **Most users, and anything with DNA/RNA, templates or constraints?** → Use **V2.0.0**, the default notebook (stable; it also covers everything V1 does)
-- **Only proteins and small-molecule ligands, and you want the shortest form?** → Use **V1.0.0** (Standard)
-- **Large-scale screening?** → Use **Batch v1.0** (automated high-throughput)
-
----
-
-## Available Notebooks
-
-| Notebook | Status | Best For |
-|----------|--------|----------|
-| [V2.0.0 (default)](colab/v2/Boltz2_V2.0.0.ipynb) | ![Stable](https://img.shields.io/badge/Stable-Default-green) | Advanced modeling, multi-entity complexes, structure-guided design |
-| [V1.0.0 (Standard)](colab/v1/Boltz2_v1.0.0.ipynb) | ![Stable](https://img.shields.io/badge/Stable-Proven-green) | Production predictions, protein-ligand binding, standard analysis |
-| [Batch v1.0](batch/Boltz2_Batch_v1_beta.ipynb) | ![Pre-release](https://img.shields.io/badge/Pre--release-Early-orange) | High-throughput screening, batch processing, automation |
-| [Parameter Generator](notebooks/Boltz2_paramgen.ipynb) | Utility | Custom configuration and input building |
-
----
-
-
-<!-- ---
-
-## Overview
-
-**Boltz2-Notebook V2.0.0** is an advanced interactive Google Colab platform for:
-
-- **Diffusion-based protein structure prediction**
-- **Protein-ligand binding affinity estimation**
-- **Multi-chain complex modeling** (proteins, DNA, RNA)
-- **Structure-guided design** (templates, constraints)
-- **Binding pocket prediction & contact conditioning**
-- **Interactive 3D visualization** with confidence metrics
-- **Automated analysis** (pLDDT, PAE, affinity scoring) -->
-
-<!-- This notebook eliminates the need for local GPU setup or command-line configuration, providing a fully guided workflow from input to publication-ready results. -->
-
-<!-- ---
-
-## What's New in V2.0.0?
-
-### Advanced Input Builder
-- **Multi-entity support**: Proteins, DNA, RNA, and ligands in one prediction
-- **Sequence modifications**: Post-translational modifications at specific residues
-- **Cyclic polymers**: Support for circular protein chains
-- **Custom MSA upload**: Provide pre-computed multiple sequence alignments
-- **Template guidance**: Structure-based modeling with PDB/CIF templates
-
-### Constraint System
-- **Covalent bonds**: Define custom bonds between atoms
-- **Pocket conditioning**: Specify binding pockets with distance constraints
-- **Contact pairs**: Force proximity between specific residue pairs
-- **Affinity properties**: Mark binder chains for affinity estimation
-
-### Enhanced Analysis
-- **Hit discovery dashboard**: Binding probability visualization
-- **Affinity assessment**: Predicted binding strength scoring
-- **Confidence metrics**: Per-residue confidence (pLDDT, PAE)
-- **Color-coded results**: Interactive 3D structure visualization
-- **Automated ranking**: Top predictions by quality metrics
-
-### Performance Improvements
-- **Configurable run profiles**: Fast, balanced, scientific quality modes
-- **Potentials refinement**: Physics-based energy minimization (optional)
-- **Multi-sample generation**: Generate multiple conformations per job
-- **GPU acceleration**: Full CUDA support for speed optimization -->
-
----
-
-## Interface
-
-Every screen shares one design system: a three-step input builder, a live run panel, a result card and a self-contained report.
-It is light by default, with a light / dark switch in the header of every panel (input builder, run panel, result card and the HTML report), and is laid out for screens from 360 px wide upwards.
-
-| Input builder | Run settings |
+| Input builder | Live run panel |
 |:--|:--|
-| ![Input builder with a protein, a ligand with its 2-D depiction, and the live summary rail](assets/ui/input-builder.png) | ![Quality presets and run settings](assets/ui/run-settings.png) |
+| ![Input builder with a protein, a ligand with its 2-D drawing, and the live summary](assets/ui/input-builder.png) | ![Run panel with phase tracker, timer and log, while running and after a failure](assets/ui/run-panel.png) |
+| **Result card** | **Run settings** |
+| ![Result card with confidence scores and the binding-affinity summary](assets/ui/result-card.png) | ![Quality presets and run settings](assets/ui/run-settings.png) |
 
-| Live run panel | Result card |
+- **A guided form** that checks your input as you type: sequences, chain IDs, SMILES (with a 2-D drawing) and CCD codes, with a live summary and YAML preview.
+- **Confidence scores** that are easy to read: per-residue pLDDT, the predicted aligned error (PAE) with chain-to-chain blocks, ipTM and interface summaries.
+- **Binding affinity** for small-molecule ligands: the probability that the ligand binds, and the predicted IC50 in µM and nM, with pIC50 and an approximate ΔG.
+- **Several samples per job** if you want them, with the spread across samples reported.
+- **A self-contained HTML report** for each job: figures, the 3-D structure, tables and everything needed to reproduce the run.
+- **Clear failures:** when a run fails, the notebook names the likely cause and how to fix it.
+- **Light and dark themes**, and a layout that works on screens from 360 px wide.
+
+## Reading the results
+
+| Quantity | What it means |
 |:--|:--|
-| ![Run panel with phase tracker, timer and log, in running and failed states](assets/ui/run-panel.png) | ![Result card with confidence tiles and the binding-affinity summary](assets/ui/result-card.png) |
+| **pLDDT** (0 to 100) | Confidence per residue: above 90 very high, 70 to 90 high, 50 to 70 low, below 50 very low. Ligands and modified residues get one value per heavy atom. |
+| **PAE** (Å) | Expected position error between two residues. It is asymmetric (row: aligned residue, column: scored residue); blocks between two chains show how confident the interface is. |
+| **Confidence score, pTM, ipTM** | Boltz's ranking metrics. Sample 0 is the best-ranked sample. |
+| **Binding probability** | How likely the ligand is a binder. Use it to separate binders from decoys. |
+| **Predicted affinity** | log10 of the IC50 in µM: −2 is about 10 nM, 0 is 1 µM, 1 is 10 µM. Use it to rank close analogues, not to compare unrelated compounds. Meaningful for small molecules only. |
 
-Highlights: chain-ID chips, FASTA paste, PDB / mmCIF import, ligand preview, Fast / Balanced / Scientific presets, a live YAML preview,
-validation messages next to the field that caused them, and failure messages that name the likely cause and the fix.
+## Requirements
 
----
-
-## Architecture & Workflow
-
-The notebooks are thin shells. Cell 1 clones a **pinned tag** of this repository and installs the `boltz2nb`
-package plus the Boltz engine (`boltz[cuda]==2.2.1` on Python ≤ 3.12, `boltz-community[cuda]==2.10.12` on 3.13);
-the remaining cells `%run` three scripts that call into the package.
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ Cell 1  setup.py          pinned engine + boltz2nb, GPU check         │
-│ Cell 2  warm-up           weights/CCD download (~6 GB once per runtime)│
-├──────────────────────────────────────────────────────────────────────┤
-│ Cell 3  param_gen.py      boltz2nb.ui input builder → yaml_builder     │
-│                           validates alphabets, chain IDs, constraints, │
-│                           SMILES (RDKit) → params.yaml + run_params.txt│
-├──────────────────────────────────────────────────────────────────────┤
-│ Cell 4  Boltz_Run.py      boltz2nb.runner: builds `boltz predict …`,   │
-│                           live run panel (phases, timer, log),         │
-│                           result card; never overwrites a job folder   │
-├──────────────────────────────────────────────────────────────────────┤
-│ Cell 5  analysis.py       boltz2nb.analysis/report: token mapping,     │
-│                           pLDDT, PAE, interface PAE, affinity, ensemble│
-│                           → analysis/<job>_report.html + summary.json  │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-Package layout: `boltz2nb/` (`yaml_builder`, `run_params`, `runner`, `tokens`, `analysis`, `report`, `batch`,
-`diagnostics`, `msa_cache`, `ligand`, `pdb_import`, `telemetry`, `install`, and `ui/` with the interface assets and renderers),
-`scripts/common/` (cell implementations), `scripts/v1|v2/` (thin launchers for the standard and advanced form), `tests/`.
-
-**Typical Time:** 2-10 minutes on T4 GPU (depending on complexity)
-
----
-
-<!-- ## Core Scripts Reference
-
-### 1. `param_gen.py` - Parameter Generator
-
-**Purpose:** Converts user input (proteins, ligands, constraints) into Boltz2 YAML configuration files.
-
-**Key Functions:**
-
-| Function | Purpose |
-|----------|---------|
-| `_build_sequences()` | Validates and formats protein/DNA/RNA/ligand sequences |
-| `_save_params()` | Generates `params.yaml` with YAML structure |
-| `_save_run_params()` | Creates `run_params.txt` with execution settings |
-| `_save_uploaded_file()` | Handles template and MSA file uploads |
-| `_clean_ids()` | Sanitizes chain IDs and entity identifiers |
-| `_clean_sequence()` | Normalizes protein sequences to uppercase |
-
-**Input Data Structure:**
-```python
-{
-    "sequences": [
-        {
-            "type": "protein",
-            "data": {
-                "id": ["A"],
-                "sequence": "MKTAYIAKQRQ...",
-                "msa": "/path/to/custom.a3m",  # optional
-                "modifications": [
-                    {"position": 5, "ccd": "PTR"},  # phosphotyrosine at pos 5
-                    {"position": 10, "ccd": "HYP"}   # hydroxyproline at pos 10
-                ],
-                "cyclic": True  # circular protein chain
-            }
-        },
-        {
-            "type": "ligand",
-            "data": {
-                "id": ["B"],
-                "smiles": "CC(=O)Oc1ccccc1C(=O)O"  # Aspirin
-                # OR "ccd": "HEM"  # Heme (use one, not both)
-            }
-        }
-    ],
-    "constraints": {
-        "bonds": [
-            {
-                "chain1": "A", "res1": 50, "atom1": "SG",
-                "chain2": "B", "res2": 10, "atom2": "S"  # covalent bond
-            }
-        ],
-        "pockets": [
-            {
-                "binder": "A",
-                "contacts": [
-                    {"chain": "B", "ref": "10"},  # residue 10 in chain B
-                    {"chain": "B", "ref": "ARG"}  # by name (if unique)
-                ],
-                "max_distance": 8.0,  # Å
-                "force": False
-            }
-        ],
-        "contacts": [
-            {
-                "chain1": "A", "ref1": 50,
-                "chain2": "B", "ref2": 20,
-                "max_distance": 5.0,
-                "force": True
-            }
-        ]
-    },
-    "templates": [
-        {
-            "path": "/path/to/template.pdb",
-            "chain_id": ["A"],
-            "template_id": ["template1"],
-            "force": False,
-            "threshold": 0.5  # confidence cutoff
-        }
-    ],
-    "properties": {
-        "affinity_binder": "B"  # chain to compute affinity for
-    }
-}
-```
-
-**Output Files:**
-- `params.yaml` - Boltz2 configuration file
-- `run_params.txt` - Execution parameters
-
----
-
-### 2. `Boltz_Run.py` - Execution Engine
-
-**Purpose:** Runs the Boltz2 prediction pipeline with loaded parameters and generates 3D structures.
-
-**Key Functions:**
-
-| Function | Purpose |
-|----------|---------|
-| `loader()` | Displays animated CLI loading spinner |
-| `parse_value()` | Converts string parameters to Python types |
-| `clean_ansi_codes()` | Removes terminal color codes from output |
-| `create_visualizations()` | Extracts PDB data for 3D visualization | -->
-
-### Execution Pipeline
-
-1. `run_params.txt` is parsed and validated (ranges, names, pairing strategy).
-2. `params.yaml` is re-serialised through the builder (no shell/`sed` step) to `<job>.yaml`.
-3. Output goes to `/content/boltz_data/<job>/`; an existing folder is kept and a timestamped sibling is used unless *override* is ticked.
-4. The command is built once, in `boltz2nb.runner.build_boltz_cmd` (shared with batch mode):
-   ```bash
-   boltz predict <job>.yaml --out_dir <job> --recycling_steps 3 --sampling_steps 200 \
-     --diffusion_samples 1 --step_scale 1.638 --max_msa_seqs 8192 --output_format pdb \
-     --use_msa_server --msa_pairing_strategy greedy --subsample_msa --num_subsampled_msa 1024 \
-     --max_parallel_samples 5 --write_full_pae [--use_potentials] [--override] [--seed N]
-   ```
-   `--use_msa_server` is omitted when every protein chain carries an `msa:` entry (uploaded MSA, cache hit, or `empty`).
-5. `boltz.log`, `run_context.json` (engine/torch/CUDA versions, GPU, command, input YAML + SHA-1) and `status.json` are written next to the predictions.
-
-### Configuration Parameters
-
-| Parameter | Default | Range | Meaning |
-|-----------|---------|-------|---------|
-| `recycling_steps` | 3 | 1–20 | Trunk recycling iterations |
-| `sampling_steps` | 200 | 10–1000 | Diffusion denoising steps |
-| `diffusion_samples` | 1 | 1–25 | Structures per job (≥3 recommended to get a spread estimate) |
-| `step_scale` | 1.638 | 0.5–5 | Diffusion temperature-like scale |
-| `max_msa_seqs` | 8192 | 1–16384 | MSA depth cap |
-| `subsample_msa` / `num_subsampled_msa` | on / 1024 | — | MSA subsampling |
-| `msa_pairing_strategy` | greedy | greedy / complete | Pairing for multi-chain server MSAs |
-| `use_potentials` | off | — | Physics-based steering potentials |
-| `override` | off | — | Reuse/overwrite the job folder |
-
-### Reading the results
-
-| Quantity | File | Meaning |
-|---|---|---|
-| pLDDT | `plddt_<job>_model_k.npz` | Per-token confidence, 0–100 (≥90 very high, 70–90 high, 50–70 low, <50 very low). One token per residue; one per heavy atom for ligands and modified residues. |
-| PAE | `pae_<job>_model_k.npz` | Token × token expected position error in Å. **Asymmetric**: row = aligned token, column = scored token. Off-diagonal chain blocks measure interface confidence. |
-| `confidence_score`, `ptm`, `iptm`, `ligand_iptm`, `complex_plddt`, `complex_pde` | `confidence_<job>_model_k.json` | Boltz ranking metrics (model 0 is the top-ranked sample). |
-| `affinity_probability_binary` | `affinity_<job>.json` | Probability that the ligand is a binder (hit discovery). |
-| `affinity_pred_value` | `affinity_<job>*.json` | **log10(IC50) in µM** — not kcal/mol. `-2` ≈ 10 nM, `0` = 1 µM, `1` = 10 µM. The report also gives pIC50 (= 6 − value) and an approximate ΔG. Only meaningful for small-molecule ligands. |
+- A Google account and a **GPU runtime** in Colab (T4 or better; use an L4 or A100 for large complexes).
+- About **6 GB** of model files are downloaded once per session.
+- The notebook installs the engine for you: `boltz 2.2.1` on Python 3.10 to 3.12, and the `boltz-community 2.10.12` fork on Python 3.13 runtimes, where the official package is not available yet.
+- Protein sequences are sent to the ColabFold MSA server to build alignments, unless you upload your own MSA or choose single-sequence mode.
 
 ## Troubleshooting
 
-Every failed run prints a *likely cause* and a *suggested fix* derived from the log (`boltz2nb/diagnostics.py`). Common cases:
+| Problem | What to do |
+|:--|:--|
+| **CUDA out of memory** | Lower *Max MSA sequences* (for example 256), use 1 sample, or switch to an L4 or A100 runtime. |
+| **MSA server failed or timed out** | Try again later, upload an `.a3m` file, or choose single-sequence mode. |
+| **Invalid SMILES or unknown CCD code** | The form checks both while you type; fix the entry it marks. |
+| **A template cannot be read** | Use the template's `.cif` file, or a `.pdb` file with SEQRES records (files written by Boltz itself have none). The form warns about this when you upload. |
+| **Low pLDDT everywhere** | Often a disordered region or single-sequence mode: provide an MSA or a template. |
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| **CUDA out of memory** | Complex too large for the GPU | `max_msa_seqs 256`, `diffusion_samples 1`, `max_parallel_samples 1`; use an L4/A100 runtime |
-| **MSA generation failed / timed out** | ColabFold server unavailable | Retry later, upload an `.a3m`, or tick single-sequence mode |
-| **Invalid SMILES** | Malformed ligand string | The parameter step validates SMILES with RDKit and shows formula/MW |
-| **Affinity requested for a protein chain** | Boltz-2 affinity only supports small molecules | Untick affinity for protein–protein jobs |
-| **Python 3.13 runtime** | Official `boltz` wheels need < 3.13 | Handled automatically (community fork); or choose runtime version 2026.7 |
-| **Low pLDDT everywhere** | Novel/disordered region or single-sequence mode | Provide an MSA; try template guidance |
+Every failed run shows a likely cause and a fix. For an analysis that does not line up with the predicted files, run `python -m boltz2nb.doctor /content/boltz_data/<job>` and include its output in an [issue](https://github.com/AtharvaTilewale/boltz2-notebook/issues).
 
-## Diagnosing an output mismatch
+## Privacy
 
-Engine versions differ in how the confidence arrays line up with the written structure. The analysis
-step detects the convention; if it cannot, it still reports the ranking metrics and affinity and says
-so. To see exactly what was found:
+Your inputs stay in your Colab runtime, except for the MSA request (your protein sequences go to the ColabFold server), the check of CCD codes with the PDB,
+and usage reports, which help improve the tool and contain no personal data. Usage reports are on by default: untick `SEND_USAGE_STATS` in the first cell to
+turn them off. See [PRIVACY.md](docs/PRIVACY.md) for details.
 
-```bash
-python -m boltz2nb.doctor /content/boltz_data/<job>
-```
+## Run it on your own machine
 
-## Running outside Colab
+<details>
+<summary><b>Install and run without Colab</b></summary>
 
 ```bash
 git clone https://github.com/AtharvaTilewale/boltz2-notebook && cd boltz2-notebook
 pip install -e ".[ligand,viewer]" "boltz[cuda]==2.2.1"
-export BOLTZ2NB_BASE_DIR=$PWD/boltz_data      # where params.yaml / run_params.txt / results live
+export BOLTZ2NB_BASE_DIR=$PWD/boltz_data      # where params.yaml, run_params.txt and the results live
 python - <<'PY'
 from boltz2nb.yaml_builder import build_yaml, write_yaml, simple_spec
 from boltz2nb.run_params import serialize_run_params, DEFAULTS
 write_yaml(build_yaml(simple_spec("MKTAYIAKQRQISFVKSHFSRQLEERLGL", ligand_smiles="CC(=O)Oc1ccccc1C(=O)O", affinity=True)), "boltz_data/params.yaml")
 open("boltz_data/run_params.txt", "w").write(serialize_run_params(dict(DEFAULTS, job_name="demo")))
 PY
-python scripts/common/Boltz_Run.py && python scripts/common/analysis.py   # report in boltz_data/demo/analysis/
-pytest                                                                   # unit tests, no GPU required
+python scripts/common/Boltz_Run.py && python scripts/common/analysis.py   # the report is written to boltz_data/demo/analysis/
 ```
 
----
+</details>
 
-<!-- ## File Structure
+<details>
+<summary><b>Run settings and their defaults</b></summary>
 
-```
-V2.0.0/
-├── Boltz2_V2.0.0.ipynb           # Main notebook
-├── README.md                       # This file
-├── scripts/
-│   ├── param_gen.py               # Input builder → params.yaml
-│   ├── Boltz_Run.py               # Boltz2 executor
-│   ├── analysis.py                # Results analyzer & visualizer
-│   ├── setup.py                   # Environment setup
-│   ├── dist/                      # Distribution files
-│   └── __pycache__/               # Python cache
-└── New Features.txt               # V2 changelog
-``` -->
-<!-- 
----
+| Setting | Default | Range | Meaning |
+|:--|:--|:--|:--|
+| Recycling steps | 3 | 1 to 20 | Refinement passes of the trunk |
+| Sampling steps | 200 | 10 to 1000 | Diffusion steps per sample |
+| Diffusion samples | 1 | 1 to 25 | Structures per job; 3 or more give a spread estimate |
+| Step scale | 1.638 | 0.5 to 5 | Lower values give more diverse samples |
+| Max MSA sequences | 8192 | 1 to 16384 | Depth cap of the alignment |
+| Subsample MSA | on, 1024 | | Faster and lighter on memory |
+| MSA pairing | greedy | greedy, complete | How chains of a complex are paired |
+| Steering potentials | off | | Physics-based potentials during sampling |
 
-## Requirements
+The **Fast** preset uses 2 recycling steps, 50 sampling steps and an MSA depth of 256; **Scientific** uses 5 recycling steps, 5 samples and the steering potentials.
 
-- **Python:** 3.8+
-- **GPU:** NVIDIA GPU (T4 or better recommended)
-- **Runtime:** Google Colab (free) or Linux with CUDA
-- **Dependencies:** PyTorch, Biopython, NumPy, Matplotlib, PyYAML, py3Dmol
+</details>
 
---- -->
+<details>
+<summary><b>How it works</b></summary>
+
+The notebooks are thin shells. Cell 1 clones a pinned release tag of this repository and installs the `boltz2nb` package and the Boltz engine; the other
+cells run three scripts that call into the package:
+
+| Cell | Script | What it does |
+|:--|:--|:--|
+| Generate Parameters | `scripts/v1` or `scripts/v2/param_gen.py` | The input builder; writes `params.yaml` and `run_params.txt` |
+| Run Boltz2 Engine | `scripts/common/Boltz_Run.py` | Builds the `boltz predict` command, shows live progress and the result card; never overwrites an existing job folder |
+| Analyse Results | `scripts/common/analysis.py` | Maps confidence values to residues, computes interface and ensemble statistics, writes `analysis/<job>_report.html` and `summary.json` |
+
+Each job folder also keeps `boltz.log`, `status.json` and `run_context.json` (engine, PyTorch and CUDA versions, GPU, the exact command and the input).
+The package, its tests and the release process are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+</details>
 
 ## Documentation
 
-- **[Version Table](releases/version_table.md)** — Feature comparison across releases
-- **[Changelog](releases/CHANGELOG.md)** — Complete release history
-- **[Batch README](batch/README.md)** — High-throughput batch processing guide
-- **[Usage reports for maintainers](docs/TELEMETRY.md)** — How to receive and read the opt-in, encrypted usage reports
-- **[Privacy](docs/PRIVACY.md)** — What leaves the runtime (the MSA request, the CCD-code lookup, and - only if you tick `SEND_USAGE_STATS` - the encrypted usage reports)
-- **[Contributing](CONTRIBUTING.md)** — Package layout, tests, release process
-- **[Verification log](docs/VERIFICATION.md)** — What has been tested, how, and what has not
-
----
+- [Use cases](https://atharvatilewale.github.io/boltz2-notebook/docs/use-cases.html) and [FAQ](https://atharvatilewale.github.io/boltz2-notebook/docs/faq.html) on the website
+- [Batch guide](batch/README.md): high-throughput screens from CSV or FASTA
+- [Changelog](releases/CHANGELOG.md) and [version table](releases/version_table.md)
+- [Privacy](docs/PRIVACY.md) and, for maintainers, [receiving usage reports](docs/TELEMETRY.md)
+- [Contributing](CONTRIBUTING.md) and the [verification log](docs/VERIFICATION.md)
 
 ## Citation
 
-If you use Boltz2-Notebook, please cite:
+If Boltz2-Notebook helps your work, please cite the preprint, and Boltz-2 for the model:
 
 ```bibtex
 @article{Tilewale2026.09.18.752645,
-  author = {Tilewale, Atharva and Patel, Dhaval},
-  title = {Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model.},
-  elocation-id = {2026.09.18.752645},
-  year = {2026},
-  doi = {10.64898/2026.09.18.752645},
-  publisher = {Cold Spring Harbor Laboratory},
-  URL = {https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645},
-  eprint = {https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645.full.pdf},
-  journal = {bioRxiv}
+  author    = {Tilewale, Atharva and Patel, Dhaval},
+  title     = {Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based
+               Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model},
+  journal   = {bioRxiv},
+  year      = {2026},
+  doi       = {10.64898/2026.09.18.752645},
+  url       = {https://www.biorxiv.org/content/early/2026/09/24/2026.09.18.752645},
+  publisher = {Cold Spring Harbor Laboratory}
 }
 
 @article{Passaro2025,
-  title={Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction},
-  author={Passaro, S. and Corso, G. and Wohlwend, J. and others},
-  journal={bioRxiv},
-  year={2025}
+  author  = {Passaro, Saro and Corso, Gabriele and Wohlwend, Jeremy and others},
+  title   = {Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction},
+  journal = {bioRxiv},
+  year    = {2025},
+  doi     = {10.1101/2025.06.14.659707}
 }
 
 @article{Wohlwend2024,
-  title={Boltz-1: Democratizing Biomolecular Interaction Modeling},
-  author={Wohlwend, J. and Corso, G. and Passaro, S. and others},
-  journal={bioRxiv},
-  year={2024}
+  author  = {Wohlwend, Jeremy and Corso, Gabriele and Passaro, Saro and others},
+  title   = {Boltz-1: Democratizing Biomolecular Interaction Modeling},
+  journal = {bioRxiv},
+  year    = {2024},
+  doi     = {10.1101/2024.11.19.624167}
 }
 ```
 
----
+## Authors and acknowledgements
 
-## Credits & Links
+Developed by [Atharva Tilewale](https://github.com/AtharvaTilewale) and Dr. Dhaval Patel at Gujarat Biotechnology University.
+Built on [Boltz](https://github.com/jwohlwend/boltz) by Wohlwend, Corso, Passaro and colleagues, and on [boltz-community](https://github.com/Novel-Therapeutics/boltz-community) for Python 3.13 runtimes.
+Alignments come from the [ColabFold](https://github.com/sokrypton/ColabFold) MSA server.
 
-- **Notebook:** [Atharva Tilewale](https://github.com/AtharvaTilewale) & Dr. Dhaval Patel (Gujarat Biotechnology University)
-- **Boltz-2 engine:** [jwohlwend/boltz](https://github.com/jwohlwend/boltz) (`boltz==2.2.1`); on Python 3.13 runtimes the [boltz-community](https://github.com/Novel-Therapeutics/boltz-community) fork (`2.10.12`) is installed instead
-- **License:** MIT License — See [LICENSE](LICENSE) for details.
-
----
-
-## Getting Help
-
-- **Issues & Bugs:** [GitHub Issues](https://github.com/AtharvaTilewale/boltz2-notebook/issues)
-- **Feature Requests:** [GitHub Discussions](https://github.com/AtharvaTilewale/boltz2-notebook/discussions)
-- **Questions:** See the [Q&A Documentation](docs/) or open a discussion
+Questions and ideas are welcome in [Discussions](https://github.com/AtharvaTilewale/boltz2-notebook/discussions); bugs go to [Issues](https://github.com/AtharvaTilewale/boltz2-notebook/issues).
+Released under the [MIT License](LICENSE).
 
 ---
 
-**Version:** 2.1.2 | **Changelog:** [releases/CHANGELOG.md](releases/CHANGELOG.md)
+**Version:** 2.1.2 · [Changelog](releases/CHANGELOG.md)

@@ -145,3 +145,5 @@ def _never_reach_the_real_usage_endpoint(monkeypatch):
     from boltz2nb import telemetry_config
     monkeypatch.setattr(telemetry_config, "ENDPOINT", "")
     monkeypatch.setattr(telemetry_config, "PUBLIC_KEY", "")
+    # Subprocesses import a fresh copy of the package with the real values; an empty BOLTZ2NB_TELEMETRY_URL switches those off too.
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", "")

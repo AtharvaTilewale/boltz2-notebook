@@ -37,12 +37,27 @@ def test_no_stable_notebook_calls_anything_beta(path):
     assert not re.search(r"beta", shown, re.I), f"{path.name} still mentions beta"
 
 
+def _row(head, name):
+    return next(ln for ln in head.splitlines() if ln.startswith(f"| **{name}**"))
+
+
 def test_the_header_names_the_default_and_where_you_are():
     head = "".join(cells(DEFAULT)[0]["source"])
-    assert head.startswith("# Boltz2-Notebook · Advanced\n") and "**Advanced (default)** **← you are here**" in head
-    assert "Batch (experimental)" in head                                  # the batch notebook really is still experimental
+    assert "\n# Advanced notebook\n" in head and "· default · *you are here*" in _row(head, "Advanced")
+    assert "blob/main/Boltz2.ipynb" in _row(head, "Advanced")
+    assert "experimental" in _row(head, "Batch")                           # the batch notebook really is still experimental
     std = "".join(cells(STANDARD)[0]["source"])
-    assert std.startswith("# Boltz2-Notebook · Standard\n") and "Advanced (default)" in std and "← you are here" in std
+    assert "\n# Standard notebook\n" in std and "default" in _row(std, "Advanced") and "*you are here*" in _row(std, "Standard")
+    assert "*you are here*" not in _row(std, "Advanced")
+
+
+def test_the_header_is_short_and_links_privacy_instead_of_explaining_it():
+    for nb in (DEFAULT, STANDARD):
+        head = "".join(cells(nb)[0]["source"])
+        assert "[Privacy](https://github.com/AtharvaTilewale/boltz2-notebook/blob/main/docs/PRIVACY.md)" in head
+        assert "SEND_USAGE_STATS" not in head and "encrypted" not in head and "ColabFold MSA request" not in head
+        assert len(head) < 2600, f"{nb.name} header grew to {len(head)} characters"
+        assert "img.shields.io" not in head                                  # no badge wall in the notebook
 
 
 def test_the_old_beta_link_still_opens_a_page_that_points_to_the_new_notebook():
@@ -56,9 +71,10 @@ def test_the_old_beta_link_still_opens_a_page_that_points_to_the_new_notebook():
 
 def test_the_public_text_calls_v2_stable_and_the_default():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    launch = readme[readme.index("| Version | Features | Status | Launch |"):].split("\n\n")[0].splitlines()
-    assert launch[2].startswith("| **V2.0.0 (default)**") and "Stable-Default" in launch[2] and "blob/main/Boltz2.ipynb" in launch[2]
-    assert not [ln for ln in launch if "V1" in ln or "V2" in ln if "Beta" in ln], "V1 and V2 are not beta"
+    launch = readme[readme.index("## Choose a notebook"):].split("\n\n")[1].splitlines()
+    assert launch[2].startswith("| **Advanced** (default)") and "Stable-Default" in launch[2] and "blob/main/Boltz2.ipynb" in launch[2]
+    assert launch[3].startswith("| **Standard**") and "Stable" in launch[3] and "colab/v1/Boltz2_v1.0.0.ipynb" in launch[3]
+    assert not [ln for ln in launch[2:4] if "Beta" in ln or "Experimental" in ln], "Advanced and Standard are not beta"
     assert "Beta-Latest" not in readme
     table = (ROOT / "releases/version_table.md").read_text(encoding="utf-8")
     assert "v2.0.0-beta" not in table and "| v2.0.0 | Stable |" in table and "Current, default" in table
@@ -70,5 +86,6 @@ def test_the_public_text_calls_v2_stable_and_the_default():
 
 def test_the_batch_notebook_is_still_labelled_experimental():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "Pre--release-Experimental" in readme
+    batch = next(ln for ln in readme.splitlines() if ln.startswith("| **Batch**"))
+    assert "Pre--release-Experimental" in batch and "batch/Boltz2_Batch_v1_beta.ipynb" in batch
     assert "Boltz2_Batch_v1_beta.ipynb" in (ROOT / "tools/build_notebook_headers.py").read_text(encoding="utf-8")

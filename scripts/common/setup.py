@@ -5,7 +5,7 @@
 Reads these environment variables (set by the notebook cell):
   BOLTZ2NB_REPO_DIR          clone of this repository (default /content/boltz2-notebook)
   FORCE_REINSTALL            "1" to reinstall even if boltz imports
-  BOLTZ2NB_SEND_USAGE_STATS  "1" only if the user opted in (encrypted usage reports, see boltz2nb/telemetry.py and docs/PRIVACY.md)
+  BOLTZ2NB_SEND_USAGE_STATS  "1" while SEND_USAGE_STATS is ticked, the default (encrypted usage reports, see boltz2nb/telemetry.py and docs/PRIVACY.md)
 No Google account information is read or transmitted.
 """
 import os
@@ -136,17 +136,17 @@ try:
     from boltz2nb import telemetry
     _state = telemetry.state()
     if _state == "off":
-        print("[i] Usage statistics: off (tick SEND_USAGE_STATS in this cell to help improve the tool; docs/PRIVACY.md lists exactly what is sent).")
+        print("[i] Usage statistics: off.")
     elif _state == "unconfigured":
         print("[i] Usage statistics: ticked, but this build is not set up to collect reports (no endpoint or key yet), so nothing is sent.")
     else:
         if not module_available("nacl"):
             step("Installing the encryption library for usage reports", lambda: run([sys.executable, "-m", "pip", "install", "-q", "pynacl"]), allow_fail=True)
         sent = telemetry.setup_done(engine_version(), sys.version.split()[0], copy_to=BASE_DIR / "usage_reports.jsonl")
-        print("[i] Usage statistics: ON. Reports are encrypted; only the maintainer can read them. Sent: this setup, each job's name, number of chains and\n"
-              "    residues and run settings, and how each job ends (success, or the redacted end of the log if it failed). Never sent: sequences, ligands,\n"
-              "    modifications, results or account details. A copy of everything sent is kept in usage_reports.jsonl. Details: docs/PRIVACY.md")
-        print(f"[i] Setup report {'sent' if sent else 'could not be sent (continuing)'}.")
+        print("[i] Usage statistics: on - anonymous usage reports help improve the tool; no personal data is shared. "
+              "Untick SEND_USAGE_STATS to turn them off. Details: docs/PRIVACY.md")
+        if not sent:
+            print("[i] Usage report could not be sent (continuing).")
 except Exception:  # noqa: BLE001
     pass
 

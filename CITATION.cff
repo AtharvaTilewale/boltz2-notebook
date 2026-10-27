@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model."
+title: "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model"
 message: "If you use this software or notebook, please cite our preprint as below."
 type: software
 authors:
@@ -27,7 +27,7 @@ preferred-citation:
       given-names: Atharva
     - family-names: Patel
       given-names: Dhaval
-  title: "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model."
+  title: "Boltz2-Notebook: An Interactive Google Colab Platform for Diffusion-Based Biomolecular Structure and Binding Affinity Prediction using the Boltz2 model"
   journal: "bioRxiv"
   year: 2026
   doi: 10.64898/2026.09.18.752645
