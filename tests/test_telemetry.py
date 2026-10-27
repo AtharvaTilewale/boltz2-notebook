@@ -375,17 +375,22 @@ def test_reader_opens_the_exported_sheet_and_skips_junk(opted_in, tmp_path, caps
     assert [json.loads(ln)["event"] for ln in (tmp_path / "out.jsonl").read_text().splitlines()] == ["boltz setup", "job failed", "job succeeded"]
 
 
-def _plain_env():
-    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
-    env.pop("PYTHONHOME", None)
+def _plain_env(tmp_path):
+    """The environment of a maintainer's terminal: the package is not importable. The interpreter running the tests may have it installed
+    (CI installs it in editable mode), so a stub package that refuses to import is put first on the path instead of relying on its absence."""
+    stub = tmp_path / "no_boltz2nb" / "boltz2nb"
+    stub.mkdir(parents=True, exist_ok=True)
+    (stub / "__init__.py").write_text('raise ImportError("boltz2nb is not installed in a plain terminal")\n')
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
+    env["PYTHONPATH"] = str(stub.parent)
     return env
 
 
 def test_the_maintainer_tools_run_from_a_plain_terminal(opted_in, tmp_path):
-    """Run as `python tools/<tool>.py` from any directory with only pynacl installed: no PYTHONPATH, the package is not importable.
+    """Run as `python tools/<tool>.py` from any directory with only pynacl installed, where the package cannot be imported.
     (The tools were first tested in-process with the repository on the path, which hid an import of boltz2nb that fails in a real terminal.)"""
     collector, keys = opted_in
-    probe = subprocess.run([sys.executable, "-c", "import boltz2nb"], capture_output=True, cwd=tmp_path, env=_plain_env())
+    probe = subprocess.run([sys.executable, "-c", "import boltz2nb"], capture_output=True, cwd=tmp_path, env=_plain_env(tmp_path))
     assert probe.returncode != 0, "boltz2nb is importable here, so this test would not catch a hidden dependency on it"
     telemetry.job_ended(False, "j1", 3.0, engine="e", return_code=1, likely_cause="GPU ran out of memory.", log_text="boom")
     export = tmp_path / "reports.csv"
@@ -396,11 +401,11 @@ def test_the_maintainer_tools_run_from_a_plain_terminal(opted_in, tmp_path):
     key_file = tmp_path / "private.key"
     key_file.write_text(keys["private"])
     done = subprocess.run([sys.executable, str(ROOT / "tools" / "telemetry_read.py"), "--key", str(key_file), str(export), "--jsonl", "out.jsonl"],
-                          capture_output=True, text=True, cwd=tmp_path, env=_plain_env())
+                          capture_output=True, text=True, cwd=tmp_path, env=_plain_env(tmp_path))
     assert done.returncode == 0, done.stderr
     assert "1 reports" in done.stdout and "GPU ran out of memory." in done.stdout and json.loads((tmp_path / "out.jsonl").read_text())["event"] == "job failed"
     made = subprocess.run([sys.executable, str(ROOT / "tools" / "telemetry_keygen.py"), "--out", str(tmp_path / "keys" / "k.key")],
-                          capture_output=True, text=True, cwd=tmp_path, env=_plain_env())
+                          capture_output=True, text=True, cwd=tmp_path, env=_plain_env(tmp_path))
     assert made.returncode == 0, made.stderr
     assert len(made.stdout.strip().splitlines()[-1]) == 44                       # a base64 32-byte public key
 
