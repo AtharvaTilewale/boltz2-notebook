@@ -23,7 +23,8 @@ dependencies = [
 ligand = ["rdkit>=2023.9"]
 viewer = ["py3Dmol>=2"]
 engine = ["boltz[cuda]==2.2.1; python_version < '3.13'", "boltz-community[cuda]==2.10.12; python_version >= '3.13'"]
-dev = ["pytest>=7", "pytest-cov", "ruff", "ipython>=8", "ipywidgets>=8"]
+telemetry = ["pynacl>=1.5"]
+dev = ["pytest>=7", "pytest-cov", "ruff", "ipython>=8", "ipywidgets>=8", "pynacl>=1.5"]
 
 [project.urls]
 Homepage = "https://github.com/AtharvaTilewale/boltz2-notebook"

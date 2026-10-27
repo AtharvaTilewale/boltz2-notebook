@@ -71,7 +71,7 @@ Typical runtime: 2 to 10 minutes on a T4 GPU. Step-by-step examples are in the [
 
 - **GPU:** Runtime ▸ Change runtime type ▸ Hardware accelerator **GPU** (T4 or better).
 - **Python:** 3.12 runtimes install the official `boltz` package; 3.13 runtimes automatically get the `boltz-community` fork.
-- **Privacy:** nothing leaves your runtime except the ColabFold MSA request Boltz makes for your sequences. Usage statistics are off unless you enable `SEND_USAGE_STATS` (anonymous, no account data).
+- **Privacy:** nothing leaves your runtime except the ColabFold MSA request Boltz makes for your sequences. Usage reports are off unless you tick `SEND_USAGE_STATS` in the first cell: then your job names, chain and residue counts, run settings and outcomes (and the redacted end of the log of a failed job) are sent encrypted to the maintainer, never your sequences or ligands ([exactly what](https://github.com/AtharvaTilewale/boltz2-notebook/blob/main/docs/PRIVACY.md)).
 - **Affinity values** are the predicted log10 IC50 in µM, reported together with a binding probability. Use the probability to separate binders from decoys, and the IC50 only to rank close analogues.
 
 Questions or problems? Open an [issue](https://github.com/AtharvaTilewale/boltz2-notebook/issues). Credits and citation are at the end of this notebook.

@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Usage reports, opt-in and encrypted** (the `SEND_USAGE_STATS` box in Cell 1, off by default). A ticked box now reports: `boltz setup` when the first cell
+  finishes; `job started` with the job name, number of chains, number of ligand chains, total polymer residues and the run settings; and `job succeeded`, or
+  `job failed` with the diagnosis, the return code and the last lines of the engine log. Every report carries the UTC time, a random session id, the versions and
+  the GPU model. Never sent: sequences, ligands, modifications, constraints, templates, results or account details. Failed-job logs are masked first (sequences,
+  ligand strings, paths, e-mail addresses, URL queries).
+- **Only the maintainer can read the reports.** Each one is sealed in the user's runtime with the maintainer's public key (libsodium sealed box; `pynacl`),
+  so the collecting web app and its sheet hold ciphertext only. Nothing is sent unless both an endpoint and the public key are set in
+  `boltz2nb/telemetry_config.py` (both empty in this release, so nothing is sent yet), and a report is never sent in the clear.
+- A plain copy of every report that was sent is written to `usage_reports.jsonl` (in the job folder; the setup report in the work folder), and Cell 1 prints a
+  summary of what is collected when the box is ticked. `docs/PRIVACY.md` lists every event and field (a test keeps it in step with the code).
+- For the maintainer: `telemetry/receiver.gs` (a Google Apps Script web app that appends sealed reports to a private sheet), `tools/telemetry_keygen.py` (makes the
+  key pair; refuses to write the private key inside a git working tree), `tools/telemetry_read.py` (opens an export of the sheet) and `docs/TELEMETRY.md`.
+
+### Changed
+- The earlier opt-in ping is replaced: it sent one anonymous ping per event to an endpoint nobody had configured. A server that answered with an error status
+  is no longer reported as "sent".
+
 ## v2.1.1
 
 The Advanced notebook is now the stable default, and a first run of the notebooks against the real engine fixed what it showed (below).

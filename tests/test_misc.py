@@ -1,7 +1,7 @@
 import sys
 from types import SimpleNamespace
 
-from boltz2nb import BOLTZ_COMMUNITY_PIN, BOLTZ_OFFICIAL_PIN, telemetry
+from boltz2nb import BOLTZ_COMMUNITY_PIN, BOLTZ_OFFICIAL_PIN
 from boltz2nb.diagnostics import diagnose_failure
 from boltz2nb.install import install_commands, pick_boltz_requirement, pip_fallback_command
 from boltz2nb.ligand import depict_svg, describe_smiles
@@ -88,17 +88,6 @@ def test_diagnose_failure():
     assert "SMILES" in diagnose_failure("ValueError: Could not parse SMILES")["likely_cause"]
     assert "ColabFold" in diagnose_failure("requests.exceptions.ConnectionError: api.colabfold.com")["likely_cause"]
     assert "Unrecognised" in diagnose_failure("something odd\nlast line")["likely_cause"]
-
-
-def test_telemetry_is_off_by_default(monkeypatch):
-    monkeypatch.delenv("BOLTZ2NB_SEND_USAGE_STATS", raising=False)
-    assert telemetry.enabled() is False
-    assert telemetry.send("setup", endpoint="http://127.0.0.1:9/never") is False
-    monkeypatch.setenv("BOLTZ2NB_SEND_USAGE_STATS", "1")
-    assert telemetry.enabled() is True
-    assert telemetry.send("setup", endpoint="") is False  # no endpoint configured -> nothing sent
-    payload = telemetry.build_payload("setup", engine="boltz 2.2.1")
-    assert set(payload) <= telemetry.ALLOWED_FIELDS and not any(k in payload for k in ("email", "username", "job_name"))
 
 
 def test_ligand_helpers():

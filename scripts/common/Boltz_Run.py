@@ -113,16 +113,26 @@ if not panel.rich:  # plain Python / terminal: keep the old, explicit console he
 print(f"[i] Live log: {output_dir / 'boltz.log'}")
 
 # ---- 6. run with live output ---------------------------------------------------------------
+# Opt-in usage report (docs/PRIVACY.md): job name, number of chains and residues, run settings. Never sequences, ligands or modifications.
+_usage_copy = output_dir / "usage_reports.jsonl"
+if telemetry.job_started(job_yaml.read_text(), params, engine=engine_version() or "", copy_to=_usage_copy):
+    print("[i] Usage statistics: job report sent (a copy of what was sent is in usage_reports.jsonl in the job folder).")
 panel.start()
 result = run_boltz(cmd, output_dir / "boltz.log", on_line=panel.feed)
 elapsed = result["runtime_sec"]
-telemetry.send("run_finished" if result["return_code"] == 0 else "run_failed", engine=engine_version())
+
+
+def _report_end(ok, **details):
+    if telemetry.job_ended(ok, job_name, elapsed, engine_version() or "", _usage_copy, **details):
+        print("[i] Usage statistics: job result sent" + ("" if ok else " with the redacted end of the log") + " (copy in usage_reports.jsonl).")
 
 # ---- 7. outcome ------------------------------------------------------------------------------
 status = {"job_name": job_name, "output_dir": str(output_dir), "return_code": result["return_code"],
           "runtime_sec": elapsed, "command": cmd}
 if result["return_code"] != 0:
-    diag = diagnose_failure(Path(result["log_path"]).read_text())
+    _log = Path(result["log_path"]).read_text()
+    diag = diagnose_failure(_log)
+    _report_end(False, return_code=result["return_code"], likely_cause=diag["likely_cause"], log_text=_log)
     status.update({"status": "FAILED", **diag})
     write_json(output_dir / "status.json", status)
     (BASE / "last_job.json").write_text(json.dumps(status, indent=2))
@@ -134,10 +144,12 @@ else:
     pred_dir = find_predictions_dir(output_dir)
     if pred_dir is None:
         # Boltz skips an input it cannot process and still exits with code 0; its log says why.
-        diag = diagnose_failure(Path(result["log_path"]).read_text())
+        _log = Path(result["log_path"]).read_text()
+        diag = diagnose_failure(_log)
         if diag["likely_cause"] == "Unrecognised error.":
             diag = {"likely_cause": "Boltz exited normally but wrote no predictions directory.",
                     "suggested_fix": "Open the log above; re-run with a different seed or fewer tokens."}
+        _report_end(False, return_code=0, likely_cause=diag["likely_cause"], log_text=_log)
         status.update({"status": "FAILED", **diag})
         write_json(output_dir / "status.json", status)
         (BASE / "last_job.json").write_text(json.dumps(status, indent=2))
@@ -151,6 +163,7 @@ else:
             print(f"[i] MSA cache: stored {len(stored)} new MSA file(s).")
     job = load_job(pred_dir)
     summary = summary_dict(job)
+    _report_end(True)
     status.update({"status": "COMPLETED", "predictions_dir": str(pred_dir), "n_models": len(job.models)})
     write_json(output_dir / "status.json", status)
     (BASE / "last_job.json").write_text(json.dumps(status, indent=2))

@@ -21,6 +21,7 @@ import pytest
 pytest.importorskip("IPython", reason="the notebook cells run inside an IPython shell")
 
 from test_notebooks_offline import ASPIRIN, ASSETS, SEQ, Runner, call  # noqa: E402  (tests/ is on sys.path; no package)
+from test_telemetry import collector, keys  # noqa: E402,F401  (fixtures: a local collecting web app and a key pair)
 
 CACHE = Path(os.environ.get("BOLTZ_CACHE", Path.home() / ".boltz"))
 pytestmark = pytest.mark.skipif(
@@ -112,3 +113,33 @@ def test_real_template_boltz_cannot_read_is_warned_about_and_explained(real):
     assert status["status"] == "FAILED" and status["return_code"] == 0, status
     assert status["likely_cause"] == "A template file could not be read by Boltz." and "SEQRES" in status["suggested_fix"], status
     assert "Failed to process" in (job / "boltz.log").read_text() and "different seed" not in out
+
+
+def test_real_failed_job_report_is_sealed_and_masked(real, monkeypatch, collector, keys):  # noqa: F811
+    """Usage reports ticked, a real engine failure: what the collector decrypts is the real log tail with its paths masked, and the run settings as numbers."""
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_URL", collector.url)
+    monkeypatch.setenv("BOLTZ2NB_TELEMETRY_KEY", keys["public"])
+    notebook = "Boltz2.ipynb"
+    real.run(notebook, 1, {"SEND_USAGE_STATS": True})
+    real.run(notebook, 2, replace=CPU_WARMUP)
+    real.run(notebook, 3)
+    up = call(real.colab, "save_uploaded_file", "template", "prediction.pdb", base64.b64encode((ASSETS / "pdb" / "prot_lig.pdb").read_bytes()).decode())
+    payload = {"sequences": [{"type": "protein", "data": {"id": ["A"], "sequence": SEQ, "msa": "empty"}}], "constraints": {"bonds": [], "pockets": [], "contacts": []},
+               "templates": [{"path": up["path"], "chain_id": ["A"]}], "properties": {}}
+    assert call(real.colab, "save_params", payload)["status"] == "ok"
+    from boltz2nb.run_params import DEFAULTS, serialize_run_params
+    content = serialize_run_params(dict(DEFAULTS, job_name="private_target_x", diffusion_samples=1, sampling_steps=20, recycling_steps=1, accelerator="cpu", num_workers=0))
+    assert call(real.colab, "save_run_params", {"filename": "run_params.txt", "content": content})["status"] == "ok"
+    real.run(notebook, 4, allow_failure_report=True)
+
+    reports = collector.reports(keys["private"])
+    assert [r["event"] for r in reports] == ["boltz setup", "job started", "job failed"], [r["event"] for r in reports]
+    started, failed = reports[1], reports[2]
+    assert started["job_name"] == "private_target_x" and started["n_chains"] == 1 and started["polymer_residues"] == len(SEQ) and started["n_ligand_chains"] == 0
+    assert started["params"]["accelerator"] == "cpu" and started["params"]["sampling_steps"] == 20 and "job_name" not in started["params"]
+    assert failed["likely_cause"] == "A template file could not be read by Boltz." and failed["return_code"] == 0
+    tail = failed["log_tail"]
+    assert "Failed to process" in tail and "IndexError: list index out of range" in tail and "boltz/data/parse/mmcif.py" in tail
+    for private in ("/home/", str(real.sandbox), "/content", SEQ):
+        assert private not in tail, private
+    assert SEQ not in json.dumps(reports)

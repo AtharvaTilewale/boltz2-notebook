@@ -14,6 +14,7 @@ tests/             pytest suite; engine tests skip unless a Boltz cache is prese
 tools/check_notebooks.py   compiles notebook cells and checks %run targets
 tools/build_notebook_headers.py   regenerates the first cell of the main notebooks and copies the V2 notebook over Boltz2.ipynb (`--check` in CI)
 tools/fetch_test_fonts.py  downloads Inter / JetBrains Mono for the browser tests
+tools/telemetry_keygen.py, tools/telemetry_read.py, telemetry/receiver.gs   make the key pair for, receive and read the opt-in usage reports (docs/TELEMETRY.md)
 ```
 
 ## Development

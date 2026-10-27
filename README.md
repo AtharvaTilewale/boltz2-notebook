@@ -47,7 +47,7 @@
 - **Live logs and diagnostics** — Boltz output streams into the cell; failures come with a likely cause and a fix
 - **Batch mode** — CSV/FASTA/YAML manifests, resume, ranking, export
 - **Reproducible** — pinned engine version, pinned notebook version (git tag), no silent overwrites
-- **Private** — no account lookups, no hidden logging; usage statistics are opt-in and anonymous ([details](docs/PRIVACY.md))
+- **Private** — no account lookups, no hidden logging; usage reports are opt-in, encrypted for the maintainer and never contain sequences or ligands ([exactly what is sent](docs/PRIVACY.md))
 - **Tested** — the logic lives in the `boltz2nb` package with a pytest suite and CI; generated inputs are validated with Boltz's own parser
 
 ---
@@ -416,7 +416,8 @@ V2.0.0/
 - **[Version Table](releases/version_table.md)** — Feature comparison across releases
 - **[Changelog](releases/CHANGELOG.md)** — Complete release history
 - **[Batch README](batch/README.md)** — High-throughput batch processing guide
-- **[Privacy](docs/PRIVACY.md)** — What leaves the runtime (only the MSA request and, for CCD ligands, the code lookup) and the opt-in usage ping
+- **[Usage reports for maintainers](docs/TELEMETRY.md)** — How to receive and read the opt-in, encrypted usage reports
+- **[Privacy](docs/PRIVACY.md)** — What leaves the runtime (the MSA request, the CCD-code lookup, and - only if you tick `SEND_USAGE_STATS` - the encrypted usage reports)
 - **[Contributing](CONTRIBUTING.md)** — Package layout, tests, release process
 - **[Verification log](docs/VERIFICATION.md)** — What has been tested, how, and what has not
 
