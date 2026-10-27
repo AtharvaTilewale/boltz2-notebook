@@ -15,3 +15,9 @@ boltz_cache/
 build/
 dist/
 .tmp/
+
+# usage reports you collected (decrypted ones hold job names and log excerpts) and the private key
+reports*.csv
+reports*.jsonl
+telemetry_private.key
+*_private.key

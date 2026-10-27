@@ -28,8 +28,15 @@ def sealed_values(path: Path, column: str = "sealed_report") -> list[str]:
     return [r[index] for r in rows[1:] if len(r) > index and r[index].strip()]
 
 
+def open_sealed(token: str, private_key_b64: str) -> bytes:
+    """Standalone on purpose: this script runs from a plain terminal, where only pynacl is needed (boltz2nb need not be installed)."""
+    import base64
+
+    from nacl.public import PrivateKey, SealedBox
+    return SealedBox(PrivateKey(base64.b64decode(private_key_b64))).decrypt(base64.b64decode(token))
+
+
 def open_reports(values: list[str], private_key_b64: str) -> tuple[list[dict], int]:
-    from boltz2nb.telemetry import open_sealed
     reports, skipped = [], 0
     for value in values:
         try:
@@ -59,6 +66,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--column", default="sealed_report")
     ap.add_argument("--jsonl", type=Path, help="also write the opened reports here, one JSON object per line")
     args = ap.parse_args(argv)
+    try:
+        import nacl  # noqa: F401
+    except ImportError:
+        print("pynacl is required: pip install pynacl", file=sys.stderr)
+        return 2
     reports, skipped = open_reports(sealed_values(args.csv, args.column), args.key.read_text().strip())
     print(summary(reports))
     if skipped:

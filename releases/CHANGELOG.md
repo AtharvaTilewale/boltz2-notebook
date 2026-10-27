@@ -18,6 +18,12 @@
   The feature comparison was checked against the forms: the Standard notebook has uploaded MSAs and PDB/mmCIF import but no templates (the old table had
   both the other way round), and the Batch notebook takes templates and MSA files through its CSV columns.
 
+### Fixed
+- `tools/telemetry_read.py` failed with `ModuleNotFoundError: No module named 'boltz2nb'` when run as `python tools/telemetry_read.py` from a normal terminal: it imported the
+  package, which is only importable from inside the repository's environment. It now needs `pynacl` only. The tests had loaded the tool with the repository already on the
+  path, which hid this; a new test runs both maintainer tools as a user does (plain interpreter, another directory, no `PYTHONPATH`) and fails on the old reader.
+- `.gitignore` now excludes `reports*.csv`, `reports*.jsonl` and private-key files, so exported or decrypted usage reports (job names, log excerpts) and the private key cannot be committed by accident.
+
 ## v2.1.2
 
 Opt-in, encrypted usage reports. The Cell 1 default tag is `v2.1.2`; `v2.1.1` stays available through the `NOTEBOOK_VERSION` field.

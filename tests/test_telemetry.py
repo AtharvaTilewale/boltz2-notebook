@@ -4,11 +4,13 @@ from __future__ import annotations
 import csv
 import http.server
 import json
+import os
 import re
 import runpy
 import shutil
 import stat
 import subprocess
+import sys
 import threading
 import urllib.parse
 
@@ -363,6 +365,36 @@ def test_reader_opens_the_exported_sheet_and_skips_junk(opted_in, tmp_path, caps
     out = capsys.readouterr().out
     assert "3 reports" in out and "boltz setup" in out and "GPU ran out of memory." in out and "1 rows could not be opened" in out
     assert [json.loads(ln)["event"] for ln in (tmp_path / "out.jsonl").read_text().splitlines()] == ["boltz setup", "job failed", "job succeeded"]
+
+
+def _plain_env():
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    env.pop("PYTHONHOME", None)
+    return env
+
+
+def test_the_maintainer_tools_run_from_a_plain_terminal(opted_in, tmp_path):
+    """Run as `python tools/<tool>.py` from any directory with only pynacl installed: no PYTHONPATH, the package is not importable.
+    (The tools were first tested in-process with the repository on the path, which hid an import of boltz2nb that fails in a real terminal.)"""
+    collector, keys = opted_in
+    probe = subprocess.run([sys.executable, "-c", "import boltz2nb"], capture_output=True, cwd=tmp_path, env=_plain_env())
+    assert probe.returncode != 0, "boltz2nb is importable here, so this test would not catch a hidden dependency on it"
+    telemetry.job_ended(False, "j1", 3.0, engine="e", return_code=1, likely_cause="GPU ran out of memory.", log_text="boom")
+    export = tmp_path / "reports.csv"
+    with export.open("w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["received_utc", "schema", "sealed_report"])
+        w.writerow(["2026-10-27T10:00:00Z", "1", "sealed:" + collector.posts[0]["form"]["p"]])
+    key_file = tmp_path / "private.key"
+    key_file.write_text(keys["private"])
+    done = subprocess.run([sys.executable, str(ROOT / "tools" / "telemetry_read.py"), "--key", str(key_file), str(export), "--jsonl", "out.jsonl"],
+                          capture_output=True, text=True, cwd=tmp_path, env=_plain_env())
+    assert done.returncode == 0, done.stderr
+    assert "1 reports" in done.stdout and "GPU ran out of memory." in done.stdout and json.loads((tmp_path / "out.jsonl").read_text())["event"] == "job failed"
+    made = subprocess.run([sys.executable, str(ROOT / "tools" / "telemetry_keygen.py"), "--out", str(tmp_path / "keys" / "k.key")],
+                          capture_output=True, text=True, cwd=tmp_path, env=_plain_env())
+    assert made.returncode == 0, made.stderr
+    assert len(made.stdout.strip().splitlines()[-1]) == 44                       # a base64 32-byte public key
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
